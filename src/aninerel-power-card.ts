@@ -26,7 +26,9 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
   // Sliding history buffer for sparkline generation
   private _historyMap: Map<string, number[]> = new Map();
-  private readonly _maxHistoryPoints = 16;
+  private readonly _maxHistoryPoints = 32;
+  private _lastHistoryFetch = 0;
+  private readonly _historyFetchInterval = 15 * 60 * 1000; // 15 minutes
 
   static styles = [cardStyles];
 
@@ -59,6 +61,10 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     const oldHass = this._hass;
     this._hass = hass;
 
+    if (!oldHass) {
+      this._fetchHistory();
+    }
+
     if (!oldHass || this._hasRelevantEntitiesChanged(oldHass, hass)) {
       this._updateHistoryBuffers();
       this.requestUpdate();
@@ -67,6 +73,10 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
   get hass(): HomeAssistant {
     return this._hass;
+  }
+
+  protected firstUpdated(): void {
+    this._fetchHistory();
   }
 
   // 3. Lovelace Sizing for Masonry layout (1 unit = 50px)
@@ -95,12 +105,117 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     return document.createElement('aninerel-power-card-editor');
   }
 
+  // Fetches real 24-hour historical records from Home Assistant via WebSocket/API
+  private async _fetchHistory(): Promise<void> {
+    if (!this._config || !this._hass) return;
+
+    const batEntity =
+      this._config.battery_voltage_entity || this._config.bms?.voltage_entity;
+    const gridEntity = this._config.grid_voltage_entity;
+
+    const entityIds: string[] = [];
+    if (batEntity) entityIds.push(batEntity);
+    if (gridEntity) entityIds.push(gridEntity);
+
+    if (entityIds.length === 0) return;
+
+    const now = Date.now();
+    if (now - this._lastHistoryFetch < this._historyFetchInterval && this._historyMap.size > 0) {
+      return;
+    }
+    this._lastHistoryFetch = now;
+
+    try {
+      const startTime = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+      let historyData: any = null;
+
+      if (typeof this._hass.callWS === 'function') {
+        historyData = await this._hass.callWS({
+          type: 'history/history_during_period',
+          start_time: startTime,
+          entity_ids: entityIds,
+          minimal_response: true,
+          no_attributes: true,
+        });
+      } else if (typeof this._hass.callApi === 'function') {
+        const query = `history/period/${startTime}?filter_entity_id=${entityIds.join(',')}&minimal_response&no_attributes`;
+        historyData = await this._hass.callApi('GET', query);
+      }
+
+      if (historyData) {
+        if (batEntity) {
+          const rawList = this._extractStateList(historyData, batEntity);
+          const points = this._sampleHistoryPoints(rawList, this._maxHistoryPoints);
+          if (points.length > 0) {
+            this._historyMap.set('battery_voltage', points);
+          }
+        }
+        if (gridEntity) {
+          const rawList = this._extractStateList(historyData, gridEntity);
+          const points = this._sampleHistoryPoints(rawList, this._maxHistoryPoints);
+          if (points.length > 0) {
+            this._historyMap.set('grid_voltage', points);
+          }
+        }
+        this.requestUpdate();
+      }
+    } catch (err) {
+      console.warn('AninerelPowerCard: using live buffer for sparklines (history API unavailable):', err);
+    }
+  }
+
+  private _extractStateList(response: any, entityId: string): any[] {
+    if (!response) return [];
+    if (response[entityId] && Array.isArray(response[entityId])) {
+      return response[entityId];
+    }
+    if (Array.isArray(response)) {
+      for (const item of response) {
+        if (Array.isArray(item) && item.length > 0) {
+          if (item[0]?.entity_id === entityId) return item;
+        } else if (item?.entity_id === entityId && Array.isArray(item.states)) {
+          return item.states;
+        }
+      }
+      if (response[0]?.state !== undefined || response[0]?.s !== undefined) {
+        return response;
+      }
+    }
+    if (response.entity_id === entityId && Array.isArray(response.states)) {
+      return response.states;
+    }
+    return [];
+  }
+
+  private _sampleHistoryPoints(rawStates: any[], targetPoints: number): number[] {
+    if (!rawStates || rawStates.length === 0) return [];
+    const values: number[] = [];
+    for (const item of rawStates) {
+      const s = item.s !== undefined ? item.s : item.state;
+      const v = parseFloat(s);
+      if (!isNaN(v) && isFinite(v)) {
+        values.push(v);
+      }
+    }
+    if (values.length === 0) return [];
+    if (values.length <= targetPoints) return values;
+
+    const result: number[] = [];
+    const step = (values.length - 1) / (targetPoints - 1);
+    for (let i = 0; i < targetPoints; i++) {
+      result.push(values[Math.min(Math.round(i * step), values.length - 1)]);
+    }
+    return result;
+  }
+
   // Records numeric history points for sparklines
   private _updateHistoryBuffers(): void {
     if (!this._config || !this._hass) return;
 
-    if (this._config.battery_voltage_entity) {
-      const batV = this._getNumber(this._config.battery_voltage_entity);
+    const batEntity =
+      this._config.battery_voltage_entity || this._config.bms?.voltage_entity;
+    if (batEntity) {
+      const batV = this._getNumber(batEntity);
       if (batV !== null && !isNaN(batV)) {
         this._pushHistory('battery_voltage', batV);
       }
@@ -116,7 +231,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
   private _pushHistory(key: string, val: number): void {
     const arr = this._historyMap.get(key) || [];
-    if (arr.length === 0 || arr[arr.length - 1] !== val) {
+    if (arr.length === 0 || Math.abs(arr[arr.length - 1] - val) > 0.001) {
       arr.push(val);
       if (arr.length > this._maxHistoryPoints) {
         arr.shift();

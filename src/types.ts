@@ -36,6 +36,8 @@ export interface HomeAssistant {
     serviceData?: Record<string, any>,
     target?: { entity_id?: string | string[]; [key: string]: any }
   ): Promise<any>;
+  callWS?<T = any>(msg: Record<string, any>): Promise<T>;
+  callApi?<T = any>(method: string, path: string, data?: Record<string, any>): Promise<T>;
 }
 
 export interface LovelaceCardConfig {

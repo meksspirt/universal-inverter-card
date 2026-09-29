@@ -14,35 +14,69 @@ export interface ElectricalParamsProps {
 }
 
 /**
- * Generates lightweight responsive SVG sparkline
+ * Generates lightweight responsive SVG sparkline with minRange protection
+ * to prevent microscopic ADC noise (e.g. 0.01V) from creating giant sawtooth artifacts.
  */
-function renderSparkline(data: number[], strokeColor: string): TemplateResult {
+function renderSparkline(
+  data: number[],
+  strokeColor: string,
+  minRange = 1.0,
+  fillId = 'spark'
+): TemplateResult {
   if (!data || data.length < 2) {
     return html`<div class="sparkline-placeholder"></div>`;
   }
 
   const width = 110;
   const height = 26;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+  const padTop = 3;
+  const padBottom = 3;
+  const usableHeight = height - padTop - padBottom;
+
+  const rawMin = Math.min(...data);
+  const rawMax = Math.max(...data);
+  const rawRange = rawMax - rawMin;
+
+  // Clamping: If the variation across data is smaller than minRange,
+  // center the curve symmetrically with minRange span.
+  let min = rawMin;
+  let max = rawMax;
+  if (rawRange < minRange) {
+    const mid = (rawMin + rawMax) / 2;
+    min = mid - minRange / 2;
+    max = mid + minRange / 2;
+  }
   const range = max - min || 1;
 
-  const points = data
-    .map((val, idx) => {
-      const x = (idx / (data.length - 1)) * width;
-      // Invert Y axis for SVG (0 is top)
-      const y = height - ((val - min) / range) * (height - 6) - 3;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
+  const pointCoords = data.map((val, idx) => {
+    const x = (idx / (data.length - 1)) * width;
+    const clampedVal = Math.max(min, Math.min(max, val));
+    // Invert Y axis for SVG (0 is top)
+    const y = height - padBottom - ((clampedVal - min) / range) * usableHeight;
+    return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
+  });
+
+  const polylinePoints = pointCoords.map((pt) => `${pt.x},${pt.y}`).join(' ');
+  const polygonPoints = `0,${height} ${polylinePoints} ${width},${height}`;
+  const gradId = `spark-grad-${fillId}`;
 
   return svg`
     <svg class="sparkline-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.25" />
+          <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points="${polygonPoints}"
+        fill="url(#${gradId})"
+      />
       <polyline
-        points="${points}"
+        points="${polylinePoints}"
         fill="none"
         stroke="${strokeColor}"
-        stroke-width="2"
+        stroke-width="1.8"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
@@ -157,7 +191,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
           </span>
         </div>
         <div class="param-chart-box">
-          ${renderSparkline(batHistory, batVColor)}
+          ${renderSparkline(batHistory, batVColor, 1.5, 'bat')}
         </div>
       </div>
 
@@ -180,7 +214,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
           </span>
         </div>
         <div class="param-chart-box">
-          ${renderSparkline(gridHistory, gridVColor)}
+          ${renderSparkline(gridHistory, gridVColor, 20.0, 'grid')}
         </div>
       </div>
 
