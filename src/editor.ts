@@ -51,7 +51,17 @@ export class AninerelPowerCardEditor extends LitElement {
         label: localize('editor.title', this.hass),
         selector: { text: {} },
       },
-      // 1. Core Power Entities (Required)
+      {
+        name: 'subtitle',
+        label: 'Подзаголовок карточки',
+        selector: { text: {} },
+      },
+      {
+        name: 'icon',
+        label: 'Иконка в шапке (MDI)',
+        selector: { icon: {} },
+      },
+      // 1. Core Power Entities (Required: load_power)
       {
         name: 'entities',
         type: 'expandable',
@@ -59,8 +69,8 @@ export class AninerelPowerCardEditor extends LitElement {
         schema: [
           {
             name: 'solar_power',
-            label: 'Солнечная генерация (PV Power)',
-            required: true,
+            label: 'Солнечная генерация (PV Power) [Опционально]',
+            required: false,
             selector: { entity: { domain: 'sensor' } },
           },
           {
@@ -346,6 +356,23 @@ export class AninerelPowerCardEditor extends LitElement {
             name: 'show_flow',
             label: 'Отображать анимацию потоков энергии',
             selector: { boolean: {} },
+          },
+          {
+            name: 'show_solar',
+            label: 'Отображать солнечную генерацию (PV)',
+            selector: { boolean: {} },
+          },
+          {
+            name: 'grid_position',
+            label: 'Расположение сети без солнца (Grid Position)',
+            selector: {
+              select: {
+                options: [
+                  { value: 'bottom', label: 'Снизу (По умолчанию)' },
+                  { value: 'top', label: 'Сверху (Вместо солнца)' },
+                ],
+              },
+            },
           },
           {
             name: 'show_params',

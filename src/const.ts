@@ -1,6 +1,6 @@
 import { AninerelCardConfig } from './types';
 
-export const CARD_VERSION = '1.0.4';
+export const CARD_VERSION = '1.0.5';
 export const CARD_NAME = 'aninerel-power-card';
 
 export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
@@ -12,6 +12,8 @@ export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
   use_log_flow_model: true,
   show_header: true,
   show_flow: true,
+  show_solar: false,
+  grid_position: 'bottom',
   show_params: true,
   show_bms: true,
   show_controls: true,
@@ -36,8 +38,8 @@ export const DEFAULT_COLORS = {
 export const STUB_CONFIG: Record<string, any> = {
   type: 'custom:aninerel-power-card',
   title: 'Aninerel ANL 4200T',
+  show_solar: false,
   entities: {
-    solar_power: 'sensor.aninerel_anl_4200t_24l_w_pro_pv_power',
     battery_power: 'sensor.aninerel_anl_4200t_24l_w_pro_battery_power',
     grid_power: 'sensor.aninerel_anl_4200t_24l_w_pro_grid_power',
     load_power: 'sensor.aninerel_anl_4200t_24l_w_pro_load_power',

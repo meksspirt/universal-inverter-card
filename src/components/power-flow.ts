@@ -1,12 +1,14 @@
 import { html, svg, TemplateResult } from 'lit';
 import { AninerelCardConfig, HomeAssistant } from '../types';
-import { NODE_POSITIONS, calculateFlowPaths, calcFlowDuration, calcStrokeWidth } from '../utils/flow-math';
+import { getFlowLayout, calculateFlowPaths, calcFlowDuration, calcStrokeWidth } from '../utils/flow-math';
 import { formatPower } from '../utils/format';
 
 export interface PowerFlowRenderParams {
   hass: HomeAssistant;
   config: AninerelCardConfig;
-  solarWatts: number;
+  hasSolar?: boolean;
+  gridPosition?: 'bottom' | 'top';
+  solarWatts?: number;
   batteryWatts: number;
   gridWatts: number;
   loadWatts: number;
@@ -19,7 +21,9 @@ export interface PowerFlowRenderParams {
 export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
   const {
     config,
-    solarWatts,
+    hasSolar = false,
+    gridPosition = 'bottom',
+    solarWatts = 0,
     batteryWatts,
     gridWatts,
     loadWatts,
@@ -34,15 +38,19 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
   const minRate = config.min_flow_rate || 0.75;
   const maxRate = config.max_flow_rate || 5.0;
 
+  const layout = getFlowLayout(hasSolar, gridPosition);
+  const { viewBoxHeight } = layout;
+  const { solar, inverter, battery, home, grid } = layout.nodes;
+
   const flowPaths = calculateFlowPaths(
     solarWatts,
     batteryWatts,
     gridWatts,
     loadWatts,
-    config.colors
+    config.colors,
+    hasSolar,
+    gridPosition
   );
-
-  const { solar, inverter, battery, home, grid } = NODE_POSITIONS;
 
   // Battery SOC calculations
   const clampedSoc = Math.max(0, Math.min(100, isNaN(batterySoc) ? 0 : batterySoc));
@@ -57,14 +65,14 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
     batteryWatts > 20 ? 'Charge' : batteryWatts < -20 ? 'Discharge' : 'Standby';
 
   return html`
-    <div class="power-flow-container">
+    <div
+      class="power-flow-container ${hasSolar ? 'with-solar' : 'no-solar'}"
+      style="--flow-aspect-ratio: 500 / ${viewBoxHeight};"
+    >
       <!-- 1. Background Pipelines and Animated Energy Flows -->
-      <svg class="flow-svg" viewBox="0 0 500 360" preserveAspectRatio="xMidYMid meet">
+      <svg class="flow-svg" viewBox="0 0 500 ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet">
         <!-- Static background wire tracks with clean clearance -->
-        <path class="pipe-track" d="M 250 82 L 250 140" />
-        <path class="pipe-track" d="M 116 175 L 216 175" />
-        <path class="pipe-track" d="M 284 175 L 388 175" />
-        <path class="pipe-track" d="M 250 210 L 250 274" />
+        ${layout.tracks.map((trackD) => svg`<path class="pipe-track" d="${trackD}" />`)}
 
         <!-- Active animated flow lines -->
         ${flowPaths.map((p) => {
@@ -86,25 +94,29 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
 
       <!-- 2. Interactive Badges Layer -->
       <div class="flow-nodes-layer">
-        <!-- SOLAR NODE (Top) -->
-        <div
-          class="flow-node node-solar"
-          style="left: ${(solar.x / 500) * 100}%; top: ${(solar.y / 360) * 100}%;"
-          @click=${() => onNodeClick(config.entities.solar_power)}
-          title="Солнечная генерация"
-        >
-          <div class="node-badge">
-            <ha-icon icon="mdi:solar-power-variant"></ha-icon>
-          </div>
-          <span class="node-value">${formatPower(solarWatts)}</span>
-          <span class="node-label">Solar</span>
-        </div>
+        <!-- SOLAR NODE (Top) - Only rendered when solar is enabled -->
+        ${hasSolar && solar
+          ? html`
+              <div
+                class="flow-node node-solar"
+                style="left: ${(solar.x / 500) * 100}%; top: ${(solar.y / viewBoxHeight) * 100}%;"
+                @click=${() => onNodeClick(config.entities?.solar_power)}
+                title="Солнечная генерация"
+              >
+                <div class="node-badge">
+                  <ha-icon icon="mdi:solar-power-variant"></ha-icon>
+                </div>
+                <span class="node-value">${formatPower(solarWatts)}</span>
+                <span class="node-label">Solar</span>
+              </div>
+            `
+          : ''}
 
         <!-- BATTERY NODE (Left) -->
         <div
           class="flow-node node-battery"
-          style="left: ${(battery.x / 500) * 100}%; top: ${(battery.y / 360) * 100}%;"
-          @click=${() => onNodeClick(config.bms?.soc_entity || config.entities.battery_power)}
+          style="left: ${(battery.x / 500) * 100}%; top: ${(battery.y / viewBoxHeight) * 100}%;"
+          @click=${() => onNodeClick(config.bms?.soc_entity || config.entities?.battery_power)}
           title="Аккумуляторная батарея"
         >
           <div class="node-badge">
@@ -150,7 +162,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
         <!-- CENTRAL INVERTER NODE -->
         <div
           class="flow-node node-inverter"
-          style="left: ${(inverter.x / 500) * 100}%; top: ${(inverter.y / 360) * 100}%;"
+          style="left: ${(inverter.x / 500) * 100}%; top: ${(inverter.y / viewBoxHeight) * 100}%;"
           @click=${() => onNodeClick(config.operating_mode_entity)}
           title="Статус инвертора"
         >
@@ -168,8 +180,8 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
         <!-- HOME LOAD NODE (Right) -->
         <div
           class="flow-node node-home"
-          style="left: ${(home.x / 500) * 100}%; top: ${(home.y / 360) * 100}%;"
-          @click=${() => onNodeClick(config.entities.load_power)}
+          style="left: ${(home.x / 500) * 100}%; top: ${(home.y / viewBoxHeight) * 100}%;"
+          @click=${() => onNodeClick(config.entities?.load_power)}
           title="Потребление дома"
         >
           <div class="node-badge">
@@ -179,11 +191,11 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           <span class="node-label">Home</span>
         </div>
 
-        <!-- GRID NODE (Bottom) -->
+        <!-- GRID NODE (Bottom or Top) -->
         <div
           class="flow-node node-grid"
-          style="left: ${(grid.x / 500) * 100}%; top: ${(grid.y / 360) * 100}%;"
-          @click=${() => onNodeClick(config.entities.grid_power)}
+          style="left: ${(grid.x / 500) * 100}%; top: ${(grid.y / viewBoxHeight) * 100}%;"
+          @click=${() => onNodeClick(config.entities?.grid_power)}
           title="Электросеть"
         >
           <div class="node-badge">

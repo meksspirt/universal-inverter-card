@@ -38,8 +38,8 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     if (!config.entities) {
       throw new Error('Обязательный блок "entities" не задан в конфигурации');
     }
-    if (!config.entities.solar_power || !config.entities.load_power) {
-      throw new Error('Необходимо указать как минимум entities.solar_power и entities.load_power');
+    if (!config.entities.load_power) {
+      throw new Error('Необходимо указать как минимум entities.load_power');
     }
 
     this._config = {
@@ -300,8 +300,16 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   protected render() {
     if (!this._config) return html``;
 
+    const hasSolar = Boolean(
+      this._config.show_solar &&
+      this._config.entities.solar_power &&
+      this._config.entities.solar_power.trim() !== ''
+    );
+
     // Power values
-    const solarWatts = this._getNumber(this._config.entities.solar_power);
+    const solarWatts = hasSolar && this._config.entities.solar_power
+      ? this._getNumber(this._config.entities.solar_power)
+      : 0;
     const batteryWatts = this._getNumber(this._config.entities.battery_power);
     const gridWatts = this._getNumber(this._config.entities.grid_power);
     const loadWatts = this._getNumber(this._config.entities.load_power);
@@ -484,6 +492,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         ${this._config.show_header !== false
           ? renderHeaderBar({
               config: this._config,
+              hasSolar,
               operatingMode,
               temperature,
               isCharging,
@@ -512,6 +521,8 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
           ? renderPowerFlow({
               hass: this._hass,
               config: this._config,
+              hasSolar,
+              gridPosition: this._config.grid_position || 'bottom',
               solarWatts,
               batteryWatts,
               gridWatts,
@@ -527,6 +538,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         ${this._config.show_params !== false
           ? renderElectricalParams({
               config: this._config,
+              hasSolar,
               batteryVoltage,
               batteryCurrent,
               gridVoltage,

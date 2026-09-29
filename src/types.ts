@@ -59,9 +59,9 @@ export interface LovelaceGridOptions {
 // Card Specific Configurations
 
 export interface EntitiesConfig {
-  solar_power: string;    // sensor...pv_power (W)
-  battery_power: string;  // sensor...battery_power (W, + charge / - discharge)
-  grid_power: string;     // sensor...grid_power (W)
+  solar_power?: string;   // sensor...pv_power (W, optional)
+  battery_power?: string; // sensor...battery_power (W, + charge / - discharge)
+  grid_power?: string;    // sensor...grid_power (W)
   load_power: string;     // sensor...load_power (W)
 }
 
@@ -146,6 +146,8 @@ export interface ColorConfig {
 export interface AninerelCardConfig extends LovelaceCardConfig {
   type: string;
   title?: string;
+  subtitle?: string;
+  icon?: string;
 
   entities: EntitiesConfig;
 
@@ -176,6 +178,8 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
   // Section visibility toggles
   show_header?: boolean;
   show_flow?: boolean;
+  show_solar?: boolean;        // default: false (hidden when no solar panels)
+  grid_position?: 'bottom' | 'top'; // default: 'bottom' (when no solar)
   show_params?: boolean;
   show_bms?: boolean;
   show_controls?: boolean;

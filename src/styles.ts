@@ -159,7 +159,7 @@ export const cardStyles = css`
     width: 100%;
     max-width: 520px;
     margin: 0 auto;
-    aspect-ratio: 500 / 360;
+    aspect-ratio: var(--flow-aspect-ratio, 500 / 360);
     user-select: none;
   }
 

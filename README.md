@@ -69,9 +69,9 @@
 type: custom:aninerel-power-card
 title: "⚡ Инвертор Aninerel 4200T"
 
-# 1. Основные потоки мощности (Вт) - Обязательно
+# 1. Основные потоки мощности (Вт)
 entities:
-  solar_power: sensor.aninerel_anl_4200t_24l_w_pro_pv_power
+  # solar_power: sensor.aninerel_anl_4200t_24l_w_pro_pv_power # Опционально (раскомментируйте, если есть панели)
   battery_power: sensor.aninerel_anl_4200t_24l_w_pro_battery_power
   grid_power: sensor.aninerel_anl_4200t_24l_w_pro_grid_power
   load_power: sensor.aninerel_anl_4200t_24l_w_pro_load_power
@@ -139,6 +139,8 @@ max_power: 4200
 use_log_flow_model: true
 show_header: true
 show_flow: true
+show_solar: false # true - если установлены солнечные панели (по умолчанию false)
+grid_position: bottom # bottom (снизу) или top (сверху) при выключенном солнце
 show_params: true
 show_bms: true
 show_controls: true

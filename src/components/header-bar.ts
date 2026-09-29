@@ -3,6 +3,7 @@ import { AninerelCardConfig } from '../types';
 
 export interface HeaderBarProps {
   config: AninerelCardConfig;
+  hasSolar?: boolean;
   operatingMode: string;
   temperature: number | null;
   isCharging: boolean;
@@ -16,6 +17,7 @@ export interface HeaderBarProps {
 export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
   const {
     config,
+    hasSolar = false,
     operatingMode,
     temperature,
     isCharging,
@@ -52,16 +54,19 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
     }
   }
 
+  const defaultIcon = hasSolar ? 'mdi:solar-power-variant-outline' : 'mdi:home-battery-outline';
+  const defaultSubtitle = hasSolar ? 'Hybrid 24V 4.2kW Inverter' : '24V 4.2kW UPS Inverter';
+
   return html`
     <div class="header-bar">
       <!-- Card Title & Inverter Model -->
       <div class="header-left">
         <div class="header-icon-box">
-          <ha-icon icon="mdi:solar-power-variant-outline"></ha-icon>
+          <ha-icon icon="${config.icon || defaultIcon}"></ha-icon>
         </div>
         <div class="header-title-box">
           <span class="header-title">${config.title || 'Aninerel ANL 4200T'}</span>
-          <span class="header-subtitle">Hybrid 24V 4.2kW Inverter</span>
+          <span class="header-subtitle">${config.subtitle || defaultSubtitle}</span>
         </div>
       </div>
 

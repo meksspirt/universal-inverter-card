@@ -3,6 +3,7 @@ import { AninerelCardConfig } from '../types';
 
 export interface ElectricalParamsProps {
   config: AninerelCardConfig;
+  hasSolar?: boolean;
   batteryVoltage: number | null;
   batteryCurrent: number | null;
   gridVoltage: number | null;
@@ -87,6 +88,7 @@ function renderArcGauge(percent: number, color: string): TemplateResult {
 export function renderElectricalParams(props: ElectricalParamsProps): TemplateResult {
   const {
     config,
+    hasSolar = false,
     batteryVoltage,
     batteryCurrent,
     gridVoltage,
@@ -189,7 +191,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
         title="Дневная автономность"
       >
         <div class="param-header">
-          <ha-icon icon="mdi:shield-sun"></ha-icon>
+          <ha-icon icon="${hasSolar ? 'mdi:shield-sun' : 'mdi:shield-battery-outline'}"></ha-icon>
           <span class="param-title">Self-Sufficiency</span>
         </div>
         <div class="param-kpi-container">

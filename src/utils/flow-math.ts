@@ -7,7 +7,7 @@ export interface NodePosition {
   radius: number;
 }
 
-// Optimized layout coordinates on a 500x360 coordinate grid
+// Legacy fixed coordinates for backward compatibility
 export const NODE_POSITIONS = {
   solar: { x: 250, y: 44, radius: 34 },
   inverter: { x: 250, y: 175, radius: 32 },
@@ -15,6 +15,83 @@ export const NODE_POSITIONS = {
   home: { x: 426, y: 175, radius: 36 },
   grid: { x: 250, y: 308, radius: 34 },
 };
+
+export interface FlowLayout {
+  viewBoxHeight: number;
+  aspectRatio: string;
+  tracks: string[];
+  nodes: {
+    solar?: NodePosition;
+    inverter: NodePosition;
+    battery: NodePosition;
+    home: NodePosition;
+    grid: NodePosition;
+  };
+}
+
+/**
+ * Computes node coordinates, track lines, and viewBox dimensions based on whether
+ * solar generation is enabled and the desired grid position.
+ */
+export function getFlowLayout(
+  hasSolar = false,
+  gridPosition: 'bottom' | 'top' = 'bottom'
+): FlowLayout {
+  if (hasSolar) {
+    return {
+      viewBoxHeight: 360,
+      aspectRatio: '500 / 360',
+      tracks: [
+        'M 250 82 L 250 140',   // Solar -> Inverter
+        'M 116 175 L 216 175', // Battery <-> Inverter
+        'M 284 175 L 388 175', // Inverter -> Home
+        'M 250 210 L 250 274', // Grid <-> Inverter
+      ],
+      nodes: {
+        solar: { x: 250, y: 44, radius: 34 },
+        inverter: { x: 250, y: 175, radius: 32 },
+        battery: { x: 74, y: 175, radius: 40 },
+        home: { x: 426, y: 175, radius: 36 },
+        grid: { x: 250, y: 308, radius: 34 },
+      },
+    };
+  }
+
+  if (gridPosition === 'top') {
+    return {
+      viewBoxHeight: 290,
+      aspectRatio: '500 / 290',
+      tracks: [
+        'M 250 115 L 250 163', // Grid <-> Inverter
+        'M 116 195 L 216 195', // Battery <-> Inverter
+        'M 284 195 L 388 195', // Inverter -> Home
+      ],
+      nodes: {
+        grid: { x: 250, y: 65, radius: 34 },
+        inverter: { x: 250, y: 195, radius: 32 },
+        battery: { x: 74, y: 195, radius: 40 },
+        home: { x: 426, y: 195, radius: 36 },
+      },
+    };
+  }
+
+  // Default when no solar: Grid is at bottom, compact balanced layout
+  return {
+    viewBoxHeight: 290,
+    aspectRatio: '500 / 290',
+    tracks: [
+      'M 116 90 L 216 90',   // Battery <-> Inverter
+      'M 284 90 L 388 90',   // Inverter -> Home
+      'M 250 145 L 250 191', // Grid <-> Inverter
+    ],
+    nodes: {
+      battery: { x: 74, y: 90, radius: 40 },
+      inverter: { x: 250, y: 90, radius: 32 },
+      home: { x: 426, y: 90, radius: 36 },
+      grid: { x: 250, y: 225, radius: 34 },
+    },
+  };
+}
 
 /**
  * Calculates flow animation duration in seconds using either logarithmic or linear interpolation.
@@ -61,7 +138,9 @@ export function calculateFlowPaths(
   batteryWatts: number,
   gridWatts: number,
   loadWatts: number,
-  colors?: ColorConfig
+  colors?: ColorConfig,
+  hasSolar = false,
+  gridPosition: 'bottom' | 'top' = 'bottom'
 ): FlowPath[] {
   const paths: FlowPath[] = [];
   const activeThreshold = 5; // Watts
@@ -73,56 +152,78 @@ export function calculateFlowPaths(
   const gridExportColor = colors?.grid_export || DEFAULT_COLORS.grid_export;
   const homeColor = colors?.home || DEFAULT_COLORS.home;
 
-  // 1. Solar -> Inverter (vertical from bottom of Solar text to top of Inverter badge)
-  const solarP = Math.max(0, solarWatts);
-  if (solarP >= activeThreshold) {
-    paths.push({
-      id: 'flow-solar-inverter',
-      d: `M 250 82 L 250 140`,
-      watts: solarP,
-      color: solarColor,
-      reversed: false,
-    });
+  // 1. Solar -> Inverter (only if solar is active and present)
+  if (hasSolar) {
+    const solarP = Math.max(0, solarWatts);
+    if (solarP >= activeThreshold) {
+      paths.push({
+        id: 'flow-solar-inverter',
+        d: 'M 250 82 L 250 140',
+        watts: solarP,
+        color: solarColor,
+        reversed: false,
+      });
+    }
   }
 
-  // 2. Inverter -> Home (horizontal from right of Inverter badge to left of Home badge)
+  // Determine line coordinates based on layout
+  let batD = 'M 116 175 L 216 175';
+  let homeD = 'M 284 175 L 388 175';
+  let gridD = 'M 250 210 L 250 274';
+  let gridImportReversed = true;
+
+  if (!hasSolar) {
+    if (gridPosition === 'top') {
+      batD = 'M 116 195 L 216 195';
+      homeD = 'M 284 195 L 388 195';
+      gridD = 'M 250 115 L 250 163';
+      // From Grid (top) down to Inverter: normal direction is import, reversed is export
+      gridImportReversed = false;
+    } else {
+      // Bottom grid
+      batD = 'M 116 90 L 216 90';
+      homeD = 'M 284 90 L 388 90';
+      gridD = 'M 250 145 L 250 191';
+      // From Grid (bottom) up to Inverter: reversed direction is import, normal is export
+      gridImportReversed = true;
+    }
+  }
+
+  // 2. Inverter -> Home
   const loadP = Math.max(0, loadWatts);
   if (loadP >= activeThreshold) {
     paths.push({
       id: 'flow-inverter-home',
-      d: `M 284 175 L 388 175`,
+      d: homeD,
       watts: loadP,
       color: homeColor,
       reversed: false,
     });
   }
 
-  // 3. Battery <-> Inverter (horizontal between Battery right edge and Inverter left edge)
+  // 3. Battery <-> Inverter
   const absBatP = Math.abs(batteryWatts);
   if (absBatP >= activeThreshold) {
     const isCharging = batteryWatts > 0;
     paths.push({
       id: 'flow-battery-inverter',
-      d: `M 116 175 L 216 175`,
+      d: batD,
       watts: absBatP,
       color: isCharging ? batteryChargeColor : batteryDischargeColor,
-      reversed: isCharging, // Charging moves from Inverter to Battery (right to left)
+      reversed: isCharging,
     });
   }
 
-  // 4. Grid <-> Inverter (vertical from Inverter bottom to Grid top)
+  // 4. Grid <-> Inverter
   const absGridP = Math.abs(gridWatts);
   if (absGridP >= activeThreshold) {
     const isImport = gridWatts > 0;
     paths.push({
       id: 'flow-grid-inverter',
-      // Line connects bottom of Inverter text (210) to top of Grid badge (274)
-      d: `M 250 210 L 250 274`,
+      d: gridD,
       watts: absGridP,
       color: isImport ? gridImportColor : gridExportColor,
-      // If importing, flow moves from Grid up to Inverter (bottom to top -> reverse)
-      // If exporting, flow moves from Inverter down to Grid (top to bottom -> normal)
-      reversed: isImport,
+      reversed: isImport ? gridImportReversed : !gridImportReversed,
     });
   }
 
