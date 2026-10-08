@@ -32,7 +32,7 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
   const items = [
     {
       id: dailyConfig.load_energy_entity,
-      label: 'Потребление дома',
+      label: 'Home Consumption',
       value: load,
       color: '#e2e8f0',
       icon: 'mdi:home-lightning-bolt',
@@ -40,7 +40,7 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
     },
     {
       id: dailyConfig.grid_import_entity,
-      label: 'Импорт из сети',
+      label: 'Grid Import',
       value: grid,
       color: '#4285f4',
       icon: 'mdi:transmission-tower',
@@ -48,7 +48,7 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
     },
     {
       id: dailyConfig.battery_charge_entity,
-      label: 'Закачано в АКБ',
+      label: 'Battery Charged',
       value: batChg,
       color: '#10b981',
       icon: 'mdi:battery-plus-variant',
@@ -56,7 +56,7 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
     },
     {
       id: dailyConfig.battery_discharge_entity,
-      label: 'Отдано батареей',
+      label: 'Battery Discharged',
       value: batDis,
       color: '#f59e0b',
       icon: 'mdi:battery-minus-variant',
@@ -70,9 +70,9 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
       <div class="energy-header">
         <div class="energy-header-title">
           <ha-icon icon="mdi:chart-box-outline"></ha-icon>
-          <span>Суточный баланс энергии</span>
+          <span>Daily Energy Balance</span>
         </div>
-        <span class="energy-total-pill">Итого: ${formatEnergy(load)}</span>
+        <span class="energy-total-pill">Total: ${formatEnergy(load)}</span>
       </div>
 
       <!-- Horizontal Energy Bars List -->
@@ -84,7 +84,7 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
             <div
               class="energy-row"
               @click=${() => onEnergyClick(item.id)}
-              title="${item.label}: ${item.value.toFixed(2)} кВт·ч"
+              title="${item.label}: ${item.value.toFixed(2)} kWh"
             >
               <!-- Icon and Label -->
               <div class="energy-row-info">

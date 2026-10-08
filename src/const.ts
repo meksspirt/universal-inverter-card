@@ -1,6 +1,6 @@
 import { AninerelCardConfig } from './types';
 
-export const CARD_VERSION = '1.0.8';
+export const CARD_VERSION = '1.1.0';
 export const CARD_NAME = 'aninerel-power-card';
 
 export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {

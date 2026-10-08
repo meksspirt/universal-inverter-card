@@ -101,7 +101,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
                 class="flow-node node-solar"
                 style="left: ${(solar.x / 500) * 100}%; top: ${(solar.y / viewBoxHeight) * 100}%;"
                 @click=${() => onNodeClick(config.entities?.solar_power)}
-                title="Солнечная генерация"
+                title="Solar Generation"
               >
                 <div class="node-badge">
                   <ha-icon icon="mdi:solar-power-variant"></ha-icon>
@@ -117,7 +117,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           class="flow-node node-battery"
           style="left: ${(battery.x / 500) * 100}%; top: ${(battery.y / viewBoxHeight) * 100}%;"
           @click=${() => onNodeClick(config.bms?.soc_entity || config.entities?.battery_power)}
-          title="Аккумуляторная батарея"
+          title="Battery Storage"
         >
           <div class="node-badge">
             <svg class="battery-gauge-svg" viewBox="0 0 80 80">
@@ -164,7 +164,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           class="flow-node node-inverter"
           style="left: ${(inverter.x / 500) * 100}%; top: ${(inverter.y / viewBoxHeight) * 100}%;"
           @click=${() => onNodeClick(config.operating_mode_entity)}
-          title="Статус инвертора"
+          title="Inverter Status"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:inverter"></ha-icon>
@@ -182,7 +182,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           class="flow-node node-home"
           style="left: ${(home.x / 500) * 100}%; top: ${(home.y / viewBoxHeight) * 100}%;"
           @click=${() => onNodeClick(config.entities?.load_power)}
-          title="Потребление дома"
+          title="Home Consumption"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:home-lightning-bolt"></ha-icon>
@@ -196,7 +196,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           class="flow-node node-grid"
           style="left: ${(grid.x / 500) * 100}%; top: ${(grid.y / viewBoxHeight) * 100}%;"
           @click=${() => onNodeClick(config.entities?.grid_power)}
-          title="Электросеть"
+          title="Power Grid"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:transmission-tower"></ha-icon>

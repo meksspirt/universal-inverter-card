@@ -49,14 +49,14 @@ export function renderAlertPanel(props: AlertPanelProps): TemplateResult {
                     safetyConfig.fault_code_entity ||
                     safetyConfig.fault_active_entity
                 )}
-              title="Нажмите для открытия подробностей"
+              title="Click to view details"
             >
               <div class="alert-icon-col">
                 <ha-icon icon="mdi:alert-octagon"></ha-icon>
               </div>
               <div class="alert-content-col">
                 <div class="alert-headline">
-                  <span class="alert-badge">АВАРИЯ F${fCode}</span>
+                  <span class="alert-badge">FAULT F${fCode}</span>
                   <span class="alert-title">${faultDetail.title}</span>
                 </div>
                 <p class="alert-desc">${faultDetail.description}</p>
@@ -80,14 +80,14 @@ export function renderAlertPanel(props: AlertPanelProps): TemplateResult {
                     safetyConfig.warning_code_entity ||
                     safetyConfig.warnings_active_entity
                 )}
-              title="Нажмите для открытия подробностей"
+              title="Click to view details"
             >
               <div class="alert-icon-col">
                 <ha-icon icon="mdi:alert"></ha-icon>
               </div>
               <div class="alert-content-col">
                 <div class="alert-headline">
-                  <span class="alert-badge">ПРЕДУПРЕЖДЕНИЕ W${wCode}</span>
+                  <span class="alert-badge">WARNING W${wCode}</span>
                   <span class="alert-title">${warningDetail.title}</span>
                 </div>
                 <p class="alert-desc">${warningDetail.description}</p>

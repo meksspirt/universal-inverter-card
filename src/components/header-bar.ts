@@ -80,7 +80,7 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
                 class="status-chip"
                 style="--chip-color: ${modeColor}"
                 @click=${() => onChipClick(config.operating_mode_entity)}
-                title="Режим работы инвертора"
+                title="Inverter operating mode"
               >
                 <ha-icon .icon=${modeIcon}></ha-icon>
                 <span>${operatingMode}</span>
@@ -96,7 +96,7 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
                 class="status-chip"
                 style="--chip-color: ${tempColor}"
                 @click=${() => onChipClick(config.inverter_temperature_entity)}
-                title="Температура силового блока"
+                title="Inverter power unit temperature"
               >
                 <ha-icon icon="mdi:thermometer"></ha-icon>
                 <span>${Math.round(temperature)}°C</span>
@@ -112,7 +112,7 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
                 class="status-chip pulse-chip"
                 style="--chip-color: #10b981"
                 @click=${() => onChipClick(config.charging_active_entity)}
-                title="Зарядка активна"
+                title="Charging active"
               >
                 <ha-icon icon="mdi:battery-charging"></ha-icon>
                 <span>CHG</span>
@@ -128,7 +128,7 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
                 class="status-chip pulse-chip-danger"
                 style="--chip-color: #ef4444"
                 @click=${() => onChipClick(config.safety?.fault_code_entity || config.safety?.fault_active_entity)}
-                title="Аварийное состояние инвертора"
+                title="Inverter fault status"
               >
                 <ha-icon icon="mdi:alert-circle"></ha-icon>
                 <span>${faultCode ? `F${faultCode}` : 'FAULT'}</span>
@@ -144,7 +144,7 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
                 class="status-chip"
                 style="--chip-color: #f59e0b"
                 @click=${() => onChipClick(config.safety?.warning_code_entity || config.safety?.warnings_active_entity)}
-                title="Предупреждение инвертора"
+                title="Inverter warning"
               >
                 <ha-icon icon="mdi:alert"></ha-icon>
                 <span>${warningCode ? `W${warningCode}` : 'WARN'}</span>
@@ -155,7 +155,7 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
         <!-- System Normal Chip -->
         ${!isFault && !isWarning
           ? html`
-              <div class="status-chip chip-ok" title="Система в норме">
+              <div class="status-chip chip-ok" title="System normal">
                 <ha-icon icon="mdi:check-circle"></ha-icon>
                 <span>OK</span>
               </div>

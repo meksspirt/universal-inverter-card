@@ -1,11 +1,10 @@
 import { html, TemplateResult } from 'lit';
-import { ControlsConfig, HomeAssistant } from '../types';
+import { ControlsConfig } from '../types';
 
 export interface ControlsPanelProps {
   controlsConfig: ControlsConfig;
-  hass: HomeAssistant;
+  hass?: any;
   expanded: boolean;
-  onToggleExpand: () => void;
   chargeSource?: string;
   chargeSourceOptions: string[];
   outputPriority?: string;
@@ -14,16 +13,16 @@ export interface ControlsPanelProps {
   bulkVoltage?: number;
   floatVoltage?: number;
   isEqualization: boolean;
+  onToggleExpand: () => void;
   onSelectOption: (entityId: string, option: string) => void;
   onSetNumber: (entityId: string, value: number) => void;
-  onToggleSwitch: (entityId: string, current: boolean) => void;
+  onToggleSwitch: (entityId: string, currentState: boolean) => void;
 }
 
 export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
   const {
     controlsConfig,
     expanded,
-    onToggleExpand,
     chargeSource,
     chargeSourceOptions,
     outputPriority,
@@ -32,6 +31,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
     bulkVoltage,
     floatVoltage,
     isEqualization,
+    onToggleExpand,
     onSelectOption,
     onSetNumber,
     onToggleSwitch,
@@ -43,7 +43,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
       <div class="controls-header" @click=${onToggleExpand}>
         <div class="controls-header-title">
           <ha-icon icon="mdi:tune-vertical"></ha-icon>
-          <span>Инвертор: Управление и автоматизации</span>
+          <span>Inverter: Controls & Settings</span>
         </div>
         <div class="controls-header-right">
           <span class="controls-quick-summary">
@@ -68,7 +68,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                       <div class="control-box">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:battery-charging-wireless"></ha-icon>
-                          <label>Источник заряда</label>
+                          <label>Charge Source Priority</label>
                         </div>
                         <div class="pill-selector">
                           ${(chargeSourceOptions.length > 0
@@ -97,7 +97,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                       <div class="control-box">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:power-plug-outline"></ha-icon>
-                          <label>Приоритет питания дома</label>
+                          <label>Output Source Priority</label>
                         </div>
                         <div class="pill-selector">
                           ${(outputPriorityOptions.length > 0
@@ -128,7 +128,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                       <div class="control-box-header">
                         <div class="control-label-wrap">
                           <ha-icon icon="mdi:current-ac"></ha-icon>
-                          <label>Макс. ток сетевого заряда</label>
+                          <label>Max AC Charge Current</label>
                         </div>
                         <span class="control-live-val">${maxChargeCurrent ?? 15} A</span>
                       </div>
@@ -160,7 +160,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                       <div class="control-box mini-voltage">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:arrow-up-bold-box-outline"></ha-icon>
-                          <label>Напряжение Bulk</label>
+                          <label>Bulk Voltage</label>
                         </div>
                         <div class="voltage-stepper">
                           <button
@@ -195,7 +195,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                       <div class="control-box mini-voltage">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:arrow-down-bold-box-outline"></ha-icon>
-                          <label>Напряжение Float</label>
+                          <label>Float Voltage</label>
                         </div>
                         <div class="voltage-stepper">
                           <button
@@ -232,10 +232,10 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                       <div class="danger-info">
                         <div class="danger-title">
                           <ha-icon icon="mdi:alert-octagon"></ha-icon>
-                          <span>Режим Equalization (Выравнивание)</span>
+                          <span>Battery Equalization</span>
                         </div>
                         <span class="danger-desc">
-                          ⚠️ Для LiFePO4 должен быть ВСЕГДА ВЫКЛЮЧЕН во избежание перезаряда ячеек!
+                          ⚠️ For LiFePO4, must ALWAYS BE OFF to prevent cell overcharging!
                         </span>
                       </div>
 
@@ -245,7 +245,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                         @click=${() => {
                           if (!isEqualization) {
                             const confirmed = confirm(
-                              'ВНИМАНИЕ!\nРежим выравнивания (Equalization) категорически не рекомендуется для LiFePO4 аккумуляторов (Redodo) и может привести к повреждению ячеек!\n\nВы действительно уверены, что хотите включить?'
+                              'WARNING!\nEqualization mode is strictly not recommended for LiFePO4 batteries (Redodo) and can permanently damage the cells!\n\nAre you sure you want to enable Equalization?'
                             );
                             if (!confirmed) return;
                           }

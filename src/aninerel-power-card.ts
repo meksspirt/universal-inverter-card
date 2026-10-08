@@ -36,13 +36,13 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   // 1. Lifecycle: setConfig
   public setConfig(config: AninerelCardConfig): void {
     if (!config) {
-      throw new Error('Некорректная конфигурация карточки');
+      throw new Error('Invalid card configuration');
     }
     if (!config.entities) {
-      throw new Error('Обязательный блок "entities" не задан в конфигурации');
+      throw new Error('Required "entities" block is not defined in configuration');
     }
     if (!config.entities.load_power) {
-      throw new Error('Необходимо указать как минимум entities.load_power');
+      throw new Error('At least entities.load_power must be specified');
     }
 
     this._config = {
@@ -598,7 +598,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         }
 
         bat1Data = {
-          name: bms.bat1_name || b1?.name || 'АКБ #1 (12V)',
+          name: bms.bat1_name || b1?.name || 'Battery #1 (12V)',
           voltage: v1,
           soc: soc1,
           temperature: t1,
@@ -606,7 +606,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         };
 
         bat2Data = {
-          name: bms.bat2_name || b2?.name || 'АКБ #2 (12V)',
+          name: bms.bat2_name || b2?.name || 'Battery #2 (12V)',
           voltage: v2,
           soc: soc2,
           temperature: t2,
@@ -784,7 +784,7 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: CARD_NAME,
   name: 'Aninerel Power Card',
-  description: 'Ультимативная карточка для инвертора Aninerel ANL 4200T + BMS Redodo',
+  description: 'Ultimate power card for Aninerel ANL 4200T inverter + Redodo BMS',
   preview: true,
-  documentationURL: 'https://github.com/custom-cards/aninerel-power-card',
+  documentationURL: 'https://github.com/ziffmafiya/aninerel-power-card',
 });

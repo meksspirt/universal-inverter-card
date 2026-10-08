@@ -48,46 +48,46 @@ export class AninerelPowerCardEditor extends LitElement {
     return [
       {
         name: 'title',
-        label: localize('editor.title', this.hass),
+        label: localize('editor.title', this.hass) || 'Card Title',
         selector: { text: {} },
       },
       {
         name: 'subtitle',
-        label: 'Подзаголовок карточки',
+        label: 'Card Subtitle',
         selector: { text: {} },
       },
       {
         name: 'icon',
-        label: 'Иконка в шапке (MDI)',
+        label: 'Header Icon (MDI)',
         selector: { icon: {} },
       },
       // 1. Core Power Entities (Required: load_power)
       {
         name: 'entities',
         type: 'expandable',
-        title: localize('editor.entities_group', this.hass),
+        title: localize('editor.entities_group', this.hass) || '⚡ Real-time Power Entities (Required)',
         schema: [
           {
             name: 'solar_power',
-            label: 'Солнечная генерация (PV Power) [Опционально]',
+            label: 'Solar Generation (PV Power) [Optional]',
             required: false,
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'battery_power',
-            label: 'Мощность батареи (+заряд / -разряд)',
+            label: 'Battery Power (+Charge / -Discharge)',
             required: true,
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'grid_power',
-            label: 'Сетевая мощность (Grid Power)',
+            label: 'Grid Power (AC Input)',
             required: true,
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'load_power',
-            label: 'Потребление дома (Load Power)',
+            label: 'Home Load Power',
             required: true,
             selector: { entity: { domain: 'sensor' } },
           },
@@ -97,36 +97,36 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: '',
         type: 'expandable',
-        title: localize('editor.params_group', this.hass),
+        title: localize('editor.params_group', this.hass) || '📊 Electrical Parameters & Telemetry',
         schema: [
           {
             name: 'battery_voltage_entity',
-            label: 'Напряжение АКБ (Battery Voltage)',
+            label: 'Battery Voltage (V)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'battery_current_entity',
-            label: 'Ток АКБ (Battery Current)',
+            label: 'Battery Current (A)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'grid_voltage_entity',
-            label: 'Напряжение сети (Grid Voltage)',
+            label: 'Grid AC Voltage (V)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'operating_mode_entity',
-            label: 'Режим работы инвертора (Operating Mode)',
+            label: 'Inverter Operating Mode',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'inverter_temperature_entity',
-            label: 'Температура инвертора (Temperature °C)',
+            label: 'Inverter Temperature (°C)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'charging_active_entity',
-            label: 'Флаг зарядки (Charging Active)',
+            label: 'Charging Active Flag',
             selector: { entity: { domain: 'binary_sensor' } },
           },
         ],
@@ -135,104 +135,104 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: 'bms',
         type: 'expandable',
-        title: localize('editor.bms_group', this.hass),
+        title: localize('editor.bms_group', this.hass) || '🔋 BMS Redodo LiFePO4 Telemetry',
         schema: [
           {
             name: 'dual_battery',
-            label: '🔋 Режим: Две батареи 12В последовательно (Серия 24В)',
+            label: '🔋 Mode: Dual 12V Batteries in Series (24V Pack)',
             selector: { boolean: {} },
           },
-          // --- Батарея #1 (12V LiFePO4) ---
+          // --- Battery #1 (12V LiFePO4) ---
           {
             name: 'bat1_name',
-            label: 'АКБ #1: Название батареи (напр. Redodo #1)',
+            label: 'Battery #1: Name (e.g. Redodo #1)',
             selector: { text: {} },
           },
           {
             name: 'bat1_soc_entity',
-            label: 'АКБ #1: Уровень заряда (SOC %)',
+            label: 'Battery #1: State of Charge (SOC %)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'bat1_voltage_entity',
-            label: 'АКБ #1: Напряжение батареи (~13.5В)',
+            label: 'Battery #1: Voltage (~13.5V)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'bat1_temperature_entity',
-            label: 'АКБ #1: Температура (°C)',
+            label: 'Battery #1: Temperature (°C)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'bat1_cell_prefix',
-            label: 'АКБ #1: Префикс сенсоров ячеек (1..4)',
+            label: 'Battery #1: Cell Sensor Prefix (1..4)',
             selector: { text: {} },
           },
-          // --- Батарея #2 (12V LiFePO4) ---
+          // --- Battery #2 (12V LiFePO4) ---
           {
             name: 'bat2_name',
-            label: 'АКБ #2: Название батареи (напр. Redodo #2)',
+            label: 'Battery #2: Name (e.g. Redodo #2)',
             selector: { text: {} },
           },
           {
             name: 'bat2_soc_entity',
-            label: 'АКБ #2: Уровень заряда (SOC %)',
+            label: 'Battery #2: State of Charge (SOC %)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'bat2_voltage_entity',
-            label: 'АКБ #2: Напряжение батареи (~13.5В)',
+            label: 'Battery #2: Voltage (~13.5V)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'bat2_temperature_entity',
-            label: 'АКБ #2: Температура (°C)',
+            label: 'Battery #2: Temperature (°C)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'bat2_cell_prefix',
-            label: 'АКБ #2: Префикс сенсоров ячеек (1..4)',
+            label: 'Battery #2: Cell Sensor Prefix (1..4)',
             selector: { text: {} },
           },
-          // --- Общие параметры сборки / Одиночный аккумулятор ---
+          // --- Single Battery Pack / Common Telemetry ---
           {
             name: 'soc_entity',
-            label: 'Общий / Средний SOC % (если есть общий датчик)',
+            label: 'Total / Average SOC % (Single Pack)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'voltage_entity',
-            label: 'Общее напряжение батареи по BMS (24В)',
+            label: 'Total Battery Voltage via BMS (24V)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'temperature_entity',
-            label: 'Температура ячеек BMS (°C)',
+            label: 'BMS Cell Temperature Probe (°C)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'cell_delta_entity',
-            label: 'Разбаланс ячеек (Cell Delta mV)',
+            label: 'Cell Imbalance (Delta mV)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'cycle_count_entity',
-            label: 'Счетчик циклов АКБ',
+            label: 'Battery Cycle Count',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'remaining_capacity_entity',
-            label: 'Остаточная емкость (Ah)',
+            label: 'Remaining Capacity (Ah)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'cell_count',
-            label: 'Количество ячеек единой сборки (для 24В = 8)',
+            label: 'Single Pack Cell Count (8 for 24V)',
             selector: { number: { min: 4, max: 16, step: 1, mode: 'box' } },
           },
           {
             name: 'cell_voltage_prefix',
-            label: 'Префикс сенсоров ячеек единой сборки (1..8)',
+            label: 'Single Pack Cell Sensor Prefix (1..8)',
             selector: { text: {} },
           },
         ],
@@ -241,36 +241,36 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: 'controls',
         type: 'expandable',
-        title: localize('editor.controls_group', this.hass),
+        title: localize('editor.controls_group', this.hass) || '🎛️ Inverter Controls & Settings',
         schema: [
           {
             name: 'charge_source_entity',
-            label: 'Приоритет источника заряда (Select)',
+            label: 'Charge Source Priority (Select)',
             selector: { entity: { domain: 'select' } },
           },
           {
             name: 'output_priority_entity',
-            label: 'Приоритет выхода потребителей (Select)',
+            label: 'Output Source Priority (Select)',
             selector: { entity: { domain: 'select' } },
           },
           {
             name: 'max_charge_current_entity',
-            label: 'Макс. ток сетевого заряда (Number)',
+            label: 'Max AC Charge Current (Number)',
             selector: { entity: { domain: 'number' } },
           },
           {
             name: 'bulk_voltage_entity',
-            label: 'Порог напряжения Bulk (Number)',
+            label: 'Bulk Voltage Setting (Number)',
             selector: { entity: { domain: 'number' } },
           },
           {
             name: 'float_voltage_entity',
-            label: 'Порог напряжения Float (Number)',
+            label: 'Float Voltage Setting (Number)',
             selector: { entity: { domain: 'number' } },
           },
           {
             name: 'equalization_entity',
-            label: 'Режим Equalization (Switch)',
+            label: 'Battery Equalization Mode (Switch)',
             selector: { entity: { domain: 'switch' } },
           },
         ],
@@ -279,26 +279,36 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: 'safety',
         type: 'expandable',
-        title: localize('editor.safety_group', this.hass),
+        title: localize('editor.safety_group', this.hass) || '🛡️ Safety & Diagnostics',
         schema: [
           {
             name: 'fault_active_entity',
-            label: 'Флаг аварии (Fault Active)',
+            label: 'Fault Active Flag (Binary Sensor)',
             selector: { entity: { domain: 'binary_sensor' } },
           },
           {
             name: 'fault_code_entity',
-            label: 'Код ошибки (Fault Code)',
+            label: 'Fault Code (Sensor)',
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'fault_details_entity',
+            label: 'Fault Details Text [Optional]',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'warnings_active_entity',
-            label: 'Флаг предупреждения (Warnings Active)',
+            label: 'Warnings Active Flag (Binary Sensor)',
             selector: { entity: { domain: 'binary_sensor' } },
           },
           {
             name: 'warning_code_entity',
-            label: 'Код предупреждения (Warning Code)',
+            label: 'Warning Code (Sensor)',
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'warning_details_entity',
+            label: 'Warning Details Text [Optional]',
             selector: { entity: { domain: 'sensor' } },
           },
         ],
@@ -307,26 +317,26 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: 'daily_energy',
         type: 'expandable',
-        title: localize('editor.energy_group', this.hass),
+        title: localize('editor.energy_group', this.hass) || '📈 Daily Energy Counters',
         schema: [
           {
             name: 'load_energy_entity',
-            label: 'Суточное потребление дома (kWh)',
+            label: 'Daily Home Consumption (kWh)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'grid_import_entity',
-            label: 'Суточный импорт из сети (kWh)',
+            label: 'Daily Grid Import (kWh)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'battery_charge_entity',
-            label: 'Суточный заряд АКБ (kWh)',
+            label: 'Daily Battery Charge (kWh)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'battery_discharge_entity',
-            label: 'Суточный разряд АКБ (kWh)',
+            label: 'Daily Battery Discharge (kWh)',
             selector: { entity: { domain: 'sensor' } },
           },
         ],
@@ -335,68 +345,68 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: '',
         type: 'expandable',
-        title: localize('editor.display_group', this.hass),
+        title: localize('editor.display_group', this.hass) || '🎨 Layout & Visualization Toggles',
         schema: [
           {
             name: 'max_power',
-            label: 'Номинальная мощность шкалы (Вт)',
+            label: 'Scale Max Power Rating (W)',
             selector: { number: { min: 1000, max: 20000, step: 200, mode: 'box' } },
           },
           {
             name: 'use_log_flow_model',
-            label: 'Логарифмическая модель скорости анимации потоков',
+            label: 'Logarithmic flow animation speed model',
             selector: { boolean: {} },
           },
           {
             name: 'show_header',
-            label: 'Отображать верхнюю шапку со статусами',
+            label: 'Show header bar with status chips',
             selector: { boolean: {} },
           },
           {
             name: 'show_flow',
-            label: 'Отображать анимацию потоков энергии',
+            label: 'Show animated power flow diagram',
             selector: { boolean: {} },
           },
           {
             name: 'show_solar',
-            label: 'Отображать солнечную генерацию (PV)',
+            label: 'Show solar generation (PV)',
             selector: { boolean: {} },
           },
           {
             name: 'grid_position',
-            label: 'Расположение сети без солнца (Grid Position)',
+            label: 'Grid position when solar is hidden',
             selector: {
               select: {
                 options: [
-                  { value: 'bottom', label: 'Снизу (По умолчанию)' },
-                  { value: 'top', label: 'Сверху (Вместо солнца)' },
+                  { value: 'bottom', label: 'Bottom (Default)' },
+                  { value: 'top', label: 'Top (Replaces solar)' },
                 ],
               },
             },
           },
           {
             name: 'show_params',
-            label: 'Отображать электрические параметры',
+            label: 'Show electrical telemetry parameters',
             selector: { boolean: {} },
           },
           {
             name: 'show_bms',
-            label: 'Отображать секцию BMS Redodo',
+            label: 'Show Redodo BMS section',
             selector: { boolean: {} },
           },
           {
             name: 'show_controls',
-            label: 'Отображать блок управления инвертором',
+            label: 'Show inverter controls & settings',
             selector: { boolean: {} },
           },
           {
             name: 'show_energy',
-            label: 'Отображать суточные счетчики энергии',
+            label: 'Show daily energy statistics',
             selector: { boolean: {} },
           },
           {
             name: 'show_alerts',
-            label: 'Отображать предупреждения и аварии',
+            label: 'Show diagnostic alerts & warnings',
             selector: { boolean: {} },
           },
         ],

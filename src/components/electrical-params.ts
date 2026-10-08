@@ -173,7 +173,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
       <div
         class="param-tile"
         @click=${() => onParamClick(config.battery_voltage_entity)}
-        title="Параметры аккумулятора"
+        title="Battery Telemetry"
       >
         <div class="param-header">
           <ha-icon icon="mdi:car-battery"></ha-icon>
@@ -199,7 +199,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
       <div
         class="param-tile"
         @click=${() => onParamClick(config.grid_voltage_entity)}
-        title="Сетевое напряжение"
+        title="Grid AC Voltage"
       >
         <div class="param-header">
           <ha-icon icon="mdi:transmission-tower"></ha-icon>
@@ -218,11 +218,11 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
         </div>
       </div>
 
-      <!-- TILE 3: KPI SELF-SUFFICIENCY (АВТОНОМНОСТЬ) -->
+      <!-- TILE 3: KPI SELF-SUFFICIENCY -->
       <div
         class="param-tile"
         @click=${() => onParamClick(config.daily_energy?.grid_import_entity)}
-        title="Дневная автономность"
+        title="Daily Self-Sufficiency"
       >
         <div class="param-header">
           <ha-icon icon="${hasSolar ? 'mdi:shield-sun' : 'mdi:shield-battery-outline'}"></ha-icon>

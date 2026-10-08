@@ -3,50 +3,52 @@ import { BmsConfig } from '../types';
 
 export interface CellData {
   index: number;
-  voltage: number; // Normalized in Volts (e.g. 3.38)
+  voltage: number;
   rawEntityId?: string;
 }
 
 export interface DualBatteryData {
   name: string;
-  voltage: number | null;
   soc: number | null;
+  voltage: number | null;
   temperature: number | null;
   cells: CellData[];
 }
 
 export interface BmsPanelProps {
   bmsConfig: BmsConfig;
-  isDual: boolean;
-  battery1?: DualBatteryData;
-  battery2?: DualBatteryData;
-  // Common / Single-pack props
   soc: number | null;
+  voltage?: number | null;
+  current?: number | null;
   temperature: number | null;
   temperature2?: number | null;
+  cellDelta: number | null;
   cycleCount: number | null;
   remainingCapacity: number | null;
   fullCapacity: number | null;
-  cellDelta: number | null; // in mV
   cells: CellData[];
   onBmsClick: (entityId?: string) => void;
+
+  // Dual battery series setup (2x 12V LiFePO4 = 24V)
+  isDual?: boolean;
+  battery1?: DualBatteryData;
+  battery2?: DualBatteryData;
 }
 
 export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
   const {
     bmsConfig,
-    isDual,
-    battery1,
-    battery2,
     soc,
     temperature,
-    temperature2,
+    cellDelta,
     cycleCount,
     remainingCapacity,
     fullCapacity,
-    cellDelta,
     cells,
     onBmsClick,
+    isDual = false,
+    battery1,
+    battery2,
   } = props;
 
   const minRange = 3.0;
@@ -60,13 +62,13 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
     const packDeltaMv = v1 > 0 && v2 > 0 ? Math.round(Math.abs(v1 - v2) * 1000) : 0;
 
     let packBalanceColor = '#10b981';
-    let packBalanceText = 'Баланс в норме';
+    let packBalanceText = 'Balanced';
     if (packDeltaMv > 200) {
       packBalanceColor = '#ef4444';
-      packBalanceText = 'Разбаланс пачек!';
+      packBalanceText = 'Pack Imbalance!';
     } else if (packDeltaMv > 80) {
       packBalanceColor = '#f59e0b';
-      packBalanceText = 'Дрейф пачек';
+      packBalanceText = 'Pack Drift';
     }
 
     // All 8 cells across both batteries for min/max calculation
@@ -83,7 +85,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
         <div class="bms-header">
           <div class="bms-header-title">
             <ha-icon icon="mdi:battery-sync"></ha-icon>
-            <span>BMS Redodo: 2× 12V Последовательно (24V)</span>
+            <span>BMS Redodo: 2× 12V Series (24V)</span>
           </div>
 
           <div class="bms-header-status">
@@ -91,19 +93,19 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
             <span
               class="bms-delta-pill"
               style="--delta-color: ${packBalanceColor}"
-              title="Разница напряжений между батареями: ${packBalanceText}"
+              title="Pack Voltage Delta: ${packBalanceText}"
             >
               <ha-icon icon="mdi:scale-balance"></ha-icon>
-              <span>Δ Пачек: ${packDeltaMv} mV</span>
+              <span>Δ Packs: ${packDeltaMv} mV</span>
             </span>
 
             <!-- Cell delta badge -->
             <span
               class="bms-delta-pill cell-delta-pill"
               style="--delta-color: ${overallCellDelta > 40 ? '#f59e0b' : '#10b981'}"
-              title="Разница между лучшей и худшей ячейкой"
+              title="Delta between highest and lowest cell"
             >
-              <span>Δ Ячеек: ${overallCellDelta} mV</span>
+              <span>Δ Cells: ${overallCellDelta} mV</span>
             </span>
           </div>
         </div>
@@ -114,8 +116,8 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
               <div class="series-drift-alert">
                 <ha-icon icon="mdi:alert"></ha-icon>
                 <span>
-                  Зафиксирована разница между батареями ${packDeltaMv} mV (АКБ 1: ${v1.toFixed(2)}V, АКБ 2: ${v2.toFixed(2)}V).
-                  Рекомендуется использовать активный балансир аккумуляторов на 24В.
+                  Pack voltage drift detected: ${packDeltaMv} mV (Battery 1: ${v1.toFixed(2)}V, Battery 2: ${v2.toFixed(2)}V).
+                  A 24V active battery equalizer is recommended.
                 </span>
               </div>
             `
@@ -129,7 +131,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
               class="pack-header"
               @click=${() => onBmsClick(bmsConfig.bat1_voltage_entity || bmsConfig.bat1_soc_entity || bmsConfig.battery_1?.voltage_entity || bmsConfig.battery_1?.soc_entity)}
               style="cursor: pointer;"
-              title="Нажмите для подробной информации по АКБ #1"
+              title="Click for Battery #1 details"
             >
               <div class="pack-name-row">
                 <span class="pack-name">${battery1.name}</span>
@@ -160,7 +162,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                   <div
                     class="cell-col"
                     @click=${() => onBmsClick(cell.rawEntityId)}
-                    title="Ячейка #${cell.index}: ${cell.voltage.toFixed(3)} V ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
+                    title="Cell #${cell.index}: ${cell.voltage.toFixed(3)} V ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
                   >
                     <div class="cell-bar-track">
                       <div
@@ -177,9 +179,9 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
           </div>
 
           <!-- Series Bridge Divider -->
-          <div class="series-bridge" title="Последовательное соединение 24В (+ к -)">
+          <div class="series-bridge" title="24V Series Connection (+ to -)">
             <span class="bridge-line"></span>
-            <span class="bridge-badge">Серия 24V</span>
+            <span class="bridge-badge">24V Series</span>
             <span class="bridge-line"></span>
           </div>
 
@@ -189,7 +191,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
               class="pack-header"
               @click=${() => onBmsClick(bmsConfig.bat2_voltage_entity || bmsConfig.bat2_soc_entity || bmsConfig.battery_2?.voltage_entity || bmsConfig.battery_2?.soc_entity)}
               style="cursor: pointer;"
-              title="Нажмите для подробной информации по АКБ #2"
+              title="Click for Battery #2 details"
             >
               <div class="pack-name-row">
                 <span class="pack-name">${battery2.name}</span>
@@ -220,7 +222,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                   <div
                     class="cell-col"
                     @click=${() => onBmsClick(cell.rawEntityId)}
-                    title="Ячейка #${cell.index}: ${cell.voltage.toFixed(3)} V ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
+                    title="Cell #${cell.index}: ${cell.voltage.toFixed(3)} V ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
                   >
                     <div class="cell-bar-track">
                       <div
@@ -245,7 +247,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                   ? html`
                       <div class="bms-footer-item" @click=${() => onBmsClick(bmsConfig.cycle_count_entity)}>
                         <ha-icon icon="mdi:refresh"></ha-icon>
-                        <span>Циклы: <strong>${cycleCount}</strong></span>
+                        <span>Cycles: <strong>${cycleCount}</strong></span>
                       </div>
                     `
                   : ''}
@@ -253,7 +255,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                   ? html`
                       <div class="bms-footer-item" @click=${() => onBmsClick(bmsConfig.remaining_capacity_entity)}>
                         <ha-icon icon="mdi:battery-charging-high"></ha-icon>
-                        <span>Остаток: <strong>${remainingCapacity.toFixed(1)} Ah</strong></span>
+                        <span>Remaining: <strong>${remainingCapacity.toFixed(1)} Ah</strong></span>
                       </div>
                     `
                   : ''}
@@ -303,7 +305,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
             class="bms-delta-pill"
             style="--delta-color: ${deltaColor}"
             @click=${() => onBmsClick(bmsConfig.cell_delta_entity)}
-            title="Разница между максимальной и минимальной ячейкой: ${balanceStatus}"
+            title="Delta between highest and lowest cell: ${balanceStatus}"
           >
             <ha-icon icon="mdi:scale-balance"></ha-icon>
             <span>Δ ${deltaMv} mV</span>
@@ -328,7 +330,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
               <div
                 class="cell-col"
                 @click=${() => onBmsClick(cell.rawEntityId)}
-                title="Ячейка #${cell.index}: ${cell.voltage.toFixed(3)} V ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
+                title="Cell #${cell.index}: ${cell.voltage.toFixed(3)} V ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
               >
                 <div class="cell-bar-track">
                   <div
@@ -350,7 +352,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                 <div
                   class="bms-stat-item"
                   @click=${() => onBmsClick(bmsConfig.temperature_entity)}
-                  title="Температура датчика BMS"
+                  title="BMS Temperature Probe"
                 >
                   <ha-icon icon="mdi:thermometer"></ha-icon>
                   <div class="bms-stat-text">
@@ -366,7 +368,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                 <div
                   class="bms-stat-item"
                   @click=${() => onBmsClick(bmsConfig.cycle_count_entity)}
-                  title="Количество циклов заряда/разряда"
+                  title="Charge/Discharge Cycle Count"
                 >
                   <ha-icon icon="mdi:refresh"></ha-icon>
                   <div class="bms-stat-text">
@@ -382,7 +384,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                 <div
                   class="bms-stat-item"
                   @click=${() => onBmsClick(bmsConfig.remaining_capacity_entity)}
-                  title="Остаточная емкость аккумулятора"
+                  title="Remaining Battery Capacity"
                 >
                   <ha-icon icon="mdi:battery-high"></ha-icon>
                   <div class="bms-stat-text">
