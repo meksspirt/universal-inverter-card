@@ -467,10 +467,16 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       ? parseInt(this._getState(this._config.safety.fault_code_entity), 10)
       : null;
 
-    const isWarning = this._getState(this._config.safety?.warnings_active_entity) === 'on';
+    let isWarning = this._getState(this._config.safety?.warnings_active_entity) === 'on';
     const warningCode = this._config.safety?.warning_code_entity
       ? parseInt(this._getState(this._config.safety.warning_code_entity), 10)
       : null;
+
+    // If solar generation is disabled (no panels), PV-related warnings (code 64 or 15)
+    // are expected normal status for MPPT at 0V and should not trigger an active alarm.
+    if (!hasSolar && (warningCode === 64 || warningCode === 15)) {
+      isWarning = false;
+    }
 
     // Daily energy
     const gridImportEnergyToday = this._config.daily_energy?.grid_import_entity
