@@ -124,8 +124,10 @@ export interface ControlsConfig {
 export interface SafetyConfig {
   fault_active_entity?: string;       // binary_sensor...fault_active
   fault_code_entity?: string;         // sensor...fault_code
+  fault_details_entity?: string;      // sensor...fault_details (optional)
   warnings_active_entity?: string;    // binary_sensor...warnings_active
   warning_code_entity?: string;       // sensor...warning_code
+  warning_details_entity?: string;    // sensor...warning_details (optional)
 }
 
 export interface DailyEnergyConfig {

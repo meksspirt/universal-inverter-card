@@ -1,18 +1,29 @@
 import { html, TemplateResult } from 'lit';
 import { SafetyConfig } from '../types';
-import { FAULT_CODES, WARNING_CODES, FaultDetail } from '../utils/fault-codes';
+import { FaultDetail, getFaultDetail, getWarningDetail } from '../utils/fault-codes';
 
 export interface AlertPanelProps {
   safetyConfig: SafetyConfig;
   isFault: boolean;
   faultCode: number | null;
+  faultDetailsText?: string | null;
   isWarning: boolean;
   warningCode: number | null;
+  warningDetailsText?: string | null;
   onAlertClick: (entityId?: string) => void;
 }
 
 export function renderAlertPanel(props: AlertPanelProps): TemplateResult {
-  const { safetyConfig, isFault, faultCode, isWarning, warningCode, onAlertClick } = props;
+  const {
+    safetyConfig,
+    isFault,
+    faultCode,
+    faultDetailsText,
+    isWarning,
+    warningCode,
+    warningDetailsText,
+    onAlertClick,
+  } = props;
 
   // If no faults and no warnings, hide alert panel completely
   if (!isFault && !isWarning) {
@@ -20,19 +31,10 @@ export function renderAlertPanel(props: AlertPanelProps): TemplateResult {
   }
 
   const fCode = faultCode ?? 0;
-  const faultDetail: FaultDetail = FAULT_CODES[fCode] || {
-    code: fCode,
-    title: `Код сбоя F${fCode}`,
-    description: 'Обнаружена аппаратная или программная ошибка инвертора.',
-    recommendation: 'Проверьте сообщения на дисплее инвертора и документацию.',
-    severity: 'critical',
-  };
+  const faultDetail: FaultDetail = getFaultDetail(fCode, faultDetailsText);
 
   const wCode = warningCode ?? 0;
-  const warningDetail = WARNING_CODES[wCode] || {
-    title: `Предупреждение W${wCode}`,
-    description: 'Инвертор зафиксировал отклонение параметров от нормы.',
-  };
+  const warningDetail = getWarningDetail(wCode, warningDetailsText);
 
   return html`
     <div class="alert-section-wrapper">
@@ -41,7 +43,12 @@ export function renderAlertPanel(props: AlertPanelProps): TemplateResult {
         ? html`
             <div
               class="alert-box alert-critical"
-              @click=${() => onAlertClick(safetyConfig.fault_code_entity || safetyConfig.fault_active_entity)}
+              @click=${() =>
+                onAlertClick(
+                  safetyConfig.fault_details_entity ||
+                    safetyConfig.fault_code_entity ||
+                    safetyConfig.fault_active_entity
+                )}
               title="Нажмите для открытия подробностей"
             >
               <div class="alert-icon-col">
@@ -68,7 +75,11 @@ export function renderAlertPanel(props: AlertPanelProps): TemplateResult {
             <div
               class="alert-box alert-warn"
               @click=${() =>
-                onAlertClick(safetyConfig.warning_code_entity || safetyConfig.warnings_active_entity)}
+                onAlertClick(
+                  safetyConfig.warning_details_entity ||
+                    safetyConfig.warning_code_entity ||
+                    safetyConfig.warnings_active_entity
+                )}
               title="Нажмите для открытия подробностей"
             >
               <div class="alert-icon-col">

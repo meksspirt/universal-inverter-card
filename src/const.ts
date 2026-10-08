@@ -1,6 +1,6 @@
 import { AninerelCardConfig } from './types';
 
-export const CARD_VERSION = '1.0.7';
+export const CARD_VERSION = '1.0.8';
 export const CARD_NAME = 'aninerel-power-card';
 
 export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
@@ -68,6 +68,7 @@ export const STUB_CONFIG: Record<string, any> = {
     fault_code_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_fault_code',
     warnings_active_entity: 'binary_sensor.aninerel_anl_4200t_24l_w_pro_warnings_active',
     warning_code_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_warning_code',
+    warning_details_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_warning_details',
   },
   daily_energy: {
     load_energy_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_estimated_load_energy_today',

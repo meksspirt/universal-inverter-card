@@ -10,6 +10,7 @@ import { renderBmsPanel, CellData, DualBatteryData } from './components/bms-pane
 import { renderControlsPanel } from './components/controls-panel';
 import { renderEnergyStats } from './components/energy-stats';
 import { renderAlertPanel } from './components/alert-panel';
+import { filterWarningCodeForNoSolar } from './utils/fault-codes';
 
 // Console banner on load
 console.info(
@@ -335,9 +336,17 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
     if (safety) {
       if (safety.fault_active_entity) ids.push(safety.fault_active_entity);
-      if (safety.fault_code_entity) ids.push(safety.fault_code_entity);
+      if (safety.fault_code_entity) {
+        ids.push(safety.fault_code_entity);
+        ids.push(safety.fault_code_entity.replace(/_code$/, '_details'));
+      }
+      if (safety.fault_details_entity) ids.push(safety.fault_details_entity);
       if (safety.warnings_active_entity) ids.push(safety.warnings_active_entity);
-      if (safety.warning_code_entity) ids.push(safety.warning_code_entity);
+      if (safety.warning_code_entity) {
+        ids.push(safety.warning_code_entity);
+        ids.push(safety.warning_code_entity.replace(/_code$/, '_details'));
+      }
+      if (safety.warning_details_entity) ids.push(safety.warning_details_entity);
     }
 
     if (daily_energy) {
@@ -348,6 +357,13 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     }
 
     return ids.filter(Boolean);
+  }
+
+  private _findMatchingEntity(baseEntityId?: string, targetSuffix?: string): string | undefined {
+    if (!baseEntityId || !targetSuffix || !this._hass || !this._hass.states) return undefined;
+    const candidate = baseEntityId.replace(/_code$/, targetSuffix.replace(/^_+/, '_'));
+    if (this._hass.states[candidate]) return candidate;
+    return undefined;
   }
 
   private _getState(entityId?: string): string {
@@ -466,16 +482,37 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     const faultCode = this._config.safety?.fault_code_entity
       ? parseInt(this._getState(this._config.safety.fault_code_entity), 10)
       : null;
+    const faultDetailsEntity =
+      this._config.safety?.fault_details_entity ||
+      this._findMatchingEntity(this._config.safety?.fault_code_entity, '_fault_details');
+    const rawFaultDetails = faultDetailsEntity ? this._getState(faultDetailsEntity) : null;
+    const faultDetailsText =
+      rawFaultDetails && rawFaultDetails !== 'N/A' && rawFaultDetails !== '0'
+        ? rawFaultDetails
+        : null;
 
     let isWarning = this._getState(this._config.safety?.warnings_active_entity) === 'on';
-    const warningCode = this._config.safety?.warning_code_entity
+    const rawWarningCode = this._config.safety?.warning_code_entity
       ? parseInt(this._getState(this._config.safety.warning_code_entity), 10)
       : null;
+    const warningDetailsEntity =
+      this._config.safety?.warning_details_entity ||
+      this._findMatchingEntity(this._config.safety?.warning_code_entity, '_warning_details');
+    const rawWarningDetails = warningDetailsEntity ? this._getState(warningDetailsEntity) : null;
+    const warningDetailsText =
+      rawWarningDetails && rawWarningDetails !== 'N/A' && rawWarningDetails !== '0'
+        ? rawWarningDetails
+        : null;
 
-    // If solar generation is disabled (no panels), PV-related warnings (code 64 or 15)
-    // are expected normal status for MPPT at 0V and should not trigger an active alarm.
-    if (!hasSolar && (warningCode === 64 || warningCode === 15)) {
-      isWarning = false;
+    let warningCode = rawWarningCode;
+    // When solar generation is disabled (show_solar: false / no panels),
+    // strip PV-related warning bits/codes (W64 / W15 / bit 6) so normal 0V MPPT doesn't alarm.
+    if (!hasSolar) {
+      const { effectiveCode, hasNonPvWarning } = filterWarningCodeForNoSolar(rawWarningCode);
+      warningCode = effectiveCode;
+      if (!hasNonPvWarning) {
+        isWarning = false;
+      }
     }
 
     // Daily energy
@@ -631,8 +668,10 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               safetyConfig: safety,
               isFault,
               faultCode,
+              faultDetailsText,
               isWarning,
               warningCode,
+              warningDetailsText,
               onAlertClick: (id) => this._handleEntityClick(id),
             })
           : ''}
@@ -720,7 +759,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               gridImportEnergy: gridImportEnergyToday,
               batteryChargeEnergy: batChargeEnergyToday,
               batteryDischargeEnergy: batDischargeEnergyToday,
-              onEnergyClick: (id) => this._handleEntityClick(id),
+              onEnergyClick: (id?: string) => this._handleEntityClick(id),
             })
           : ''}
       </ha-card>
