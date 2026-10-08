@@ -6,7 +6,9 @@
   "main": "dist/aninerel-power-card.js",
   "scripts": {
     "build": "rollup -c",
-    "watch": "rollup -c --watch"
+    "watch": "rollup -c --watch",
+    "deploy": "node scripts/deploy.mjs",
+    "build:deploy": "rollup -c && node scripts/deploy.mjs"
   },
   "dependencies": {
     "lit": "^3.2.1"
