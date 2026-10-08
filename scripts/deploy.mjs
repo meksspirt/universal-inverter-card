@@ -20,8 +20,11 @@ async function deploy() {
   const jsContent = fs.readFileSync(BUNDLE_PATH);
   console.log(`📦 Bundled file size: ${(jsContent.length / 1024).toFixed(1)} KB`);
 
+  // Copy to repository root for release/HACS
+  fs.writeFileSync(path.join(ROOT_DIR, 'aninerel-power-card.js'), jsContent);
+
   // 1. Copy bundle and gzip to HA Samba share
-  if (fs.existsSync(HA_SHARE)) {
+  try {
     const destJs = path.join(HA_SHARE, 'aninerel-power-card.js');
     const destGz = path.join(HA_SHARE, 'aninerel-power-card.js.gz');
 
@@ -30,8 +33,8 @@ async function deploy() {
     fs.writeFileSync(destGz, gzContent);
     console.log(`✅ Files written to HA Samba share: ${destJs}`);
     console.log(`✅ Gzip archive created: ${destGz} (${(gzContent.length / 1024).toFixed(1)} KB)`);
-  } else {
-    console.warn(`⚠️ Samba share ${HA_SHARE} not reachable. Skipping file copy.`);
+  } catch (err) {
+    console.warn(`⚠️ Samba share copy failed (${err.message}). Skipping file copy.`);
   }
 
   // 2. Bump Lovelace resource cache buster in Home Assistant

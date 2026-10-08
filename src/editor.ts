@@ -129,6 +129,26 @@ export class AninerelPowerCardEditor extends LitElement {
             label: 'Charging Active Flag',
             selector: { entity: { domain: 'binary_sensor' } },
           },
+          {
+            name: 'kpi_mode',
+            label: '3rd Radial Gauge KPI Metric',
+            selector: {
+              select: {
+                options: [
+                  { value: 'auto', label: 'Auto (Battery SoC for UPS, Self-Sufficiency for Solar)' },
+                  { value: 'battery_soc', label: 'Battery SoC % (State of Charge)' },
+                  { value: 'battery_autonomy', label: 'Battery Autonomy % (Daily Load Powered by Battery)' },
+                  { value: 'self_sufficiency', label: 'Solar Self-Sufficiency % (Autarky)' },
+                  { value: 'inverter_load', label: 'Inverter Load %' },
+                ],
+              },
+            },
+          },
+          {
+            name: 'kpi_entity',
+            label: 'Custom KPI Entity (Overrides click/gauge entity)',
+            selector: { entity: { domain: 'sensor' } },
+          },
         ],
       },
       // 3. BMS Redodo

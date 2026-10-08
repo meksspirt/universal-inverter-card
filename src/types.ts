@@ -162,6 +162,11 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
   operating_mode_entity?: string;
   charging_active_entity?: string;
   inverter_temperature_entity?: string;
+  inverter_load_percent_entity?: string;
+
+  // 3rd Circular Gauge KPI Configuration
+  kpi_mode?: 'auto' | 'battery_soc' | 'battery_autonomy' | 'self_sufficiency' | 'inverter_load';
+  kpi_entity?: string;
 
   // Subsections
   bms?: BmsConfig;

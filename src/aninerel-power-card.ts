@@ -694,7 +694,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
             })
           : ''}
 
-        <!-- 4. Electrical Telemetry & Self-Sufficiency KPI -->
+        <!-- 4. Electrical Telemetry & Battery SoC / Self-Sufficiency KPI -->
         ${this._config.show_params !== false
           ? renderElectricalParams({
               config: this._config,
@@ -702,8 +702,13 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               batteryVoltage,
               batteryCurrent,
               gridVoltage,
+              batterySoc,
               gridImportEnergyToday,
               loadEnergyToday,
+              batteryDischargeEnergyToday: batDischargeEnergyToday,
+              inverterLoadPercent: this._config.inverter_load_percent_entity
+                ? this._getNumber(this._config.inverter_load_percent_entity)
+                : this._getNumber('sensor.aninerel_anl_4200t_24l_w_pro_load_percent'),
               historyMap: this._historyMap,
               onParamClick: (id) => this._handleEntityClick(id),
             })
