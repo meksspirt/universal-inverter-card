@@ -229,7 +229,7 @@ export const FAULT_CODES: Record<number, FaultDetail> = {
 
 export const WARNING_CODES: Record<number, WarningDetail> = {
   0: { title: 'No Warnings', description: 'System operating normally without warnings.' },
-  1: { title: 'Fan Slowed / Locked', description: 'Cooling fan operating at low speed or dust accumulated.' },
+  1: { title: 'Off-Grid / Battery Mode', description: 'Inverter operating in autonomous battery mode (grid outage).' },
   2: { title: 'Inverter High Temperature', description: 'Heatsink temperature elevated, fans running at maximum speed.' },
   3: { title: 'Battery Over-Charged', description: 'Battery voltage close to high cut-off threshold.' },
   4: { title: 'Low Battery Voltage', description: 'Battery voltage below warning threshold (recharge recommended).' },
@@ -268,10 +268,11 @@ export interface ModbusWarningBit {
   title: string;
   description: string;
   isPvRelated?: boolean;
+  isInformational?: boolean;
 }
 
 export const MODBUS_WARNING_BITS: ModbusWarningBit[] = [
-  { bit: 0, mask: 1 << 0, code: 1, title: 'W01: Fan Slowed', description: 'Cooling fan operating at reduced speed or blocked by dust.' },
+  { bit: 0, mask: 1 << 0, code: 1, title: 'Off-Grid Mode', description: 'Inverter operating in autonomous battery mode (grid outage).', isInformational: true },
   { bit: 1, mask: 1 << 1, code: 2, title: 'W02: Inverter Over-Temperature', description: 'Internal heatsink temperature is elevated.' },
   { bit: 2, mask: 1 << 2, code: 4, title: 'W04: Low Battery Voltage', description: 'Battery voltage has dropped below warning threshold.' },
   { bit: 3, mask: 1 << 3, code: 8, title: 'W08: Battery Disconnected', description: 'Battery circuit is open or battery is not detected.' },
@@ -285,7 +286,7 @@ export const MODBUS_WARNING_BITS: ModbusWarningBit[] = [
   { bit: 11, mask: 1 << 11, code: 11, title: 'MPPT Over-Current', description: 'Solar input current exceeded MPPT controller limit.', isPvRelated: true },
   { bit: 12, mask: 1 << 12, code: 12, title: 'MPPT Over-Temperature', description: 'Solar charger heatsink temperature is high.', isPvRelated: true },
   { bit: 13, mask: 1 << 13, code: 13, title: 'MPPT High Battery Voltage', description: 'Solar charger detected high battery terminal voltage.' },
-  { bit: 14, mask: 1 << 14, code: 14, title: 'MPPT Low Battery Voltage', description: 'Battery voltage is too low for MPPT charger startup.' },
+  { bit: 14, mask: 1 << 14, code: 14, title: 'W14: Fan Blocked', description: 'Cooling fan operating at reduced speed or blocked by dust.' },
   { bit: 15, mask: 1 << 15, code: 15, title: 'AC Line Abnormal', description: 'Utility grid AC voltage or frequency out of acceptable bounds.' },
 ];
 
@@ -302,8 +303,9 @@ export function isPvWarningCode(code: number | null): boolean {
 }
 
 /**
- * Strips PV-related warning flags when solar generation is disabled (no panels).
- * Returns the effective warning code and whether any non-PV warning remains active.
+ * Strips PV-related warning flags and normal Off-Grid battery backup flags when
+ * solar generation is disabled (UPS mode without solar panels).
+ * Returns the effective warning code and whether any genuine non-PV hardware warning remains active.
  */
 export function filterWarningCodeForNoSolar(warningCode: number | null): {
   effectiveCode: number | null;
@@ -313,23 +315,31 @@ export function filterWarningCodeForNoSolar(warningCode: number | null): {
     return { effectiveCode: null, hasNonPvWarning: false };
   }
 
-  // Direct single PV code matches
-  if (warningCode === 64 || warningCode === 15 || warningCode === 13) {
+  // Direct single PV code matches or normal Off-Grid flag (code 1)
+  if (warningCode === 64 || warningCode === 15 || warningCode === 13 || warningCode === 1) {
     return { effectiveCode: null, hasNonPvWarning: false };
   }
 
-  // Check if bitmask has bit 6 (64) set
-  const pvBitMask = 1 << 6;
-  if ((warningCode & pvBitMask) !== 0) {
-    const remaining = warningCode & ~pvBitMask;
-    if (remaining === 0) {
-      return { effectiveCode: null, hasNonPvWarning: false };
-    }
-    return { effectiveCode: remaining, hasNonPvWarning: true };
+  // Bitmask filtering:
+  // Bit 6 (64): PV Low Voltage (always set when no solar panels)
+  // Bit 0 (1): Off-Grid / Battery Backup mode (raised normally on AC grid outage)
+  // When running as a UPS without solar, 64 (no sun) + 1 (running on battery during blackout) = 65.
+  // This is completely normal operation, not an equipment fault!
+  const pvBitMask = 1 << 6; // 64
+  const offGridBitMask = 1 << 0; // 1
+
+  let remaining = (warningCode & pvBitMask) !== 0 ? (warningCode & ~pvBitMask) : warningCode;
+  if ((remaining & offGridBitMask) !== 0) {
+    remaining = remaining & ~offGridBitMask;
   }
 
-  return { effectiveCode: warningCode, hasNonPvWarning: true };
+  if (remaining === 0) {
+    return { effectiveCode: null, hasNonPvWarning: false };
+  }
+
+  return { effectiveCode: remaining, hasNonPvWarning: true };
 }
+
 
 /**
  * Resolves comprehensive warning details, decoding bitmasks and utilizing HA details text.
