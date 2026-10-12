@@ -230,36 +230,34 @@ export const FAULT_CODES: Record<number, FaultDetail> = {
 export const WARNING_CODES: Record<number, WarningDetail> = {
   0: { title: 'No Warnings', description: 'System operating normally without warnings.' },
   1: { title: 'Off-Grid / Battery Mode', description: 'Inverter operating in autonomous battery mode (grid outage).' },
-  2: { title: 'Inverter High Temperature', description: 'Heatsink temperature elevated, fans running at maximum speed.' },
-  3: { title: 'Battery Over-Charged', description: 'Battery voltage close to high cut-off threshold.' },
+  2: { title: 'Mains Waveform Abnormal', description: 'Utility AC grid waveform distorted during outage or switching.' },
   4: { title: 'Low Battery Voltage', description: 'Battery voltage below warning threshold (recharge recommended).' },
   7: { title: 'Overload Warning', description: 'Home consumption approaching rated inverter limit (4.2 kW).' },
-  8: { title: 'Battery Disconnected', description: 'Battery circuit open or battery not detected.' },
+  8: { title: 'Mains Low Voltage', description: 'Utility AC grid voltage is 0V or below acceptable threshold (grid outage).' },
   10: { title: 'Output Power Derating', description: 'Inverter automatically derating power to prevent overheating.' },
-  12: { title: 'Solar Charger Stopped: Low Battery', description: 'MPPT charger suspended due to deep battery discharge.' },
-  13: { title: 'Solar Charger Stopped: High PV Voltage', description: 'Solar array voltage exceeded safe operating range of MPPT.', isPvRelated: true },
-  14: { title: 'Solar Charger Stopped: Overload / Fan', description: 'Solar charger derated or stopped due to overload or fan speed drop.' },
-  15: { title: 'PV Energy Weak', description: 'Solar voltage below MPPT operating threshold (dusk, night, or panels not connected).', isPvRelated: true },
-  16: { title: 'Parallel / Grid Comm Fault', description: 'Synchronization error between units or unstable AC line.' },
-  19: { title: 'Lithium Battery Comm Failure', description: 'Lost data telemetry with lithium battery protocol.' },
-  20: { title: 'BMS Communication Lost', description: 'No response from battery BMS over CAN/RS485 cable.' },
-  21: { title: 'Lithium Battery Over-Current', description: 'Current through battery exceeded BMS protection threshold.' },
-  32: { title: 'Communication Board / EEPROM Warning', description: 'Internal communication bus or EEPROM memory warning.' },
-  61: { title: 'Battery Discharge Over-Current', description: 'Battery discharge current exceeded rated parameter.' },
-  62: { title: 'Battery Charge Over-Current', description: 'Total charge current from grid and solar exceeded battery limit.' },
-  63: { title: 'Battery Over-Temperature', description: 'Battery cell temperature probe exceeded safety threshold.' },
+  14: { title: 'Fan Blocked', description: 'Cooling fan is blocked or operating at reduced speed.' },
+  15: { title: 'PV Energy Weak', description: 'Solar voltage below MPPT operating threshold (panels not connected or night).', isPvRelated: true },
+  16: { title: 'Mains Over Frequency', description: 'Utility AC grid frequency out of acceptable range.' },
+  19: { title: 'Lithium Battery Comm Abnormal', description: 'Lost RS485/CAN telemetry communication with lithium battery BMS.' },
+  20: { title: 'Battery Discharge Over-Current', description: 'Battery discharge current exceeded configured threshold.' },
+  32: { title: 'Mains Low Frequency', description: 'Utility AC grid frequency dropped below acceptable range.' },
   64: { title: 'PV Low Voltage', description: 'Solar array voltage below MPPT operating threshold (panels not connected or overcast).', isPvRelated: true },
-  65: { title: 'Battery Under-Temperature', description: 'Battery temperature too low for charging (LiFePO4 risk below 0°C).' },
-  67: { title: 'Critical Battery Under-Voltage', description: 'Battery voltage approaching inverter shutdown threshold.' },
-  68: { title: 'Charge Stopped: High Battery Temp', description: 'Charging halted automatically due to battery overheating.' },
-  69: { title: 'Charge Stopped: Low Battery Temp', description: 'Charging halted to protect battery cells from freezing.' },
-  70: { title: 'Discharge Stopped: High Battery Temp', description: 'Discharging halted to protect cells from thermal stress.' },
-  72: { title: 'Lithium Battery Comm Lost', description: 'Inverter is not receiving telemetry from lithium battery.' },
-  73: { title: 'BMS Protection Active', description: 'Battery built-in BMS entered protection mode.' },
+  128: { title: 'Inverter Over-Temperature', description: 'Internal heatsink temperature is too high.' },
+  256: { title: 'Battery Low Voltage', description: 'Battery voltage has dropped below warning threshold (recharge needed).' },
+  512: { title: 'Battery Not Connected', description: 'Battery circuit is open or battery is not detected.' },
+  1024: { title: 'Overload Warning', description: 'Home consumption is approaching or exceeding rated inverter limit (4.2 kW).' },
+  2048: { title: 'Battery Equalization Active', description: 'Battery equalization charging cycle is currently active.' },
+  4096: { title: 'Battery Discharged Below Recovery', description: 'Battery voltage discharged below recovery threshold.' },
+  8192: { title: 'Output Power Derating', description: 'Inverter automatically derating output power due to thermal or voltage limits.' },
+  16384: { title: 'Fan Blocked', description: 'Cooling fan is blocked or operating at reduced speed.' },
+  32768: { title: 'PV Energy Too Low', description: 'Solar input power is too weak for MPPT conversion.', isPvRelated: true },
+  524288: { title: 'Lithium Battery Comm Abnormal', description: 'Lost RS485/CAN telemetry communication with lithium battery BMS.' },
+  1048576: { title: 'Battery Discharge Over-Current', description: 'Battery discharge current exceeded configured safety threshold.' },
 };
 
 /**
- * Modbus warning bitmask definitions (registers 105, 108, 109)
+ * Modbus SMG warning bitmask definitions (register 108-109, u32_high_first)
+ * Exact mapping from modbus_smg/base.json for Aninerel ANL-4200T-24L-W-PRO
  */
 export interface ModbusWarningBit {
   bit: number;
@@ -272,22 +270,27 @@ export interface ModbusWarningBit {
 }
 
 export const MODBUS_WARNING_BITS: ModbusWarningBit[] = [
-  { bit: 0, mask: 1 << 0, code: 1, title: 'Off-Grid Mode', description: 'Inverter operating in autonomous battery mode (grid outage).', isInformational: true },
-  { bit: 1, mask: 1 << 1, code: 2, title: 'W02: Inverter Over-Temperature', description: 'Internal heatsink temperature is elevated.' },
-  { bit: 2, mask: 1 << 2, code: 4, title: 'W04: Low Battery Voltage', description: 'Battery voltage has dropped below warning threshold.' },
-  { bit: 3, mask: 1 << 3, code: 8, title: 'W08: Battery Disconnected', description: 'Battery circuit is open or battery is not detected.' },
-  { bit: 4, mask: 1 << 4, code: 7, title: 'W07: Overload Warning', description: 'Home consumption is approaching rated inverter power (4.2 kW).' },
-  { bit: 5, mask: 1 << 5, code: 32, title: 'W32: Comm Board / EEPROM Error', description: 'Internal communication bus or configuration memory failure.' },
-  { bit: 6, mask: 1 << 6, code: 64, title: 'W64: PV Low Voltage', description: 'Solar array voltage below MPPT startup range (panels not connected or overcast).', isPvRelated: true },
-  { bit: 7, mask: 1 << 7, code: 53, title: 'Inverter Soft-Start Warning', description: 'Inverter bridge soft-start pre-charge warning.' },
-  { bit: 8, mask: 1 << 8, code: 55, title: 'DC Voltage on AC Output', description: 'DC voltage component detected on the 230V AC output.' },
-  { bit: 9, mask: 1 << 9, code: 56, title: 'Battery Open Circuit', description: 'Inverter detected open battery circuit during operation.' },
-  { bit: 10, mask: 1 << 10, code: 57, title: 'Current Sensor Fault', description: 'Inverter current sensor calibration deviation.' },
-  { bit: 11, mask: 1 << 11, code: 11, title: 'MPPT Over-Current', description: 'Solar input current exceeded MPPT controller limit.', isPvRelated: true },
-  { bit: 12, mask: 1 << 12, code: 12, title: 'MPPT Over-Temperature', description: 'Solar charger heatsink temperature is high.', isPvRelated: true },
-  { bit: 13, mask: 1 << 13, code: 13, title: 'MPPT High Battery Voltage', description: 'Solar charger detected high battery terminal voltage.' },
-  { bit: 14, mask: 1 << 14, code: 14, title: 'W14: Fan Blocked', description: 'Cooling fan operating at reduced speed or blocked by dust.' },
-  { bit: 15, mask: 1 << 15, code: 15, title: 'AC Line Abnormal', description: 'Utility grid AC voltage or frequency out of acceptable bounds.' },
+  { bit: 0, mask: 1 << 0, code: 0, title: 'Off-Grid Mode', description: 'Inverter operating in autonomous battery mode (grid outage).', isInformational: true },
+  { bit: 1, mask: 1 << 1, code: 1, title: 'Mains Waveform Abnormal', description: 'Utility AC grid waveform distorted during outage or switching.', isInformational: true },
+  { bit: 2, mask: 1 << 2, code: 2, title: 'Vendor Status Bit 2', description: 'Vendor-specific operational status bit 2.', isInformational: true },
+  { bit: 3, mask: 1 << 3, code: 3, title: 'Mains Low Voltage', description: 'Utility AC grid voltage is low or 0V (grid outage).', isInformational: true },
+  { bit: 4, mask: 1 << 4, code: 4, title: 'Mains Over Frequency', description: 'Utility AC grid frequency exceeded upper bound.', isInformational: true },
+  { bit: 5, mask: 1 << 5, code: 5, title: 'Mains Low Frequency', description: 'Utility AC grid frequency dropped below lower bound.', isInformational: true },
+  { bit: 6, mask: 1 << 6, code: 6, title: 'PV Low Voltage', description: 'Solar array voltage below MPPT startup range (panels not connected or night).', isPvRelated: true },
+  { bit: 7, mask: 1 << 7, code: 7, title: 'W02: Over Temperature', description: 'Internal inverter heatsink temperature is elevated.' },
+  { bit: 8, mask: 1 << 8, code: 8, title: 'W04: Battery Low Voltage', description: 'Battery voltage has dropped below warning threshold.' },
+  { bit: 9, mask: 1 << 9, code: 9, title: 'W09: Battery Not Connected', description: 'Battery circuit is open or battery is not detected.' },
+  { bit: 10, mask: 1 << 10, code: 10, title: 'W07: Overload', description: 'Home consumption is approaching rated inverter power (4.2 kW).' },
+  { bit: 11, mask: 1 << 11, code: 11, title: 'Battery Equalization Charging', description: 'Battery equalization charging cycle is active.', isInformational: true },
+  { bit: 12, mask: 1 << 12, code: 12, title: 'Battery Discharged Below Recovery', description: 'Battery discharged below recovery voltage threshold.' },
+  { bit: 13, mask: 1 << 13, code: 13, title: 'W10: Output Power Derating', description: 'Output power derating active due to high temperature.' },
+  { bit: 14, mask: 1 << 14, code: 14, title: 'W14: Fan Blocked', description: 'Cooling fan is blocked or operating at reduced speed.' },
+  { bit: 15, mask: 1 << 15, code: 15, title: 'W15: PV Energy Too Low', description: 'Solar input energy is too low to use.', isPvRelated: true },
+  { bit: 16, mask: 1 << 16, code: 16, title: 'Parallel Comm Interrupted', description: 'Parallel communication link interrupted.' },
+  { bit: 17, mask: 1 << 17, code: 17, title: 'Output Mode Mismatch', description: 'Single/Parallel output mode mismatch.' },
+  { bit: 18, mask: 1 << 18, code: 18, title: 'Parallel Battery Voltage Diff', description: 'Parallel battery voltage difference is too large.' },
+  { bit: 19, mask: 1 << 19, code: 19, title: 'Lithium Battery Comm Abnormal', description: 'Lithium battery BMS communication abnormal.' },
+  { bit: 20, mask: 1 << 20, code: 20, title: 'Battery Discharge Over-Current', description: 'Battery discharge current exceeds set value.' },
 ];
 
 /**
@@ -295,17 +298,17 @@ export const MODBUS_WARNING_BITS: ModbusWarningBit[] = [
  */
 export function isPvWarningCode(code: number | null): boolean {
   if (code === null || code === 0 || isNaN(code)) return false;
-  if (code === 64 || code === 15 || code === 13) return true;
-  // If bitmask with only PV bit (bit 6 = 64) set
-  const pvMask = 1 << 6;
+  if (code === 64 || code === 32768 || code === 15) return true;
+  const pvMask = (1 << 6) | (1 << 15);
   if ((code & pvMask) !== 0 && (code & ~pvMask) === 0) return true;
   return false;
 }
 
 /**
- * Strips PV-related warning flags and normal Off-Grid battery backup flags when
- * solar generation is disabled (UPS mode without solar panels).
- * Returns the effective warning code and whether any genuine non-PV hardware warning remains active.
+ * Strips PV-related warning flags (bits 6, 15) and normal AC grid blackout /
+ * Off-Grid transition flags (bits 0..5: Off-Grid, Mains Low Voltage, Mains Waveform/Freq)
+ * when operating in UPS mode without solar panels.
+ * Returns the effective warning code and whether any genuine hardware/battery warning remains active.
  */
 export function filterWarningCodeForNoSolar(warningCode: number | null): {
   effectiveCode: number | null;
@@ -315,23 +318,18 @@ export function filterWarningCodeForNoSolar(warningCode: number | null): {
     return { effectiveCode: null, hasNonPvWarning: false };
   }
 
-  // Direct single PV code matches or normal Off-Grid flag (code 1)
-  if (warningCode === 64 || warningCode === 15 || warningCode === 13 || warningCode === 1) {
-    return { effectiveCode: null, hasNonPvWarning: false };
-  }
-
-  // Bitmask filtering:
-  // Bit 6 (64): PV Low Voltage (always set when no solar panels)
-  // Bit 0 (1): Off-Grid / Battery Backup mode (raised normally on AC grid outage)
-  // When running as a UPS without solar, 64 (no sun) + 1 (running on battery during blackout) = 65.
-  // This is completely normal operation, not an equipment fault!
-  const pvBitMask = 1 << 6; // 64
-  const offGridBitMask = 1 << 0; // 1
-
-  let remaining = (warningCode & pvBitMask) !== 0 ? (warningCode & ~pvBitMask) : warningCode;
-  if ((remaining & offGridBitMask) !== 0) {
-    remaining = remaining & ~offGridBitMask;
-  }
+  // In modbus_smg:
+  // Bits 0..5 (mask 0b111111 = 63): Mains/Grid outage status bits
+  //   - Bit 0 (1): Off-Grid autonomous mode
+  //   - Bit 1 (2): Mains Waveform Abnormal (during grid disconnect)
+  //   - Bit 2 (4): Vendor Bit 2
+  //   - Bit 3 (8): Mains Low Voltage (0V during grid blackout -> 64 + 8 + 1 = 73)
+  //   - Bit 4 (16): Mains Over Frequency
+  //   - Bit 5 (32): Mains Low Frequency
+  // Bit 6 (64) & Bit 15 (32768): PV Low Voltage / PV Energy Too Low
+  // Bit 11 (2048): Battery Equalization informational status
+  const suppressMask = 0b111111 | (1 << 6) | (1 << 11) | (1 << 15);
+  const remaining = warningCode & ~suppressMask;
 
   if (remaining === 0) {
     return { effectiveCode: null, hasNonPvWarning: false };
@@ -357,7 +355,7 @@ export function getWarningDetail(
     };
   }
 
-  // Check if this matches multiple active bits in Modbus bitmask
+  // Check if this matches active bits in Modbus bitmask
   const activeBits = MODBUS_WARNING_BITS.filter((b) => (code & b.mask) !== 0);
 
   if (activeBits.length > 1) {
@@ -372,6 +370,19 @@ export function getWarningDetail(
     };
   }
 
+  // If matched exactly 1 bit from bitmask table, prioritize bitmask definition
+  if (activeBits.length === 1) {
+    const bit = activeBits[0];
+    return {
+      title: bit.title,
+      description: detailsText && detailsText !== bit.title
+        ? `${bit.description} (Status: ${detailsText})`
+        : bit.description,
+      isBitmask: true,
+      isPv: !!bit.isPvRelated,
+    };
+  }
+
   // Single direct code lookup in WARNING_CODES
   const direct = WARNING_CODES[code];
   if (direct) {
@@ -382,19 +393,6 @@ export function getWarningDetail(
         : direct.description,
       isBitmask: false,
       isPv: !!direct.isPvRelated,
-    };
-  }
-
-  // If matched exactly 1 bit from bitmask table
-  if (activeBits.length === 1) {
-    const bit = activeBits[0];
-    return {
-      title: bit.title,
-      description: detailsText && detailsText !== bit.title
-        ? `${bit.description} (Status: ${detailsText})`
-        : bit.description,
-      isBitmask: true,
-      isPv: !!bit.isPvRelated,
     };
   }
 
