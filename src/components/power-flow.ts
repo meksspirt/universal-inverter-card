@@ -79,15 +79,27 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
     : '#ef4444';
 
   const batteryStatusText =
-    batteryWatts > 20
+    batteryWatts >= 5
       ? localize('flow.charge', hass, lang)
-      : batteryWatts < -20
+      : batteryWatts <= -5
       ? localize('flow.discharge', hass, lang)
       : localize('flow.standby', hass, lang);
 
+  let selfSourceLabel = '';
+  if (hasSolar && solarWatts >= 10) {
+    selfSourceLabel = ` ← ${localize('nodes.solar', hass, lang)}`;
+  } else if (gridWatts >= 5) {
+    selfSourceLabel = ` ← ${localize('nodes.grid', hass, lang)}`;
+  } else if (batteryWatts <= -5) {
+    selfSourceLabel = ` ← ${localize('nodes.battery', hass, lang)}`;
+  }
+
   const inverterSubLabel =
-    selfConsumptionWatts !== null && selfConsumptionWatts !== undefined && !isNaN(selfConsumptionWatts) && selfConsumptionWatts > 0
-      ? `${localize('flow.self', hass, lang)}: ${Math.round(selfConsumptionWatts)} W`
+    selfConsumptionWatts !== null &&
+    selfConsumptionWatts !== undefined &&
+    !isNaN(selfConsumptionWatts) &&
+    selfConsumptionWatts > 0
+      ? `${localize('flow.self', hass, lang)}: ${Math.round(selfConsumptionWatts)} W${selfSourceLabel}`
       : `${(maxPower / 1000).toFixed(1)} kW`;
 
   return html`
@@ -231,7 +243,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
         <div
           class="flow-node node-grid"
           style="left: ${(grid.x / 500) * 100}%; top: ${(grid.y / viewBoxHeight) * 100}%;"
-          @click=${() => onNodeClick(config.entities?.grid_power)}
+          @click=${() => onNodeClick(config.grid_breaker_power_entity || config.entities?.grid_power)}
           title="${localize('nodes.grid', hass, lang)}"
         >
           <div class="node-badge">
@@ -239,9 +251,9 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           </div>
           <span class="node-value">${isOffline ? '—' : formatPower(Math.abs(gridWatts))}</span>
           <span class="node-label">
-            ${gridWatts > 20
+            ${gridWatts >= 5
               ? localize('flow.import', hass, lang)
-              : gridWatts < -20
+              : gridWatts <= -5
               ? localize('flow.export', hass, lang)
               : localize('nodes.grid', hass, lang)}
           </span>

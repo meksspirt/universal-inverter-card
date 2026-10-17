@@ -28,6 +28,7 @@ const DEFAULT_SELF_DAILY_ENTITY =
 const DEFAULT_SELF_MONTHLY_ENTITY =
   'sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_mesiats';
 const DEFAULT_BREAKER_ENTITY = 'switch.invertor_vkhod';
+const DEFAULT_BREAKER_POWER_ENTITY = 'sensor.invertor_vkhod_power';
 const DEFAULT_REMAINING_ENERGY_ENTITY =
   'sensor.kukhnia_redodo_24v_bms_to_inverter_rs485_bridge_redodo_24v_remaining_energy';
 const DEFAULT_LOAD_PERCENT_ENTITY =
@@ -347,6 +348,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       DEFAULT_SELF_DAILY_ENTITY,
       DEFAULT_SELF_MONTHLY_ENTITY,
       DEFAULT_BREAKER_ENTITY,
+      DEFAULT_BREAKER_POWER_ENTITY,
       DEFAULT_REMAINING_ENERGY_ENTITY,
       DEFAULT_LOAD_PERCENT_ENTITY,
     ];
@@ -621,7 +623,17 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         ? this._getNumber(this._config.entities.solar_power)
         : 0;
     const batteryWatts = this._getNumber(this._config.entities.battery_power);
-    const gridWatts = this._getNumber(this._config.entities.grid_power);
+    const rawGridWatts = this._getNumber(this._config.entities.grid_power);
+    const gridBreakerPowerEntity = this._resolveEntity(
+      this._config.grid_breaker_power_entity,
+      DEFAULT_BREAKER_POWER_ENTITY
+    );
+    const gridBreakerWatts = gridBreakerPowerEntity
+      ? this._getNullableNumber(gridBreakerPowerEntity)
+      : null;
+    // Internal inverter grid_power ignores ~20W AC standby draw; prefer external input meter when higher
+    const gridWatts =
+      gridBreakerWatts !== null && gridBreakerWatts > rawGridWatts ? gridBreakerWatts : rawGridWatts;
     const loadWatts = this._getNumber(this._config.entities.load_power);
 
     // Electrical telemetry (honest null when sensor is unavailable)
