@@ -385,11 +385,17 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       if (bms.full_capacity_entity) ids.push(bms.full_capacity_entity);
       if (bms.remaining_energy_entity) ids.push(bms.remaining_energy_entity);
 
+      const pushCellCandidates = (pfx: string, cnt: number) => {
+        const clean = pfx.trim();
+        for (let i = 1; i <= cnt; i++) {
+          ids.push(`${clean}${i}`);
+          ids.push(`${clean}${i}_voltage`);
+        }
+      };
+
       const count = bms.cell_count || 8;
       const prefix = bms.cell_voltage_prefix || 'sensor.redodo_battery_cell_voltage_';
-      for (let i = 1; i <= count; i++) {
-        ids.push(`${prefix}${i}`);
-      }
+      pushCellCandidates(prefix, count);
 
       // Battery 1 (flat & nested)
       const count1 = bms.battery_1?.cell_count || 4;
@@ -397,7 +403,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       if (bms.bat1_voltage_entity) ids.push(bms.bat1_voltage_entity);
       if (bms.bat1_temperature_entity) ids.push(bms.bat1_temperature_entity);
       if (bms.bat1_cell_prefix) {
-        for (let i = 1; i <= count1; i++) ids.push(`${bms.bat1_cell_prefix}${i}`);
+        pushCellCandidates(bms.bat1_cell_prefix, count1);
       }
       if (bms.battery_1) {
         const b1 = bms.battery_1;
@@ -405,7 +411,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         if (b1.voltage_entity) ids.push(b1.voltage_entity);
         if (b1.temperature_entity) ids.push(b1.temperature_entity);
         if (b1.cell_voltage_prefix) {
-          for (let i = 1; i <= count1; i++) ids.push(`${b1.cell_voltage_prefix}${i}`);
+          pushCellCandidates(b1.cell_voltage_prefix, count1);
         }
       }
 
@@ -415,7 +421,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       if (bms.bat2_voltage_entity) ids.push(bms.bat2_voltage_entity);
       if (bms.bat2_temperature_entity) ids.push(bms.bat2_temperature_entity);
       if (bms.bat2_cell_prefix) {
-        for (let i = 1; i <= count2; i++) ids.push(`${bms.bat2_cell_prefix}${i}`);
+        pushCellCandidates(bms.bat2_cell_prefix, count2);
       }
       if (bms.battery_2) {
         const b2 = bms.battery_2;
@@ -423,7 +429,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         if (b2.voltage_entity) ids.push(b2.voltage_entity);
         if (b2.temperature_entity) ids.push(b2.temperature_entity);
         if (b2.cell_voltage_prefix) {
-          for (let i = 1; i <= count2; i++) ids.push(`${b2.cell_voltage_prefix}${i}`);
+          pushCellCandidates(b2.cell_voltage_prefix, count2);
         }
       }
     }
@@ -462,6 +468,29 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     }
 
     return ids.filter(Boolean);
+  }
+
+  private _resolveCellEntityId(prefix: string, cellIndex: number): string {
+    const cleanPrefix = prefix.trim();
+    const candidates = [
+      `${cleanPrefix}${cellIndex}`,
+      `${cleanPrefix}${cellIndex}_voltage`,
+      `${cleanPrefix.replace(/_voltage_?$/, '_')}${cellIndex}_voltage`,
+      `${cleanPrefix.replace(/_cell_?$/, '_cell_voltage_')}${cellIndex}`,
+    ];
+    if (this._hass?.states) {
+      for (const candidate of candidates) {
+        if (this._hass.states[candidate] && !this._isEntityUnavailable(candidate)) {
+          return candidate;
+        }
+      }
+      for (const candidate of candidates) {
+        if (this._hass.states[candidate]) {
+          return candidate;
+        }
+      }
+    }
+    return candidates[0];
   }
 
   private _findMatchingEntity(baseEntityId?: string, targetSuffix?: string): string | undefined {
@@ -729,24 +758,26 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         const t1 = this._getNullableNumber(t1Entity);
         const t2 = this._getNullableNumber(t2Entity);
 
-        // Scan cells for Battery 1 (honest readings, no fake 3.38V)
+        // Scan cells for Battery 1 (supports both <prefix><N> and <prefix><N>_voltage)
         const cells1: CellData[] = [];
         const prefix1 = bms.bat1_cell_prefix || b1?.cell_voltage_prefix || 'sensor.redodo_1_cell_voltage_';
         const count1 = b1?.cell_count || 4;
         for (let i = 1; i <= count1; i++) {
-          let val = this._getNullableNumber(`${prefix1}${i}`) ?? 0;
+          const cellEntity1 = this._resolveCellEntityId(prefix1, i);
+          let val = this._getNullableNumber(cellEntity1) ?? 0;
           if (val > 100) val = val / 1000;
-          cells1.push({ index: i, voltage: val > 0 ? val : 0, rawEntityId: `${prefix1}${i}` });
+          cells1.push({ index: i, voltage: val > 0 ? val : 0, rawEntityId: cellEntity1 });
         }
 
-        // Scan cells for Battery 2 (honest readings, no fake 3.38V)
+        // Scan cells for Battery 2 (supports both <prefix><N> and <prefix><N>_voltage)
         const cells2: CellData[] = [];
         const prefix2 = bms.bat2_cell_prefix || b2?.cell_voltage_prefix || 'sensor.redodo_2_cell_voltage_';
         const count2 = b2?.cell_count || 4;
         for (let i = 1; i <= count2; i++) {
-          let val = this._getNullableNumber(`${prefix2}${i}`) ?? 0;
+          const cellEntity2 = this._resolveCellEntityId(prefix2, i);
+          let val = this._getNullableNumber(cellEntity2) ?? 0;
           if (val > 100) val = val / 1000;
-          cells2.push({ index: i + count1, voltage: val > 0 ? val : 0, rawEntityId: `${prefix2}${i}` });
+          cells2.push({ index: i + count1, voltage: val > 0 ? val : 0, rawEntityId: cellEntity2 });
         }
 
         bat1Data = {
@@ -778,7 +809,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         const prefix = bms.cell_voltage_prefix || 'sensor.redodo_battery_cell_voltage_';
 
         for (let i = 1; i <= cellCount; i++) {
-          const entityId = `${prefix}${i}`;
+          const entityId = this._resolveCellEntityId(prefix, i);
           let rawVal = this._getNullableNumber(entityId) ?? 0;
           if (rawVal > 100) {
             rawVal = rawVal / 1000;
