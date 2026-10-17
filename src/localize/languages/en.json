@@ -2,14 +2,31 @@
   "common": {
     "version": "Version",
     "name": "Aninerel Power Card",
-    "description": "Ultimate card for Aninerel ANL 4200T inverter + Redodo BMS"
+    "description": "Ultimate card for Aninerel ANL 4200T inverter + Redodo BMS",
+    "offline": "OFFLINE",
+    "ok": "OK",
+    "chg": "CHG",
+    "fault": "FAULT",
+    "warn": "WARN",
+    "na": "N/A"
+  },
+  "header": {
+    "subtitle_solar": "Hybrid 24V 4.2kW Inverter",
+    "subtitle_ups": "24V 4.2kW UPS Inverter",
+    "self_power": "Self",
+    "input_breaker": "Input"
+  },
+  "alerts": {
+    "offline_title": "Inverter Collector Offline",
+    "offline_desc": "Key inverter telemetry sensors are currently unavailable. Check Wi-Fi/RS485 datalogger connection."
   },
   "mode": {
     "battery": "Battery",
     "mains": "Mains",
     "bypass": "Bypass",
     "line": "Line",
-    "grid": "Grid"
+    "grid": "Grid",
+    "off_grid": "Off-Grid"
   },
   "nodes": {
     "solar": "Solar",
@@ -23,43 +40,58 @@
     "discharge": "Discharge",
     "standby": "Standby",
     "import": "Import",
-    "export": "Export"
+    "export": "Export",
+    "self": "Self"
   },
   "params": {
     "battery": "Battery DC",
     "grid": "Grid AC",
+    "battery_soc": "Battery SoC",
+    "battery_autonomy": "Battery Autonomy",
+    "inverter_load": "Inverter Load",
     "self_sufficiency": "Self-Sufficiency",
     "normal": "Normal",
     "deviated": "Deviated",
     "sag": "Low (Sag)",
-    "surge": "High (Surge)"
+    "surge": "High (Surge)",
+    "offline": "Offline"
   },
   "bms": {
     "title": "BMS Redodo LiFePO4",
+    "title_dual": "BMS Redodo: 2× 12V Series (24V)",
+    "series_badge": "24V Series",
+    "delta_packs": "Δ Packs",
+    "delta_cells": "Δ Cells",
     "temp": "Temp",
     "cycles": "Cycles",
     "capacity": "Capacity",
+    "remaining": "Remaining",
     "balanced": "Balanced",
     "drift": "Normal Drift",
-    "imbalance": "Imbalance Alert"
+    "imbalance": "Imbalance Alert",
+    "pack_drift_warn": "Pack voltage drift detected ({delta} mV: {v1}V vs {v2}V). A 24V active battery equalizer is recommended.",
+    "offline": "BMS telemetry unavailable"
   },
   "controls": {
-    "title": "Inverter: Controls & Automations",
+    "title": "Inverter: Controls & Settings",
     "charge_source": "Charge Source Priority",
-    "output_priority": "Home Output Priority",
-    "max_charge_current": "Max AC Charging Current",
+    "output_priority": "Output Source Priority",
+    "max_charge_current": "Max AC Charge Current",
     "bulk_voltage": "Bulk Voltage",
     "float_voltage": "Float Voltage",
-    "equalization": "Equalization Mode",
-    "equalization_warning": "⚠️ For LiFePO4 MUST ALWAYS BE OFF to prevent cell damage!"
+    "equalization": "Battery Equalization",
+    "equalization_warning": "⚠️ For LiFePO4, must ALWAYS BE OFF to prevent cell overcharging!",
+    "confirm_on": "Confirm ON?"
   },
   "energy": {
     "title": "Daily Energy Balance",
     "total": "Total",
     "load": "Home Consumption",
     "grid_import": "Grid Import",
-    "bat_charge": "Battery Charge",
-    "bat_discharge": "Battery Discharge"
+    "bat_charge": "Battery Charged",
+    "bat_discharge": "Battery Discharged",
+    "self_consumption": "Inverter Self-Consumption",
+    "month_short": "Mo"
   },
   "editor": {
     "title": "Card Title",

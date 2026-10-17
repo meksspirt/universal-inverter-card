@@ -2,14 +2,31 @@
   "common": {
     "version": "Версия",
     "name": "Aninerel Power Card",
-    "description": "Ультимативная карточка для инвертора Aninerel ANL 4200T + BMS Redodo"
+    "description": "Ультимативная карточка для инвертора Aninerel ANL 4200T + BMS Redodo",
+    "offline": "НЕТ СВЯЗИ",
+    "ok": "ОК",
+    "chg": "ЗАРЯД",
+    "fault": "АВАРИЯ",
+    "warn": "ВНИМ.",
+    "na": "Н/Д"
+  },
+  "header": {
+    "subtitle_solar": "Гибридный инвертор 24В 4.2 кВт",
+    "subtitle_ups": "ИБП квартиры 24В 4.2 кВт",
+    "self_power": "ХХ",
+    "input_breaker": "Вход"
+  },
+  "alerts": {
+    "offline_title": "Потеряна связь с инвертором (Offline)",
+    "offline_desc": "Основные сенсоры телеметрии недоступны (unavailable). Проверьте питание и Wi-Fi/RS485 даталоггер."
   },
   "mode": {
     "battery": "Батарея",
     "mains": "Сеть",
     "bypass": "Байпас",
     "line": "Сеть",
-    "grid": "Сеть"
+    "grid": "Сеть",
+    "off_grid": "Автономно"
   },
   "nodes": {
     "solar": "Солнце",
@@ -23,43 +40,58 @@
     "discharge": "Разряд",
     "standby": "Ожидание",
     "import": "Импорт",
-    "export": "Экспорт"
+    "export": "Экспорт",
+    "self": "ХХ"
   },
   "params": {
     "battery": "Батарея DC",
     "grid": "Сеть AC",
-    "self_sufficiency": "Автономность",
+    "battery_soc": "Заряд АКБ",
+    "battery_autonomy": "Автономность АКБ",
+    "inverter_load": "Нагрузка инвертора",
+    "self_sufficiency": "Самообеспечение",
     "normal": "Норма",
     "deviated": "Отклонение",
-    "sag": "Просадка",
-    "surge": "Перенапряжение"
+    "sag": "Просадка (0В)",
+    "surge": "Перенапряжение",
+    "offline": "Нет связи"
   },
   "bms": {
     "title": "BMS Redodo LiFePO4",
+    "title_dual": "BMS Redodo: 2× 12В Последовательно (24В)",
+    "series_badge": "24В Сборка",
+    "delta_packs": "Δ Батарей",
+    "delta_cells": "Δ Ячеек",
     "temp": "Темп.",
     "cycles": "Циклы",
     "capacity": "Емкость",
+    "remaining": "Остаток",
     "balanced": "Сбалансировано",
-    "drift": "Естественный дрейф",
-    "imbalance": "Алерт разбаланса"
+    "drift": "Легкий дрейф",
+    "imbalance": "Разбаланс!",
+    "pack_drift_warn": "Разбаланс между 12В батареями: {delta} мВ ({v1}В против {v2}В). Рекомендуется активный балансир 24В.",
+    "offline": "Нет данных от BMS"
   },
   "controls": {
-    "title": "Инвертор: Управление и автоматизации",
-    "charge_source": "Источник заряда",
+    "title": "Инвертор: Управление и настройки",
+    "charge_source": "Приоритет источника заряда",
     "output_priority": "Приоритет питания дома",
-    "max_charge_current": "Макс. ток сетевого заряда",
-    "bulk_voltage": "Напряжение Bulk",
-    "float_voltage": "Напряжение Float",
-    "equalization": "Режим Equalization (Выравнивание)",
-    "equalization_warning": "⚠️ Для LiFePO4 должен быть ВСЕГДА ВЫКЛЮЧЕН во избежание перезаряда ячеек!"
+    "max_charge_current": "Макс. ток сетевого заряда AC",
+    "bulk_voltage": "Напряжение Bulk (Заряд)",
+    "float_voltage": "Напряжение Float (Поддержка)",
+    "equalization": "Выравнивание (Equalization)",
+    "equalization_warning": "⚠️ Для LiFePO4 должен быть ВСЕГДА ВЫКЛЮЧЕН во избежание перезаряда ячеек!",
+    "confirm_on": "Точно ВКЛ?"
   },
   "energy": {
     "title": "Суточный баланс энергии",
-    "total": "Итого",
+    "total": "Дом",
     "load": "Потребление дома",
     "grid_import": "Импорт из сети",
-    "bat_charge": "Закачано в АКБ",
-    "bat_discharge": "Отдано батареей"
+    "bat_charge": "Заряд АКБ",
+    "bat_discharge": "Отдано из АКБ",
+    "self_consumption": "Собств. нужды инвертора (ХХ)",
+    "month_short": "Мес"
   },
   "editor": {
     "title": "Заголовок карточки",

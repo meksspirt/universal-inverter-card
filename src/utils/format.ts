@@ -1,5 +1,5 @@
 /**
- * Utility functions for formatting sensor values, wattages, voltages, and percentages
+ * Utility functions for formatting sensor values, wattages, voltages, runtime, and percentages
  */
 
 export function formatPower(watts: number, decimals = 1): string {
@@ -28,4 +28,21 @@ export function formatEnergy(kwh: number | null | undefined, decimals = 1): stri
 export function formatTemperature(celsius: number | null | undefined, decimals = 0): string {
   if (celsius === null || celsius === undefined || isNaN(celsius)) return 'N/A';
   return `${celsius.toFixed(decimals)} °C`;
+}
+
+export function formatDurationHours(hours: number | null | undefined, lang: 'ru' | 'en' = 'ru'): string | null {
+  if (hours === null || hours === undefined || isNaN(hours) || !isFinite(hours) || hours <= 0) {
+    return null;
+  }
+  const clamped = Math.min(99, hours);
+  const h = Math.floor(clamped);
+  const m = Math.round((clamped - h) * 60);
+  if (lang === 'ru') {
+    if (h <= 0) return `~${Math.max(1, m)} мин`;
+    if (m <= 0 || h >= 24) return `~${h} ч`;
+    return `~${h}ч ${m}м`;
+  }
+  if (h <= 0) return `~${Math.max(1, m)}m`;
+  if (m <= 0 || h >= 24) return `~${h}h`;
+  return `~${h}h ${m}m`;
 }

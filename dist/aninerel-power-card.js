@@ -1,4 +1,4 @@
-function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPropertyDescriptor(t,i):r;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)n=Reflect.decorate(e,t,i,r);else for(var s=e.length-1;s>=0;s--)(a=e[s])&&(n=(o<3?a(n):o>3?a(t,i,n):a(t,i))||n);return o>3&&n&&Object.defineProperty(t,i,n),n}"function"==typeof SuppressedError&&SuppressedError;const t=globalThis,i=t.ShadowRoot&&(void 0===t.ShadyCSS||t.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,r=Symbol(),a=new WeakMap;let o=class{constructor(e,t,i){if(this._$cssResult$=!0,i!==r)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=e,this.t=t}get styleSheet(){let e=this.o;const t=this.t;if(i&&void 0===e){const i=void 0!==t&&1===t.length;i&&(e=a.get(t)),void 0===e&&((this.o=e=new CSSStyleSheet).replaceSync(this.cssText),i&&a.set(t,e))}return e}toString(){return this.cssText}};const n=(e,...t)=>{const i=1===e.length?e[0]:t.reduce((t,i,r)=>t+(e=>{if(!0===e._$cssResult$)return e.cssText;if("number"==typeof e)return e;throw Error("Value passed to 'css' function must be a 'css' function result: "+e+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+e[r+1],e[0]);return new o(i,e,r)},s=i?e=>e:e=>e instanceof CSSStyleSheet?(e=>{let t="";for(const i of e.cssRules)t+=i.cssText;return(e=>new o("string"==typeof e?e:e+"",void 0,r))(t)})(e):e,{is:l,defineProperty:c,getOwnPropertyDescriptor:d,getOwnPropertyNames:p,getOwnPropertySymbols:h,getPrototypeOf:g}=Object,u=globalThis,_=u.trustedTypes,y=_?_.emptyScript:"",m=u.reactiveElementPolyfillSupport,b=(e,t)=>e,f={toAttribute(e,t){switch(t){case Boolean:e=e?y:null;break;case Object:case Array:e=null==e?e:JSON.stringify(e)}return e},fromAttribute(e,t){let i=e;switch(t){case Boolean:i=null!==e;break;case Number:i=null===e?null:Number(e);break;case Object:case Array:try{i=JSON.parse(e)}catch(e){i=null}}return i}},v=(e,t)=>!l(e,t),x={attribute:!0,type:String,converter:f,reflect:!1,useDefault:!1,hasChanged:v};Symbol.metadata??=Symbol("metadata"),u.litPropertyMetadata??=new WeakMap;let w=class extends HTMLElement{static addInitializer(e){this._$Ei(),(this.l??=[]).push(e)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(e,t=x){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(e)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(e,t),!t.noAccessor){const i=Symbol(),r=this.getPropertyDescriptor(e,i,t);void 0!==r&&c(this.prototype,e,r)}}static getPropertyDescriptor(e,t,i){const{get:r,set:a}=d(this.prototype,e)??{get(){return this[t]},set(e){this[t]=e}};return{get:r,set(t){const o=r?.call(this);a?.call(this,t),this.requestUpdate(e,o,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(e){return this.elementProperties.get(e)??x}static _$Ei(){if(this.hasOwnProperty(b("elementProperties")))return;const e=g(this);e.finalize(),void 0!==e.l&&(this.l=[...e.l]),this.elementProperties=new Map(e.elementProperties)}static finalize(){if(this.hasOwnProperty(b("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(b("properties"))){const e=this.properties,t=[...p(e),...h(e)];for(const i of t)this.createProperty(i,e[i])}const e=this[Symbol.metadata];if(null!==e){const t=litPropertyMetadata.get(e);if(void 0!==t)for(const[e,i]of t)this.elementProperties.set(e,i)}this._$Eh=new Map;for(const[e,t]of this.elementProperties){const i=this._$Eu(e,t);void 0!==i&&this._$Eh.set(i,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(e){const t=[];if(Array.isArray(e)){const i=new Set(e.flat(1/0).reverse());for(const e of i)t.unshift(s(e))}else void 0!==e&&t.push(s(e));return t}static _$Eu(e,t){const i=t.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof e?e.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(e=>this.enableUpdating=e),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(e=>e(this))}addController(e){(this._$EO??=new Set).add(e),void 0!==this.renderRoot&&this.isConnected&&e.hostConnected?.()}removeController(e){this._$EO?.delete(e)}_$E_(){const e=new Map,t=this.constructor.elementProperties;for(const i of t.keys())this.hasOwnProperty(i)&&(e.set(i,this[i]),delete this[i]);e.size>0&&(this._$Ep=e)}createRenderRoot(){const e=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((e,r)=>{if(i)e.adoptedStyleSheets=r.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(const i of r){const r=document.createElement("style"),a=t.litNonce;void 0!==a&&r.setAttribute("nonce",a),r.textContent=i.cssText,e.appendChild(r)}})(e,this.constructor.elementStyles),e}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(e=>e.hostConnected?.())}enableUpdating(e){}disconnectedCallback(){this._$EO?.forEach(e=>e.hostDisconnected?.())}attributeChangedCallback(e,t,i){this._$AK(e,i)}_$ET(e,t){const i=this.constructor.elementProperties.get(e),r=this.constructor._$Eu(e,i);if(void 0!==r&&!0===i.reflect){const a=(void 0!==i.converter?.toAttribute?i.converter:f).toAttribute(t,i.type);this._$Em=e,null==a?this.removeAttribute(r):this.setAttribute(r,a),this._$Em=null}}_$AK(e,t){const i=this.constructor,r=i._$Eh.get(e);if(void 0!==r&&this._$Em!==r){const e=i.getPropertyOptions(r),a="function"==typeof e.converter?{fromAttribute:e.converter}:void 0!==e.converter?.fromAttribute?e.converter:f;this._$Em=r;const o=a.fromAttribute(t,e.type);this[r]=o??this._$Ej?.get(r)??o,this._$Em=null}}requestUpdate(e,t,i,r=!1,a){if(void 0!==e){const o=this.constructor;if(!1===r&&(a=this[e]),i??=o.getPropertyOptions(e),!((i.hasChanged??v)(a,t)||i.useDefault&&i.reflect&&a===this._$Ej?.get(e)&&!this.hasAttribute(o._$Eu(e,i))))return;this.C(e,t,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(e,t,{useDefault:i,reflect:r,wrapped:a},o){i&&!(this._$Ej??=new Map).has(e)&&(this._$Ej.set(e,o??t??this[e]),!0!==a||void 0!==o)||(this._$AL.has(e)||(this.hasUpdated||i||(t=void 0),this._$AL.set(e,t)),!0===r&&this._$Em!==e&&(this._$Eq??=new Set).add(e))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}const e=this.scheduleUpdate();return null!=e&&await e,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[e,t]of this._$Ep)this[e]=t;this._$Ep=void 0}const e=this.constructor.elementProperties;if(e.size>0)for(const[t,i]of e){const{wrapped:e}=i,r=this[t];!0!==e||this._$AL.has(t)||void 0===r||this.C(t,void 0,i,r)}}let e=!1;const t=this._$AL;try{e=this.shouldUpdate(t),e?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(t){throw e=!1,this._$EM(),t}e&&this._$AE(t)}willUpdate(e){}_$AE(e){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(e)),this.updated(e)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(e){return!0}update(e){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(e){}firstUpdated(e){}};w.elementStyles=[],w.shadowRootOptions={mode:"open"},w[b("elementProperties")]=new Map,w[b("finalized")]=new Map,m?.({ReactiveElement:w}),(u.reactiveElementVersions??=[]).push("2.1.2");const $=globalThis,k=e=>e,C=$.trustedTypes,S=C?C.createPolicy("lit-html",{createHTML:e=>e}):void 0,A="$lit$",M=`lit$${Math.random().toFixed(9).slice(2)}$`,E="?"+M,N=`<${E}>`,B=document,P=()=>B.createComment(""),O=e=>null===e||"object"!=typeof e&&"function"!=typeof e,I=Array.isArray,T="[ \t\n\f\r]",L=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,z=/-->/g,D=/>/g,F=RegExp(`>|${T}(?:([^\\s"'>=/]+)(${T}*=${T}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),R=/'/g,V=/"/g,H=/^(?:script|style|textarea|title)$/i,U=e=>(t,...i)=>({_$litType$:e,strings:t,values:i}),W=U(1),q=U(2),j=Symbol.for("lit-noChange"),G=Symbol.for("lit-nothing"),Y=new WeakMap,K=B.createTreeWalker(B,129);function Z(e,t){if(!I(e)||!e.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==S?S.createHTML(t):t}const J=(e,t)=>{const i=e.length-1,r=[];let a,o=2===t?"<svg>":3===t?"<math>":"",n=L;for(let t=0;t<i;t++){const i=e[t];let s,l,c=-1,d=0;for(;d<i.length&&(n.lastIndex=d,l=n.exec(i),null!==l);)d=n.lastIndex,n===L?"!--"===l[1]?n=z:void 0!==l[1]?n=D:void 0!==l[2]?(H.test(l[2])&&(a=RegExp("</"+l[2],"g")),n=F):void 0!==l[3]&&(n=F):n===F?">"===l[0]?(n=a??L,c=-1):void 0===l[1]?c=-2:(c=n.lastIndex-l[2].length,s=l[1],n=void 0===l[3]?F:'"'===l[3]?V:R):n===V||n===R?n=F:n===z||n===D?n=L:(n=F,a=void 0);const p=n===F&&e[t+1].startsWith("/>")?" ":"";o+=n===L?i+N:c>=0?(r.push(s),i.slice(0,c)+A+i.slice(c)+M+p):i+M+(-2===c?t:p)}return[Z(e,o+(e[i]||"<?>")+(2===t?"</svg>":3===t?"</math>":"")),r]};class X{constructor({strings:e,_$litType$:t},i){let r;this.parts=[];let a=0,o=0;const n=e.length-1,s=this.parts,[l,c]=J(e,t);if(this.el=X.createElement(l,i),K.currentNode=this.el.content,2===t||3===t){const e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;null!==(r=K.nextNode())&&s.length<n;){if(1===r.nodeType){if(r.hasAttributes())for(const e of r.getAttributeNames())if(e.endsWith(A)){const t=c[o++],i=r.getAttribute(e).split(M),n=/([.?@])?(.*)/.exec(t);s.push({type:1,index:a,name:n[2],strings:i,ctor:"."===n[1]?re:"?"===n[1]?ae:"@"===n[1]?oe:ie}),r.removeAttribute(e)}else e.startsWith(M)&&(s.push({type:6,index:a}),r.removeAttribute(e));if(H.test(r.tagName)){const e=r.textContent.split(M),t=e.length-1;if(t>0){r.textContent=C?C.emptyScript:"";for(let i=0;i<t;i++)r.append(e[i],P()),K.nextNode(),s.push({type:2,index:++a});r.append(e[t],P())}}}else if(8===r.nodeType)if(r.data===E)s.push({type:2,index:a});else{let e=-1;for(;-1!==(e=r.data.indexOf(M,e+1));)s.push({type:7,index:a}),e+=M.length-1}a++}}static createElement(e,t){const i=B.createElement("template");return i.innerHTML=e,i}}function Q(e,t,i=e,r){if(t===j)return t;let a=void 0!==r?i._$Co?.[r]:i._$Cl;const o=O(t)?void 0:t._$litDirective$;return a?.constructor!==o&&(a?._$AO?.(!1),void 0===o?a=void 0:(a=new o(e),a._$AT(e,i,r)),void 0!==r?(i._$Co??=[])[r]=a:i._$Cl=a),void 0!==a&&(t=Q(e,a._$AS(e,t.values),a,r)),t}class ee{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){const{el:{content:t},parts:i}=this._$AD,r=(e?.creationScope??B).importNode(t,!0);K.currentNode=r;let a=K.nextNode(),o=0,n=0,s=i[0];for(;void 0!==s;){if(o===s.index){let t;2===s.type?t=new te(a,a.nextSibling,this,e):1===s.type?t=new s.ctor(a,s.name,s.strings,this,e):6===s.type&&(t=new ne(a,this,e)),this._$AV.push(t),s=i[++n]}o!==s?.index&&(a=K.nextNode(),o++)}return K.currentNode=B,r}p(e){let t=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(e,i,t),t+=i.strings.length-2):i._$AI(e[t])),t++}}class te{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,i,r){this.type=2,this._$AH=G,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=i,this.options=r,this._$Cv=r?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode;const t=this._$AM;return void 0!==t&&11===e?.nodeType&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=Q(this,e,t),O(e)?e===G||null==e||""===e?(this._$AH!==G&&this._$AR(),this._$AH=G):e!==this._$AH&&e!==j&&this._(e):void 0!==e._$litType$?this.$(e):void 0!==e.nodeType?this.T(e):(e=>I(e)||"function"==typeof e?.[Symbol.iterator])(e)?this.k(e):this._(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==G&&O(this._$AH)?this._$AA.nextSibling.data=e:this.T(B.createTextNode(e)),this._$AH=e}$(e){const{values:t,_$litType$:i}=e,r="number"==typeof i?this._$AC(e):(void 0===i.el&&(i.el=X.createElement(Z(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===r)this._$AH.p(t);else{const e=new ee(r,this),i=e.u(this.options);e.p(t),this.T(i),this._$AH=e}}_$AC(e){let t=Y.get(e.strings);return void 0===t&&Y.set(e.strings,t=new X(e)),t}k(e){I(this._$AH)||(this._$AH=[],this._$AR());const t=this._$AH;let i,r=0;for(const a of e)r===t.length?t.push(i=new te(this.O(P()),this.O(P()),this,this.options)):i=t[r],i._$AI(a),r++;r<t.length&&(this._$AR(i&&i._$AB.nextSibling,r),t.length=r)}_$AR(e=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);e!==this._$AB;){const t=k(e).nextSibling;k(e).remove(),e=t}}setConnected(e){void 0===this._$AM&&(this._$Cv=e,this._$AP?.(e))}}class ie{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,i,r,a){this.type=1,this._$AH=G,this._$AN=void 0,this.element=e,this.name=t,this._$AM=r,this.options=a,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=G}_$AI(e,t=this,i,r){const a=this.strings;let o=!1;if(void 0===a)e=Q(this,e,t,0),o=!O(e)||e!==this._$AH&&e!==j,o&&(this._$AH=e);else{const r=e;let n,s;for(e=a[0],n=0;n<a.length-1;n++)s=Q(this,r[i+n],t,n),s===j&&(s=this._$AH[n]),o||=!O(s)||s!==this._$AH[n],s===G?e=G:e!==G&&(e+=(s??"")+a[n+1]),this._$AH[n]=s}o&&!r&&this.j(e)}j(e){e===G?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??"")}}class re extends ie{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===G?void 0:e}}class ae extends ie{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==G)}}class oe extends ie{constructor(e,t,i,r,a){super(e,t,i,r,a),this.type=5}_$AI(e,t=this){if((e=Q(this,e,t,0)??G)===j)return;const i=this._$AH,r=e===G&&i!==G||e.capture!==i.capture||e.once!==i.once||e.passive!==i.passive,a=e!==G&&(i===G||r);r&&this.element.removeEventListener(this.name,this,i),a&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}}class ne{constructor(e,t,i){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(e){Q(this,e)}}const se=$.litHtmlPolyfillSupport;se?.(X,te),($.litHtmlVersions??=[]).push("3.3.3");const le=globalThis;class ce extends w{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const e=super.createRenderRoot();return this.renderOptions.renderBefore??=e.firstChild,e}update(e){const t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(e),this._$Do=((e,t,i)=>{const r=i?.renderBefore??t;let a=r._$litPart$;if(void 0===a){const e=i?.renderBefore??null;r._$litPart$=a=new te(t.insertBefore(P(),e),e,void 0,i??{})}return a._$AI(e),a})(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return j}}ce._$litElement$=!0,ce.finalized=!0,le.litElementHydrateSupport?.({LitElement:ce});const de=le.litElementPolyfillSupport;de?.({LitElement:ce}),(le.litElementVersions??=[]).push("4.2.2");const pe=e=>(t,i)=>{void 0!==i?i.addInitializer(()=>{customElements.define(e,t)}):customElements.define(e,t)},he={attribute:!0,type:String,converter:f,reflect:!1,hasChanged:v},ge=(e=he,t,i)=>{const{kind:r,metadata:a}=i;let o=globalThis.litPropertyMetadata.get(a);if(void 0===o&&globalThis.litPropertyMetadata.set(a,o=new Map),"setter"===r&&((e=Object.create(e)).wrapped=!0),o.set(i.name,e),"accessor"===r){const{name:r}=i;return{set(i){const a=t.get.call(this);t.set.call(this,i),this.requestUpdate(r,a,e,!0,i)},init(t){return void 0!==t&&this.C(r,void 0,e,t),t}}}if("setter"===r){const{name:r}=i;return function(i){const a=this[r];t.call(this,i),this.requestUpdate(r,a,e,!0,i)}}throw Error("Unsupported decorator location: "+r)};function ue(e){return(t,i)=>"object"==typeof i?ge(e,t,i):((e,t,i)=>{const r=t.hasOwnProperty(i);return t.constructor.createProperty(i,e),r?Object.getOwnPropertyDescriptor(t,i):void 0})(e,t,i)}function _e(e){return ue({...e,state:!0,attribute:!1})}const ye="aninerel-power-card",me={title:"Aninerel ANL 4200T",max_power:4200,inverter_capacity:4200,min_flow_rate:.75,max_flow_rate:6,use_log_flow_model:!0,show_header:!0,show_flow:!0,show_solar:!1,grid_position:"bottom",show_params:!0,show_bms:!0,show_controls:!0,show_energy:!0,show_alerts:!0,compact_mode:!1},be="var(--energy-solar-color, #F59E0B)",fe="var(--energy-battery-in-color, #10B981)",ve="var(--energy-battery-out-color, #FF9800)",xe="var(--energy-grid-consumption-color, #4285F4)",we="var(--energy-grid-return-color, #2ecc71)",$e="var(--primary-text-color, #E0E0E0)",ke={type:"custom:aninerel-power-card",title:"Aninerel ANL 4200T",show_solar:!1,entities:{battery_power:"sensor.aninerel_anl_4200t_24l_w_pro_battery_power",grid_power:"sensor.aninerel_anl_4200t_24l_w_pro_grid_power",load_power:"sensor.aninerel_anl_4200t_24l_w_pro_load_power"},battery_voltage_entity:"sensor.aninerel_anl_4200t_24l_w_pro_battery_voltage",battery_current_entity:"sensor.aninerel_anl_4200t_24l_w_pro_battery_current",grid_voltage_entity:"sensor.aninerel_anl_4200t_24l_w_pro_grid_voltage",operating_mode_entity:"sensor.aninerel_anl_4200t_24l_w_pro_operating_mode",charging_active_entity:"binary_sensor.aninerel_anl_4200t_24l_w_pro_charging_active",inverter_temperature_entity:"sensor.aninerel_anl_4200t_24l_w_pro_inverter_temperature",bms:{soc_entity:"sensor.redodo_battery_state_of_charge",cell_count:8,cell_voltage_prefix:"sensor.redodo_battery_cell_voltage_"},controls:{charge_source_entity:"select.aninerel_anl_4200t_24l_w_pro_charge_source_priority",output_priority_entity:"select.aninerel_anl_4200t_24l_w_pro_output_source_priority",max_charge_current_entity:"number.aninerel_anl_4200t_24l_w_pro_max_ac_charge_current",bulk_voltage_entity:"number.aninerel_anl_4200t_24l_w_pro_battery_bulk_voltage",float_voltage_entity:"number.aninerel_anl_4200t_24l_w_pro_battery_float_voltage",equalization_entity:"switch.aninerel_anl_4200t_24l_w_pro_battery_equalization"},safety:{fault_active_entity:"binary_sensor.aninerel_anl_4200t_24l_w_pro_fault_active",fault_code_entity:"sensor.aninerel_anl_4200t_24l_w_pro_fault_code",warnings_active_entity:"binary_sensor.aninerel_anl_4200t_24l_w_pro_warnings_active",warning_code_entity:"sensor.aninerel_anl_4200t_24l_w_pro_warning_code",warning_details_entity:"sensor.aninerel_anl_4200t_24l_w_pro_warning_details"},daily_energy:{load_energy_entity:"sensor.aninerel_anl_4200t_24l_w_pro_estimated_load_energy_today",grid_import_entity:"sensor.aninerel_anl_4200t_24l_w_pro_estimated_grid_import_energy_today",battery_charge_entity:"sensor.aninerel_anl_4200t_24l_w_pro_estimated_battery_charge_energy_today",battery_discharge_entity:"sensor.aninerel_anl_4200t_24l_w_pro_estimated_battery_discharge_energy_today"}},Ce=n`
+function e(e,t,i,a){var r,n=arguments.length,o=n<3?t:null===a?a=Object.getOwnPropertyDescriptor(t,i):a;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)o=Reflect.decorate(e,t,i,a);else for(var s=e.length-1;s>=0;s--)(r=e[s])&&(o=(n<3?r(o):n>3?r(t,i,o):r(t,i))||o);return n>3&&o&&Object.defineProperty(t,i,o),o}"function"==typeof SuppressedError&&SuppressedError;const t=globalThis,i=t.ShadowRoot&&(void 0===t.ShadyCSS||t.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,a=Symbol(),r=new WeakMap;let n=class{constructor(e,t,i){if(this._$cssResult$=!0,i!==a)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=e,this.t=t}get styleSheet(){let e=this.o;const t=this.t;if(i&&void 0===e){const i=void 0!==t&&1===t.length;i&&(e=r.get(t)),void 0===e&&((this.o=e=new CSSStyleSheet).replaceSync(this.cssText),i&&r.set(t,e))}return e}toString(){return this.cssText}};const o=(e,...t)=>{const i=1===e.length?e[0]:t.reduce((t,i,a)=>t+(e=>{if(!0===e._$cssResult$)return e.cssText;if("number"==typeof e)return e;throw Error("Value passed to 'css' function must be a 'css' function result: "+e+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+e[a+1],e[0]);return new n(i,e,a)},s=i?e=>e:e=>e instanceof CSSStyleSheet?(e=>{let t="";for(const i of e.cssRules)t+=i.cssText;return(e=>new n("string"==typeof e?e:e+"",void 0,a))(t)})(e):e,{is:l,defineProperty:c,getOwnPropertyDescriptor:d,getOwnPropertyNames:p,getOwnPropertySymbols:h,getPrototypeOf:g}=Object,u=globalThis,_=u.trustedTypes,m=_?_.emptyScript:"",y=u.reactiveElementPolyfillSupport,b=(e,t)=>e,f={toAttribute(e,t){switch(t){case Boolean:e=e?m:null;break;case Object:case Array:e=null==e?e:JSON.stringify(e)}return e},fromAttribute(e,t){let i=e;switch(t){case Boolean:i=null!==e;break;case Number:i=null===e?null:Number(e);break;case Object:case Array:try{i=JSON.parse(e)}catch(e){i=null}}return i}},v=(e,t)=>!l(e,t),x={attribute:!0,type:String,converter:f,reflect:!1,useDefault:!1,hasChanged:v};Symbol.metadata??=Symbol("metadata"),u.litPropertyMetadata??=new WeakMap;let w=class extends HTMLElement{static addInitializer(e){this._$Ei(),(this.l??=[]).push(e)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(e,t=x){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(e)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(e,t),!t.noAccessor){const i=Symbol(),a=this.getPropertyDescriptor(e,i,t);void 0!==a&&c(this.prototype,e,a)}}static getPropertyDescriptor(e,t,i){const{get:a,set:r}=d(this.prototype,e)??{get(){return this[t]},set(e){this[t]=e}};return{get:a,set(t){const n=a?.call(this);r?.call(this,t),this.requestUpdate(e,n,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(e){return this.elementProperties.get(e)??x}static _$Ei(){if(this.hasOwnProperty(b("elementProperties")))return;const e=g(this);e.finalize(),void 0!==e.l&&(this.l=[...e.l]),this.elementProperties=new Map(e.elementProperties)}static finalize(){if(this.hasOwnProperty(b("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(b("properties"))){const e=this.properties,t=[...p(e),...h(e)];for(const i of t)this.createProperty(i,e[i])}const e=this[Symbol.metadata];if(null!==e){const t=litPropertyMetadata.get(e);if(void 0!==t)for(const[e,i]of t)this.elementProperties.set(e,i)}this._$Eh=new Map;for(const[e,t]of this.elementProperties){const i=this._$Eu(e,t);void 0!==i&&this._$Eh.set(i,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(e){const t=[];if(Array.isArray(e)){const i=new Set(e.flat(1/0).reverse());for(const e of i)t.unshift(s(e))}else void 0!==e&&t.push(s(e));return t}static _$Eu(e,t){const i=t.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof e?e.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(e=>this.enableUpdating=e),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(e=>e(this))}addController(e){(this._$EO??=new Set).add(e),void 0!==this.renderRoot&&this.isConnected&&e.hostConnected?.()}removeController(e){this._$EO?.delete(e)}_$E_(){const e=new Map,t=this.constructor.elementProperties;for(const i of t.keys())this.hasOwnProperty(i)&&(e.set(i,this[i]),delete this[i]);e.size>0&&(this._$Ep=e)}createRenderRoot(){const e=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((e,a)=>{if(i)e.adoptedStyleSheets=a.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(const i of a){const a=document.createElement("style"),r=t.litNonce;void 0!==r&&a.setAttribute("nonce",r),a.textContent=i.cssText,e.appendChild(a)}})(e,this.constructor.elementStyles),e}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(e=>e.hostConnected?.())}enableUpdating(e){}disconnectedCallback(){this._$EO?.forEach(e=>e.hostDisconnected?.())}attributeChangedCallback(e,t,i){this._$AK(e,i)}_$ET(e,t){const i=this.constructor.elementProperties.get(e),a=this.constructor._$Eu(e,i);if(void 0!==a&&!0===i.reflect){const r=(void 0!==i.converter?.toAttribute?i.converter:f).toAttribute(t,i.type);this._$Em=e,null==r?this.removeAttribute(a):this.setAttribute(a,r),this._$Em=null}}_$AK(e,t){const i=this.constructor,a=i._$Eh.get(e);if(void 0!==a&&this._$Em!==a){const e=i.getPropertyOptions(a),r="function"==typeof e.converter?{fromAttribute:e.converter}:void 0!==e.converter?.fromAttribute?e.converter:f;this._$Em=a;const n=r.fromAttribute(t,e.type);this[a]=n??this._$Ej?.get(a)??n,this._$Em=null}}requestUpdate(e,t,i,a=!1,r){if(void 0!==e){const n=this.constructor;if(!1===a&&(r=this[e]),i??=n.getPropertyOptions(e),!((i.hasChanged??v)(r,t)||i.useDefault&&i.reflect&&r===this._$Ej?.get(e)&&!this.hasAttribute(n._$Eu(e,i))))return;this.C(e,t,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(e,t,{useDefault:i,reflect:a,wrapped:r},n){i&&!(this._$Ej??=new Map).has(e)&&(this._$Ej.set(e,n??t??this[e]),!0!==r||void 0!==n)||(this._$AL.has(e)||(this.hasUpdated||i||(t=void 0),this._$AL.set(e,t)),!0===a&&this._$Em!==e&&(this._$Eq??=new Set).add(e))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}const e=this.scheduleUpdate();return null!=e&&await e,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[e,t]of this._$Ep)this[e]=t;this._$Ep=void 0}const e=this.constructor.elementProperties;if(e.size>0)for(const[t,i]of e){const{wrapped:e}=i,a=this[t];!0!==e||this._$AL.has(t)||void 0===a||this.C(t,void 0,i,a)}}let e=!1;const t=this._$AL;try{e=this.shouldUpdate(t),e?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(t){throw e=!1,this._$EM(),t}e&&this._$AE(t)}willUpdate(e){}_$AE(e){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(e)),this.updated(e)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(e){return!0}update(e){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(e){}firstUpdated(e){}};w.elementStyles=[],w.shadowRootOptions={mode:"open"},w[b("elementProperties")]=new Map,w[b("finalized")]=new Map,y?.({ReactiveElement:w}),(u.reactiveElementVersions??=[]).push("2.1.2");const $=globalThis,k=e=>e,C=$.trustedTypes,S=C?C.createPolicy("lit-html",{createHTML:e=>e}):void 0,A="$lit$",N=`lit$${Math.random().toFixed(9).slice(2)}$`,M="?"+N,E=`<${M}>`,B=document,P=()=>B.createComment(""),O=e=>null===e||"object"!=typeof e&&"function"!=typeof e,I=Array.isArray,T="[ \t\n\f\r]",z=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,L=/-->/g,D=/>/g,R=RegExp(`>|${T}(?:([^\\s"'>=/]+)(${T}*=${T}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),F=/'/g,V=/"/g,W=/^(?:script|style|textarea|title)$/i,H=e=>(t,...i)=>({_$litType$:e,strings:t,values:i}),U=H(1),q=H(2),j=Symbol.for("lit-noChange"),G=Symbol.for("lit-nothing"),Y=new WeakMap,K=B.createTreeWalker(B,129);function Z(e,t){if(!I(e)||!e.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==S?S.createHTML(t):t}const J=(e,t)=>{const i=e.length-1,a=[];let r,n=2===t?"<svg>":3===t?"<math>":"",o=z;for(let t=0;t<i;t++){const i=e[t];let s,l,c=-1,d=0;for(;d<i.length&&(o.lastIndex=d,l=o.exec(i),null!==l);)d=o.lastIndex,o===z?"!--"===l[1]?o=L:void 0!==l[1]?o=D:void 0!==l[2]?(W.test(l[2])&&(r=RegExp("</"+l[2],"g")),o=R):void 0!==l[3]&&(o=R):o===R?">"===l[0]?(o=r??z,c=-1):void 0===l[1]?c=-2:(c=o.lastIndex-l[2].length,s=l[1],o=void 0===l[3]?R:'"'===l[3]?V:F):o===V||o===F?o=R:o===L||o===D?o=z:(o=R,r=void 0);const p=o===R&&e[t+1].startsWith("/>")?" ":"";n+=o===z?i+E:c>=0?(a.push(s),i.slice(0,c)+A+i.slice(c)+N+p):i+N+(-2===c?t:p)}return[Z(e,n+(e[i]||"<?>")+(2===t?"</svg>":3===t?"</math>":"")),a]};class X{constructor({strings:e,_$litType$:t},i){let a;this.parts=[];let r=0,n=0;const o=e.length-1,s=this.parts,[l,c]=J(e,t);if(this.el=X.createElement(l,i),K.currentNode=this.el.content,2===t||3===t){const e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;null!==(a=K.nextNode())&&s.length<o;){if(1===a.nodeType){if(a.hasAttributes())for(const e of a.getAttributeNames())if(e.endsWith(A)){const t=c[n++],i=a.getAttribute(e).split(N),o=/([.?@])?(.*)/.exec(t);s.push({type:1,index:r,name:o[2],strings:i,ctor:"."===o[1]?ae:"?"===o[1]?re:"@"===o[1]?ne:ie}),a.removeAttribute(e)}else e.startsWith(N)&&(s.push({type:6,index:r}),a.removeAttribute(e));if(W.test(a.tagName)){const e=a.textContent.split(N),t=e.length-1;if(t>0){a.textContent=C?C.emptyScript:"";for(let i=0;i<t;i++)a.append(e[i],P()),K.nextNode(),s.push({type:2,index:++r});a.append(e[t],P())}}}else if(8===a.nodeType)if(a.data===M)s.push({type:2,index:r});else{let e=-1;for(;-1!==(e=a.data.indexOf(N,e+1));)s.push({type:7,index:r}),e+=N.length-1}r++}}static createElement(e,t){const i=B.createElement("template");return i.innerHTML=e,i}}function Q(e,t,i=e,a){if(t===j)return t;let r=void 0!==a?i._$Co?.[a]:i._$Cl;const n=O(t)?void 0:t._$litDirective$;return r?.constructor!==n&&(r?._$AO?.(!1),void 0===n?r=void 0:(r=new n(e),r._$AT(e,i,a)),void 0!==a?(i._$Co??=[])[a]=r:i._$Cl=r),void 0!==r&&(t=Q(e,r._$AS(e,t.values),r,a)),t}class ee{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){const{el:{content:t},parts:i}=this._$AD,a=(e?.creationScope??B).importNode(t,!0);K.currentNode=a;let r=K.nextNode(),n=0,o=0,s=i[0];for(;void 0!==s;){if(n===s.index){let t;2===s.type?t=new te(r,r.nextSibling,this,e):1===s.type?t=new s.ctor(r,s.name,s.strings,this,e):6===s.type&&(t=new oe(r,this,e)),this._$AV.push(t),s=i[++o]}n!==s?.index&&(r=K.nextNode(),n++)}return K.currentNode=B,a}p(e){let t=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(e,i,t),t+=i.strings.length-2):i._$AI(e[t])),t++}}class te{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,i,a){this.type=2,this._$AH=G,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=i,this.options=a,this._$Cv=a?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode;const t=this._$AM;return void 0!==t&&11===e?.nodeType&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=Q(this,e,t),O(e)?e===G||null==e||""===e?(this._$AH!==G&&this._$AR(),this._$AH=G):e!==this._$AH&&e!==j&&this._(e):void 0!==e._$litType$?this.$(e):void 0!==e.nodeType?this.T(e):(e=>I(e)||"function"==typeof e?.[Symbol.iterator])(e)?this.k(e):this._(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==G&&O(this._$AH)?this._$AA.nextSibling.data=e:this.T(B.createTextNode(e)),this._$AH=e}$(e){const{values:t,_$litType$:i}=e,a="number"==typeof i?this._$AC(e):(void 0===i.el&&(i.el=X.createElement(Z(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===a)this._$AH.p(t);else{const e=new ee(a,this),i=e.u(this.options);e.p(t),this.T(i),this._$AH=e}}_$AC(e){let t=Y.get(e.strings);return void 0===t&&Y.set(e.strings,t=new X(e)),t}k(e){I(this._$AH)||(this._$AH=[],this._$AR());const t=this._$AH;let i,a=0;for(const r of e)a===t.length?t.push(i=new te(this.O(P()),this.O(P()),this,this.options)):i=t[a],i._$AI(r),a++;a<t.length&&(this._$AR(i&&i._$AB.nextSibling,a),t.length=a)}_$AR(e=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);e!==this._$AB;){const t=k(e).nextSibling;k(e).remove(),e=t}}setConnected(e){void 0===this._$AM&&(this._$Cv=e,this._$AP?.(e))}}class ie{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,i,a,r){this.type=1,this._$AH=G,this._$AN=void 0,this.element=e,this.name=t,this._$AM=a,this.options=r,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=G}_$AI(e,t=this,i,a){const r=this.strings;let n=!1;if(void 0===r)e=Q(this,e,t,0),n=!O(e)||e!==this._$AH&&e!==j,n&&(this._$AH=e);else{const a=e;let o,s;for(e=r[0],o=0;o<r.length-1;o++)s=Q(this,a[i+o],t,o),s===j&&(s=this._$AH[o]),n||=!O(s)||s!==this._$AH[o],s===G?e=G:e!==G&&(e+=(s??"")+r[o+1]),this._$AH[o]=s}n&&!a&&this.j(e)}j(e){e===G?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??"")}}class ae extends ie{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===G?void 0:e}}class re extends ie{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==G)}}class ne extends ie{constructor(e,t,i,a,r){super(e,t,i,a,r),this.type=5}_$AI(e,t=this){if((e=Q(this,e,t,0)??G)===j)return;const i=this._$AH,a=e===G&&i!==G||e.capture!==i.capture||e.once!==i.once||e.passive!==i.passive,r=e!==G&&(i===G||a);a&&this.element.removeEventListener(this.name,this,i),r&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}}class oe{constructor(e,t,i){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(e){Q(this,e)}}const se=$.litHtmlPolyfillSupport;se?.(X,te),($.litHtmlVersions??=[]).push("3.3.3");const le=globalThis;class ce extends w{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const e=super.createRenderRoot();return this.renderOptions.renderBefore??=e.firstChild,e}update(e){const t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(e),this._$Do=((e,t,i)=>{const a=i?.renderBefore??t;let r=a._$litPart$;if(void 0===r){const e=i?.renderBefore??null;a._$litPart$=r=new te(t.insertBefore(P(),e),e,void 0,i??{})}return r._$AI(e),r})(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return j}}ce._$litElement$=!0,ce.finalized=!0,le.litElementHydrateSupport?.({LitElement:ce});const de=le.litElementPolyfillSupport;de?.({LitElement:ce}),(le.litElementVersions??=[]).push("4.2.2");const pe=e=>(t,i)=>{void 0!==i?i.addInitializer(()=>{customElements.define(e,t)}):customElements.define(e,t)},he={attribute:!0,type:String,converter:f,reflect:!1,hasChanged:v},ge=(e=he,t,i)=>{const{kind:a,metadata:r}=i;let n=globalThis.litPropertyMetadata.get(r);if(void 0===n&&globalThis.litPropertyMetadata.set(r,n=new Map),"setter"===a&&((e=Object.create(e)).wrapped=!0),n.set(i.name,e),"accessor"===a){const{name:a}=i;return{set(i){const r=t.get.call(this);t.set.call(this,i),this.requestUpdate(a,r,e,!0,i)},init(t){return void 0!==t&&this.C(a,void 0,e,t),t}}}if("setter"===a){const{name:a}=i;return function(i){const r=this[a];t.call(this,i),this.requestUpdate(a,r,e,!0,i)}}throw Error("Unsupported decorator location: "+a)};function ue(e){return(t,i)=>"object"==typeof i?ge(e,t,i):((e,t,i)=>{const a=t.hasOwnProperty(i);return t.constructor.createProperty(i,e),a?Object.getOwnPropertyDescriptor(t,i):void 0})(e,t,i)}function _e(e){return ue({...e,state:!0,attribute:!1})}const me="aninerel-power-card",ye={title:"Aninerel ANL 4200T",max_power:4200,inverter_capacity:4200,min_flow_rate:.75,max_flow_rate:6,use_log_flow_model:!0,show_header:!0,show_flow:!0,show_solar:!1,grid_position:"bottom",show_params:!0,show_bms:!0,show_controls:!0,show_energy:!0,show_alerts:!0,compact_mode:!1,language:"auto"},be="var(--energy-solar-color, #F59E0B)",fe="var(--energy-battery-in-color, #10B981)",ve="var(--energy-battery-out-color, #FF9800)",xe="var(--energy-grid-consumption-color, #4285F4)",we="var(--energy-grid-return-color, #2ecc71)",$e="var(--primary-text-color, #E0E0E0)",ke={type:"custom:aninerel-power-card",title:"Aninerel ANL 4200T",show_solar:!1,entities:{battery_power:"sensor.aninerel_anl_4200t_24l_w_pro_battery_power",grid_power:"sensor.aninerel_anl_4200t_24l_w_pro_grid_power",load_power:"sensor.aninerel_anl_4200t_24l_w_pro_load_power"},battery_voltage_entity:"sensor.aninerel_anl_4200t_24l_w_pro_battery_voltage",battery_current_entity:"sensor.aninerel_anl_4200t_24l_w_pro_battery_current",grid_voltage_entity:"sensor.aninerel_anl_4200t_24l_w_pro_grid_voltage",operating_mode_entity:"sensor.aninerel_anl_4200t_24l_w_pro_operating_mode",charging_active_entity:"binary_sensor.aninerel_anl_4200t_24l_w_pro_charging_active",inverter_temperature_entity:"sensor.aninerel_anl_4200t_24l_w_pro_inverter_temperature",inverter_load_percent_entity:"sensor.aninerel_anl_4200t_24l_w_pro_load_percent",self_consumption_power_entity:"sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie",grid_breaker_switch_entity:"switch.invertor_vkhod",bms:{soc_entity:"sensor.redodo_battery_state_of_charge",cell_count:8,cell_voltage_prefix:"sensor.redodo_battery_cell_voltage_",nominal_capacity_wh:2560},controls:{charge_source_entity:"select.aninerel_anl_4200t_24l_w_pro_charge_source_priority",output_priority_entity:"select.aninerel_anl_4200t_24l_w_pro_output_source_priority",max_charge_current_entity:"number.aninerel_anl_4200t_24l_w_pro_max_ac_charge_current",bulk_voltage_entity:"number.aninerel_anl_4200t_24l_w_pro_battery_bulk_voltage",float_voltage_entity:"number.aninerel_anl_4200t_24l_w_pro_battery_float_voltage",equalization_entity:"switch.aninerel_anl_4200t_24l_w_pro_battery_equalization"},safety:{fault_active_entity:"binary_sensor.aninerel_anl_4200t_24l_w_pro_fault_active",fault_code_entity:"sensor.aninerel_anl_4200t_24l_w_pro_fault_code",warnings_active_entity:"binary_sensor.aninerel_anl_4200t_24l_w_pro_warnings_active",warning_code_entity:"sensor.aninerel_anl_4200t_24l_w_pro_warning_code",warning_details_entity:"sensor.aninerel_anl_4200t_24l_w_pro_warning_details"},daily_energy:{load_energy_entity:"sensor.aninerel_anl_4200t_24l_w_pro_estimated_load_energy_today",grid_import_entity:"sensor.aninerel_anl_4200t_24l_w_pro_estimated_grid_import_energy_today",battery_charge_entity:"sensor.aninerel_anl_4200t_24l_w_pro_estimated_battery_charge_energy_today",battery_discharge_entity:"sensor.aninerel_anl_4200t_24l_w_pro_estimated_battery_discharge_energy_today",self_consumption_daily_entity:"sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_den",self_consumption_monthly_entity:"sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_mesiats"}},Ce=o`
   :host {
     display: block;
     box-sizing: border-box;
@@ -28,6 +28,22 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
     box-shadow: var(--ha-card-box-shadow, 0 6px 24px rgba(0, 0, 0, 0.3));
     border: 1px solid var(--divider);
     position: relative;
+  }
+
+  ha-card.compact {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  ha-card.compact .power-flow-container {
+    max-width: 420px;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+    color: inherit;
   }
 
   /* ============================================================
@@ -1101,6 +1117,8 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .energy-header-title {
@@ -1115,6 +1133,13 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
   .energy-header-title ha-icon {
     --mdc-icon-size: 18px;
     color: #f59e0b;
+  }
+
+  .energy-header-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
   .energy-total-pill {
@@ -1380,18 +1405,18 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
       animation: none !important;
     }
   }
-`;function Se(e,t=1){return Math.abs(e)>=1e3?`${(e/1e3).toFixed(t)} kW`:`${Math.round(e)} W`}function Ae(e){const{config:t,hasSolar:i=!1,gridPosition:r="bottom",solarWatts:a=0,batteryWatts:o,gridWatts:n,loadWatts:s,batterySoc:l,operatingMode:c,isFault:d,onNodeClick:p}=e,h=t.max_power||4200,g=!1!==t.use_log_flow_model,u=t.min_flow_rate||.75,_=t.max_flow_rate||5,y=function(e=!1,t="bottom"){return e?{viewBoxHeight:360,aspectRatio:"500 / 360",tracks:["M 250 82 L 250 140","M 116 175 L 216 175","M 284 175 L 388 175","M 250 210 L 250 274"],nodes:{solar:{x:250,y:44,radius:34},inverter:{x:250,y:175,radius:32},battery:{x:74,y:175,radius:40},home:{x:426,y:175,radius:36},grid:{x:250,y:308,radius:34}}}:"top"===t?{viewBoxHeight:290,aspectRatio:"500 / 290",tracks:["M 250 115 L 250 163","M 116 195 L 216 195","M 284 195 L 388 195"],nodes:{grid:{x:250,y:65,radius:34},inverter:{x:250,y:195,radius:32},battery:{x:74,y:195,radius:40},home:{x:426,y:195,radius:36}}}:{viewBoxHeight:290,aspectRatio:"500 / 290",tracks:["M 116 90 L 216 90","M 284 90 L 388 90","M 250 145 L 250 191"],nodes:{battery:{x:74,y:90,radius:40},inverter:{x:250,y:90,radius:32},home:{x:426,y:90,radius:36},grid:{x:250,y:225,radius:34}}}}(i,r),{viewBoxHeight:m}=y,{solar:b,inverter:f,battery:v,home:x,grid:w}=y.nodes,$=function(e,t,i,r,a,o=!1,n="bottom"){const s=[],l=a?.solar||be,c=a?.battery_charge||fe,d=a?.battery_discharge||ve,p=a?.grid_import||xe,h=a?.grid_export||we,g=a?.home||$e;if(o){const t=Math.max(0,e);t>=5&&s.push({id:"flow-solar-inverter",d:"M 250 82 L 250 140",watts:t,color:l,reversed:!1})}let u="M 116 175 L 216 175",_="M 284 175 L 388 175",y="M 250 210 L 250 274",m=!0;o||("top"===n?(u="M 116 195 L 216 195",_="M 284 195 L 388 195",y="M 250 115 L 250 163",m=!1):(u="M 116 90 L 216 90",_="M 284 90 L 388 90",y="M 250 145 L 250 191",m=!0));const b=Math.max(0,r);b>=5&&s.push({id:"flow-inverter-home",d:_,watts:b,color:g,reversed:!1});const f=Math.abs(t);if(f>=5){const e=t>0;s.push({id:"flow-battery-inverter",d:u,watts:f,color:e?c:d,reversed:e})}const v=Math.abs(i);if(v>=5){const e=i>0;s.push({id:"flow-grid-inverter",d:y,watts:v,color:e?p:h,reversed:e?m:!m})}return s}(a,o,n,s,t.colors,i,r),k=Math.max(0,Math.min(100,isNaN(l)?0:l)),C=2*Math.PI*32,S=C*(1-k/100),A=k>50?"#10b981":k>20?"#f59e0b":"#ef4444",M=o>20?"Charge":o<-20?"Discharge":"Standby";return W`
+`;const Se={en:{common:{version:"Version",name:"Aninerel Power Card",description:"Ultimate card for Aninerel ANL 4200T inverter + Redodo BMS",offline:"OFFLINE",ok:"OK",chg:"CHG",fault:"FAULT",warn:"WARN",na:"N/A"},header:{subtitle_solar:"Hybrid 24V 4.2kW Inverter",subtitle_ups:"24V 4.2kW UPS Inverter",self_power:"Self",input_breaker:"Input"},alerts:{offline_title:"Inverter Collector Offline",offline_desc:"Key inverter telemetry sensors are currently unavailable. Check Wi-Fi/RS485 datalogger connection."},mode:{battery:"Battery",mains:"Mains",bypass:"Bypass",line:"Line",grid:"Grid",off_grid:"Off-Grid"},nodes:{solar:"Solar",battery:"Battery",inverter:"Inverter",home:"Home",grid:"Grid"},flow:{charge:"Charge",discharge:"Discharge",standby:"Standby",import:"Import",export:"Export",self:"Self"},params:{battery:"Battery DC",grid:"Grid AC",battery_soc:"Battery SoC",battery_autonomy:"Battery Autonomy",inverter_load:"Inverter Load",self_sufficiency:"Self-Sufficiency",normal:"Normal",deviated:"Deviated",sag:"Low (Sag)",surge:"High (Surge)",offline:"Offline"},bms:{title:"BMS Redodo LiFePO4",title_dual:"BMS Redodo: 2× 12V Series (24V)",series_badge:"24V Series",delta_packs:"Δ Packs",delta_cells:"Δ Cells",temp:"Temp",cycles:"Cycles",capacity:"Capacity",remaining:"Remaining",balanced:"Balanced",drift:"Normal Drift",imbalance:"Imbalance Alert",pack_drift_warn:"Pack voltage drift detected ({delta} mV: {v1}V vs {v2}V). A 24V active battery equalizer is recommended.",offline:"BMS telemetry unavailable"},controls:{title:"Inverter: Controls & Settings",charge_source:"Charge Source Priority",output_priority:"Output Source Priority",max_charge_current:"Max AC Charge Current",bulk_voltage:"Bulk Voltage",float_voltage:"Float Voltage",equalization:"Battery Equalization",equalization_warning:"⚠️ For LiFePO4, must ALWAYS BE OFF to prevent cell overcharging!",confirm_on:"Confirm ON?"},energy:{title:"Daily Energy Balance",total:"Total",load:"Home Consumption",grid_import:"Grid Import",bat_charge:"Battery Charged",bat_discharge:"Battery Discharged",self_consumption:"Inverter Self-Consumption",month_short:"Mo"},editor:{title:"Card Title",entities_group:"⚡ Real-time Power Entities (Required)",params_group:"📊 Electrical Parameters & Telemetry",bms_group:"🔋 BMS Redodo LiFePO4 Telemetry",controls_group:"🎛️ Inverter Controls & Settings",safety_group:"🛡️ Safety & Diagnostics",energy_group:"📈 Daily Energy Counters",display_group:"🎨 Layout & Visualization Toggles"}},ru:{common:{version:"Версия",name:"Aninerel Power Card",description:"Ультимативная карточка для инвертора Aninerel ANL 4200T + BMS Redodo",offline:"НЕТ СВЯЗИ",ok:"ОК",chg:"ЗАРЯД",fault:"АВАРИЯ",warn:"ВНИМ.",na:"Н/Д"},header:{subtitle_solar:"Гибридный инвертор 24В 4.2 кВт",subtitle_ups:"ИБП квартиры 24В 4.2 кВт",self_power:"ХХ",input_breaker:"Вход"},alerts:{offline_title:"Потеряна связь с инвертором (Offline)",offline_desc:"Основные сенсоры телеметрии недоступны (unavailable). Проверьте питание и Wi-Fi/RS485 даталоггер."},mode:{battery:"Батарея",mains:"Сеть",bypass:"Байпас",line:"Сеть",grid:"Сеть",off_grid:"Автономно"},nodes:{solar:"Солнце",battery:"АКБ",inverter:"Инвертор",home:"Дом",grid:"Сеть"},flow:{charge:"Заряд",discharge:"Разряд",standby:"Ожидание",import:"Импорт",export:"Экспорт",self:"ХХ"},params:{battery:"Батарея DC",grid:"Сеть AC",battery_soc:"Заряд АКБ",battery_autonomy:"Автономность АКБ",inverter_load:"Нагрузка инвертора",self_sufficiency:"Самообеспечение",normal:"Норма",deviated:"Отклонение",sag:"Просадка (0В)",surge:"Перенапряжение",offline:"Нет связи"},bms:{title:"BMS Redodo LiFePO4",title_dual:"BMS Redodo: 2× 12В Последовательно (24В)",series_badge:"24В Сборка",delta_packs:"Δ Батарей",delta_cells:"Δ Ячеек",temp:"Темп.",cycles:"Циклы",capacity:"Емкость",remaining:"Остаток",balanced:"Сбалансировано",drift:"Легкий дрейф",imbalance:"Разбаланс!",pack_drift_warn:"Разбаланс между 12В батареями: {delta} мВ ({v1}В против {v2}В). Рекомендуется активный балансир 24В.",offline:"Нет данных от BMS"},controls:{title:"Инвертор: Управление и настройки",charge_source:"Приоритет источника заряда",output_priority:"Приоритет питания дома",max_charge_current:"Макс. ток сетевого заряда AC",bulk_voltage:"Напряжение Bulk (Заряд)",float_voltage:"Напряжение Float (Поддержка)",equalization:"Выравнивание (Equalization)",equalization_warning:"⚠️ Для LiFePO4 должен быть ВСЕГДА ВЫКЛЮЧЕН во избежание перезаряда ячеек!",confirm_on:"Точно ВКЛ?"},energy:{title:"Суточный баланс энергии",total:"Дом",load:"Потребление дома",grid_import:"Импорт из сети",bat_charge:"Заряд АКБ",bat_discharge:"Отдано из АКБ",self_consumption:"Собств. нужды инвертора (ХХ)",month_short:"Мес"},editor:{title:"Заголовок карточки",entities_group:"⚡ Мощности реального времени (Обязательно)",params_group:"📊 Электрические параметры и телеметрия",bms_group:"🔋 Телеметрия BMS Redodo LiFePO4",controls_group:"🎛️ Управление инвертором и настройки",safety_group:"🛡️ Безопасность и диагностика сбоев",energy_group:"📈 Суточные счетчики электроэнергии",display_group:"🎨 Настройки отображения и видимости секций"}}};function Ae(e,t){if(t&&"auto"!==t&&Se[t.toLowerCase()])return t.toLowerCase();const i=(e?.locale?.language||e?.language||("undefined"!=typeof navigator?navigator.language:"")||"ru").toLowerCase().split("-")[0];return Se[i]?i:"ru"}function Ne(e,t,i,a,r){const n=Ae(t,i);let o;try{o=e.split(".").reduce((e,t)=>e?.[t],Se[n])}catch(e){o=void 0}if(void 0===o)try{o=e.split(".").reduce((e,t)=>e?.[t],Se.ru)}catch(e){o=void 0}if(void 0===o)try{o=e.split(".").reduce((e,t)=>e?.[t],Se.en)}catch(e){o=void 0}return void 0!==o&&"string"==typeof o||(o=e),o}function Me(e,t=1){return Math.abs(e)>=1e3?`${(e/1e3).toFixed(t)} kW`:`${Math.round(e)} W`}function Ee(e,t="ru"){if(null==e||isNaN(e)||!isFinite(e)||e<=0)return null;const i=Math.min(99,e),a=Math.floor(i),r=Math.round(60*(i-a));return"ru"===t?a<=0?`~${Math.max(1,r)} мин`:r<=0||a>=24?`~${a} ч`:`~${a}ч ${r}м`:a<=0?`~${Math.max(1,r)}m`:r<=0||a>=24?`~${a}h`:`~${a}h ${r}m`}function Be(e){const{hass:t,config:i,hasSolar:a=!1,isOffline:r=!1,gridPosition:n="bottom",solarWatts:o=0,batteryWatts:s,gridWatts:l,loadWatts:c,batterySoc:d,batteryRuntimeText:p,selfConsumptionWatts:h,operatingMode:g,isFault:u,onNodeClick:_}=e,m=i.language,y=i.max_power||4200,b=!1!==i.use_log_flow_model,f=i.min_flow_rate||.75,v=i.max_flow_rate||5,x=function(e=!1,t="bottom"){return e?{viewBoxHeight:360,aspectRatio:"500 / 360",tracks:["M 250 82 L 250 140","M 116 175 L 216 175","M 284 175 L 388 175","M 250 210 L 250 274"],nodes:{solar:{x:250,y:44,radius:34},inverter:{x:250,y:175,radius:32},battery:{x:74,y:175,radius:40},home:{x:426,y:175,radius:36},grid:{x:250,y:308,radius:34}}}:"top"===t?{viewBoxHeight:290,aspectRatio:"500 / 290",tracks:["M 250 115 L 250 163","M 116 195 L 216 195","M 284 195 L 388 195"],nodes:{grid:{x:250,y:65,radius:34},inverter:{x:250,y:195,radius:32},battery:{x:74,y:195,radius:40},home:{x:426,y:195,radius:36}}}:{viewBoxHeight:290,aspectRatio:"500 / 290",tracks:["M 116 90 L 216 90","M 284 90 L 388 90","M 250 145 L 250 191"],nodes:{battery:{x:74,y:90,radius:40},inverter:{x:250,y:90,radius:32},home:{x:426,y:90,radius:36},grid:{x:250,y:225,radius:34}}}}(a,n),{viewBoxHeight:w}=x,{solar:$,inverter:k,battery:C,home:S,grid:A}=x.nodes,N=r?[]:function(e,t,i,a,r,n=!1,o="bottom"){const s=[],l=r?.solar||be,c=r?.battery_charge||fe,d=r?.battery_discharge||ve,p=r?.grid_import||xe,h=r?.grid_export||we,g=r?.home||$e;if(n){const t=Math.max(0,e);t>=5&&s.push({id:"flow-solar-inverter",d:"M 250 82 L 250 140",watts:t,color:l,reversed:!1})}let u="M 116 175 L 216 175",_="M 284 175 L 388 175",m="M 250 210 L 250 274",y=!0;n||("top"===o?(u="M 116 195 L 216 195",_="M 284 195 L 388 195",m="M 250 115 L 250 163",y=!1):(u="M 116 90 L 216 90",_="M 284 90 L 388 90",m="M 250 145 L 250 191",y=!0));const b=Math.max(0,a);b>=5&&s.push({id:"flow-inverter-home",d:_,watts:b,color:g,reversed:!1});const f=Math.abs(t);if(f>=5){const e=t>0;s.push({id:"flow-battery-inverter",d:u,watts:f,color:e?c:d,reversed:e})}const v=Math.abs(i);if(v>=5){const e=i>0;s.push({id:"flow-grid-inverter",d:m,watts:v,color:e?p:h,reversed:e?y:!y})}return s}(o,s,l,c,i.colors,a,n),M=null!==d&&!isNaN(d),E=M?Math.max(0,Math.min(100,Math.round(d))):0,B=2*Math.PI*32,P=B*(1-E/100),O=M?E>50?"#10b981":E>20?"#f59e0b":"#ef4444":"#64748b",I=Ne(s>20?"flow.charge":s<-20?"flow.discharge":"flow.standby",t,m),T=null!=h&&!isNaN(h)&&h>0?`${Ne("flow.self",t,m)}: ${Math.round(h)} W`:`${(y/1e3).toFixed(1)} kW`;return U`
     <div
-      class="power-flow-container ${i?"with-solar":"no-solar"}"
-      style="--flow-aspect-ratio: 500 / ${m};"
+      class="power-flow-container ${a?"with-solar":"no-solar"}"
+      style="--flow-aspect-ratio: 500 / ${w};"
     >
       <!-- 1. Background Pipelines and Animated Energy Flows -->
-      <svg class="flow-svg" viewBox="0 0 500 ${m}" preserveAspectRatio="xMidYMid meet">
+      <svg class="flow-svg" viewBox="0 0 500 ${w}" preserveAspectRatio="xMidYMid meet">
         <!-- Static background wire tracks with clean clearance -->
-        ${y.tracks.map(e=>q`<path class="pipe-track" d="${e}" />`)}
+        ${x.tracks.map(e=>q`<path class="pipe-track" d="${e}" />`)}
 
         <!-- Active animated flow lines -->
-        ${$.map(e=>{const t=function(e,t=4200,i=.75,r=5,a=!0){const o=Math.abs(e);if(o<5)return 0;const n=Math.min(o,t);let s;s=a?Math.log10(n+1)/Math.log10(t+1):n/t;const l=r-s*(r-i);return Math.max(i,Math.min(r,Number(l.toFixed(2))))}(e.watts,h,u,_,g),i=function(e,t=4200){const i=Math.min(Math.abs(e)/t,1);return Number((2.8+2.7*i).toFixed(1))}(e.watts,h);return q`
+        ${N.map(e=>{const t=function(e,t=4200,i=.75,a=5,r=!0){const n=Math.abs(e);if(n<5)return 0;const o=Math.min(n,t);let s;s=r?Math.log10(o+1)/Math.log10(t+1):o/t;const l=a-s*(a-i);return Math.max(i,Math.min(a,Number(l.toFixed(2))))}(e.watts,y,f,v,b),i=function(e,t=4200){const i=Math.min(Math.abs(e)/t,1);return Number((2.8+2.7*i).toFixed(1))}(e.watts,y);return q`
             <path
               id="${e.id}"
               class="flow-line ${e.reversed?"reverse":""}"
@@ -1406,27 +1431,27 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
       <!-- 2. Interactive Badges Layer -->
       <div class="flow-nodes-layer">
         <!-- SOLAR NODE (Top) - Only rendered when solar is enabled -->
-        ${i&&b?W`
+        ${a&&$?U`
               <div
                 class="flow-node node-solar"
-                style="left: ${b.x/500*100}%; top: ${b.y/m*100}%;"
-                @click=${()=>p(t.entities?.solar_power)}
-                title="Solar Generation"
+                style="left: ${$.x/500*100}%; top: ${$.y/w*100}%;"
+                @click=${()=>_(i.entities?.solar_power)}
+                title="${Ne("nodes.solar",t,m)}"
               >
                 <div class="node-badge">
                   <ha-icon icon="mdi:solar-power-variant"></ha-icon>
                 </div>
-                <span class="node-value">${Se(a)}</span>
-                <span class="node-label">Solar</span>
+                <span class="node-value">${Me(o)}</span>
+                <span class="node-label">${Ne("nodes.solar",t,m)}</span>
               </div>
             `:""}
 
         <!-- BATTERY NODE (Left) -->
         <div
           class="flow-node node-battery"
-          style="left: ${v.x/500*100}%; top: ${v.y/m*100}%;"
-          @click=${()=>p(t.bms?.soc_entity||t.entities?.battery_power)}
-          title="Battery Storage"
+          style="left: ${C.x/500*100}%; top: ${C.y/w*100}%;"
+          @click=${()=>_(i.bms?.soc_entity||i.bms?.battery_1?.soc_entity||i.bms?.bat1_soc_entity||i.entities?.battery_power)}
+          title="${Ne("nodes.battery",t,m)}"
         >
           <div class="node-badge">
             <svg class="battery-gauge-svg" viewBox="0 0 80 80">
@@ -1441,77 +1466,79 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
                 cx="40"
                 cy="40"
                 r="${32}"
-                stroke="${A}"
-                stroke-dasharray="${C}"
-                stroke-dashoffset="${S}"
+                stroke="${O}"
+                stroke-dasharray="${B}"
+                stroke-dashoffset="${P}"
               />
             </svg>
             <div class="battery-gauge-center">
               <ha-icon
-                icon="${o>20?"mdi:battery-charging":k>80?"mdi:battery-high":k>30?"mdi:battery-medium":"mdi:battery-low"}"
-                style="color: ${A};"
+                icon="${M?s>20?"mdi:battery-charging":E>80?"mdi:battery-high":E>30?"mdi:battery-medium":"mdi:battery-low":"mdi:battery-unknown"}"
+                style="color: ${O};"
               ></ha-icon>
-              <span class="battery-soc-text" style="color: ${A};">
-                ${k}%
+              <span class="battery-soc-text" style="color: ${O};">
+                ${M?`${E}%`:"—"}
               </span>
             </div>
           </div>
-          <span class="node-value" style="color: ${A};">
-            ${Se(Math.abs(o))}
+          <span class="node-value" style="color: ${O};">
+            ${Me(Math.abs(s))}
           </span>
-          <span class="node-label">${M}</span>
+          <span class="node-label">
+            ${p?`${I} • ${p}`:I}
+          </span>
         </div>
 
         <!-- CENTRAL INVERTER NODE -->
         <div
           class="flow-node node-inverter"
-          style="left: ${f.x/500*100}%; top: ${f.y/m*100}%;"
-          @click=${()=>p(t.operating_mode_entity)}
-          title="Inverter Status"
+          style="left: ${k.x/500*100}%; top: ${k.y/w*100}%;"
+          @click=${()=>_(i.self_consumption_power_entity||i.operating_mode_entity)}
+          title="${Ne("nodes.inverter",t,m)}"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:inverter"></ha-icon>
             <span
               class="inverter-status-dot"
-              style="background: ${d?"#ef4444":"#10b981"}; box-shadow: 0 0 6px ${d?"#ef4444":"#10b981"};"
+              style="background: ${u||r?"#ef4444":"#10b981"}; box-shadow: 0 0 6px ${u||r?"#ef4444":"#10b981"};"
             ></span>
           </div>
-          <span class="node-value">${c||"Inverter"}</span>
-          <span class="node-label">4.2 kW</span>
+          <span class="node-value">${g||Ne("nodes.inverter",t,m)}</span>
+          <span class="node-label">${T}</span>
         </div>
 
         <!-- HOME LOAD NODE (Right) -->
         <div
           class="flow-node node-home"
-          style="left: ${x.x/500*100}%; top: ${x.y/m*100}%;"
-          @click=${()=>p(t.entities?.load_power)}
-          title="Home Consumption"
+          style="left: ${S.x/500*100}%; top: ${S.y/w*100}%;"
+          @click=${()=>_(i.entities?.load_power)}
+          title="${Ne("nodes.home",t,m)}"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:home-lightning-bolt"></ha-icon>
           </div>
-          <span class="node-value">${Se(s)}</span>
-          <span class="node-label">Home</span>
+          <span class="node-value">${r?"—":Me(c)}</span>
+          <span class="node-label">${Ne("nodes.home",t,m)}</span>
         </div>
 
         <!-- GRID NODE (Bottom or Top) -->
         <div
           class="flow-node node-grid"
-          style="left: ${w.x/500*100}%; top: ${w.y/m*100}%;"
-          @click=${()=>p(t.entities?.grid_power)}
-          title="Power Grid"
+          style="left: ${A.x/500*100}%; top: ${A.y/w*100}%;"
+          @click=${()=>_(i.entities?.grid_power)}
+          title="${Ne("nodes.grid",t,m)}"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:transmission-tower"></ha-icon>
           </div>
-          <span class="node-value">${Se(Math.abs(n))}</span>
+          <span class="node-value">${r?"—":Me(Math.abs(l))}</span>
           <span class="node-label">
-            ${n>20?"Import":n<-20?"Export":"Grid"}
+            ${Ne(l>20?"flow.import":l<-20?"flow.export":"nodes.grid",t,m)}
           </span>
         </div>
       </div>
     </div>
-  `}function Me(e,t,i=1,r="spark"){if(!e||e.length<2)return W`<div class="sparkline-placeholder"></div>`;const a=Math.min(...e),o=Math.max(...e);let n=a,s=o;if(o-a<i){const e=(a+o)/2;n=e-i/2,s=e+i/2}const l=s-n||1,c=e.map((t,i)=>{const r=i/(e.length-1)*110,a=23-(Math.max(n,Math.min(s,t))-n)/l*20;return{x:Number(r.toFixed(1)),y:Number(a.toFixed(1))}}),d=c.map(e=>`${e.x},${e.y}`).join(" "),p=`spark-grad-${r}`;return q`
+  `}function Pe(e,t,i=1,a="spark"){if(!e||e.length<2)return U`<div class="sparkline-placeholder"></div>`;const r=Math.min(...e),n=Math.max(...e);let o=r,s=n;if(n-r<i){const e=(r+n)/2;o=e-i/2,s=e+i/2}const l=s-o||1,c=e.map((t,i)=>{const a=i/(e.length-1)*110,r=23-(Math.max(o,Math.min(s,t))-o)/l*20;return{x:Number(a.toFixed(1)),y:Number(r.toFixed(1))}}),d=c.map(e=>`${e.x},${e.y}`).join(" "),p=`spark-grad-${a}`;return q`
     <svg class="sparkline-svg" viewBox="0 0 ${110} ${26}" preserveAspectRatio="none">
       <defs>
         <linearGradient id="${p}" x1="0" y1="0" x2="0" y2="1">
@@ -1532,71 +1559,71 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
         stroke-linejoin="round"
       />
     </svg>
-  `}function Ee(e){const{config:t,hasSolar:i=!1,batteryVoltage:r,batteryCurrent:a,gridVoltage:o,batterySoc:n,gridImportEnergyToday:s,loadEnergyToday:l,batteryDischargeEnergyToday:c,inverterLoadPercent:d,historyMap:p,onParamClick:h}=e;let g="#10b981";null===r||isNaN(r)||(r<24||r>29?g="#ef4444":r<25.6&&(g="#f59e0b"));let u="#4285f4",_="Normal";null===o||isNaN(o)||(o<190||o>255?(u="#ef4444",_=o<190?"Low (Sag)":"High (Surge)"):(o<210||o>245)&&(u="#f59e0b",_="Deviated"));const y=t.kpi_mode&&"auto"!==t.kpi_mode?t.kpi_mode:i?"self_sufficiency":"battery_soc";let m="Battery SoC",b="Battery State of Charge",f="mdi:battery-heart-variant",v=0,x="#10b981",w=t.kpi_entity||t.bms?.soc_entity||t.bms?.battery_1?.soc_entity||t.bms?.bat1_soc_entity||t.battery_voltage_entity;if("battery_soc"===y)m="Battery SoC",b="Battery State of Charge",f=a&&a>.5?"mdi:battery-charging-high":"mdi:battery-heart-variant",v=null==n||isNaN(n)?0:Math.max(0,Math.min(100,Math.round(n))),x=v>=75?"#10b981":v>=30?"#f59e0b":"#ef4444";else if("battery_autonomy"===y)m="Battery Autonomy",b="Daily Load Powered by Battery",f="mdi:shield-battery-outline",w=t.kpi_entity||t.daily_energy?.battery_discharge_entity||t.daily_energy?.load_energy_entity,v=0,null!==l&&l>0&&null!=c&&(v=Math.max(0,Math.min(100,Math.round(Math.max(0,c)/l*100)))),x=v>=75?"#10b981":v>=30?"#f59e0b":"#ef4444";else if("inverter_load"===y)m="Inverter Load",b="Current Inverter Load %",f="mdi:gauge",w=t.kpi_entity||t.entities?.load_power,v=null==d||isNaN(d)?0:Math.max(0,Math.min(100,Math.round(d))),x=v<60?"#10b981":v<85?"#f59e0b":"#ef4444";else{if(m="Self-Sufficiency",b="Daily Solar Self-Sufficiency",f=i?"mdi:shield-sun":"mdi:shield-battery-outline",w=t.kpi_entity||t.daily_energy?.grid_import_entity,v=100,null!==l&&l>0){const e=null!==s?Math.max(0,s):0;v=Math.max(0,Math.min(100,Math.round(100*(1-e/l))))}x=v>=75?"#10b981":v>=40?"#f59e0b":"#ef4444"}const $=p.get("battery_voltage")||[],k=p.get("grid_voltage")||[];return W`
+  `}function Oe(e){const{hass:t,config:i,hasSolar:a=!1,batteryVoltage:r,batteryCurrent:n,gridVoltage:o,batterySoc:s,gridImportEnergyToday:l,loadEnergyToday:c,batteryDischargeEnergyToday:d,inverterLoadPercent:p,historyMap:h,onParamClick:g}=e,u=i.language,_=Ne("common.na",t,u);let m="#10b981";null===r||isNaN(r)?m="#64748b":r<24||r>29?m="#ef4444":r<25.6&&(m="#f59e0b");let y="#4285f4",b=Ne("params.normal",t,u);null===o||isNaN(o)?(y="#64748b",b=Ne("params.offline",t,u)):o<190||o>255?(y="#ef4444",b=Ne(o<190?"params.sag":"params.surge",t,u)):(o<210||o>245)&&(y="#f59e0b",b=Ne("params.deviated",t,u));const f=i.kpi_mode&&"auto"!==i.kpi_mode?i.kpi_mode:a?"self_sufficiency":"battery_soc";let v=Ne("params.battery_soc",t,u),x=v,w="mdi:battery-heart-variant",$=0,k="#10b981",C=i.kpi_entity||i.bms?.soc_entity||i.bms?.battery_1?.soc_entity||i.bms?.bat1_soc_entity||i.battery_voltage_entity;if("battery_soc"===f)v=Ne("params.battery_soc",t,u),x=v,w=n&&n>.5?"mdi:battery-charging-high":"mdi:battery-heart-variant",$=null==s||isNaN(s)?0:Math.max(0,Math.min(100,Math.round(s))),k=$>=75?"#10b981":$>=30?"#f59e0b":"#ef4444";else if("battery_autonomy"===f)v=Ne("params.battery_autonomy",t,u),x=v,w="mdi:shield-battery-outline",C=i.kpi_entity||i.daily_energy?.battery_discharge_entity||i.daily_energy?.load_energy_entity,$=0,null!==c&&c>0&&null!=d&&($=Math.max(0,Math.min(100,Math.round(Math.max(0,d)/c*100)))),k=$>=75?"#10b981":$>=30?"#f59e0b":"#ef4444";else if("inverter_load"===f)v=Ne("params.inverter_load",t,u),x=v,w="mdi:gauge",C=i.kpi_entity||i.inverter_load_percent_entity||i.entities?.load_power,$=null==p||isNaN(p)?0:Math.max(0,Math.min(100,Math.round(p))),k=$<60?"#10b981":$<85?"#f59e0b":"#ef4444";else{if(v=Ne("params.self_sufficiency",t,u),x=v,w=a?"mdi:shield-sun":"mdi:shield-battery-outline",C=i.kpi_entity||i.daily_energy?.grid_import_entity,$=100,null!==c&&c>0){const e=null!==l?Math.max(0,l):0;$=Math.max(0,Math.min(100,Math.round(100*(1-e/c))))}k=$>=75?"#10b981":$>=40?"#f59e0b":"#ef4444"}const S=h.get("battery_voltage")||[],A=h.get("grid_voltage")||[];return U`
     <div class="params-grid">
       <!-- TILE 1: BATTERY TELEMETRY -->
       <div
         class="param-tile"
-        @click=${()=>h(t.battery_voltage_entity)}
-        title="Battery Telemetry"
+        @click=${()=>g(i.battery_voltage_entity)}
+        title="${Ne("params.battery",t,u)}"
       >
         <div class="param-header">
           <ha-icon icon="mdi:car-battery"></ha-icon>
-          <span class="param-title">Battery DC</span>
+          <span class="param-title">${Ne("params.battery",t,u)}</span>
         </div>
         <div class="param-main-value">
-          <span style="color: ${g}">
-            ${null===r||isNaN(r)?"N/A":`${r.toFixed(1)}V`}
+          <span style="color: ${m}">
+            ${null===r||isNaN(r)?_:`${r.toFixed(1)}V`}
           </span>
           <span class="param-slash">/</span>
-          <span style="color: ${a&&a>0?"#10b981":"#f59e0b"}">
-            ${null===a||isNaN(a)?"N/A":`${a>0?"+":""}${a.toFixed(1)}A`}
+          <span style="color: ${n&&n>0?"#10b981":"#f59e0b"}">
+            ${null===n||isNaN(n)?_:`${n>0?"+":""}${n.toFixed(1)}A`}
           </span>
         </div>
         <div class="param-chart-box">
-          ${Me($,g,1.5,"bat")}
+          ${Pe(S,m,1.5,"bat")}
         </div>
       </div>
 
       <!-- TILE 2: GRID TELEMETRY -->
       <div
         class="param-tile"
-        @click=${()=>h(t.grid_voltage_entity)}
-        title="Grid AC Voltage"
+        @click=${()=>g(i.grid_voltage_entity)}
+        title="${Ne("params.grid",t,u)}"
       >
         <div class="param-header">
           <ha-icon icon="mdi:transmission-tower"></ha-icon>
-          <span class="param-title">Grid AC</span>
-          <span class="param-badge" style="background: ${u}22; color: ${u}">
-            ${_}
+          <span class="param-title">${Ne("params.grid",t,u)}</span>
+          <span class="param-badge" style="background: ${y}22; color: ${y}">
+            ${b}
           </span>
         </div>
         <div class="param-main-value">
-          <span style="color: ${u}">
-            ${null===o||isNaN(o)?"N/A":`${Math.round(o)}V`}
+          <span style="color: ${y}">
+            ${null===o||isNaN(o)?_:`${Math.round(o)}V`}
           </span>
         </div>
         <div class="param-chart-box">
-          ${Me(k,u,20,"grid")}
+          ${Pe(A,y,20,"grid")}
         </div>
       </div>
 
       <!-- TILE 3: KPI (BATTERY SOC / SELF-SUFFICIENCY / AUTONOMY / LOAD) -->
       <div
         class="param-tile"
-        @click=${()=>h(w)}
-        title="${b}"
+        @click=${()=>g(C)}
+        title="${x}"
       >
         <div class="param-header">
-          <ha-icon icon="${f}"></ha-icon>
-          <span class="param-title">${m}</span>
+          <ha-icon icon="${w}"></ha-icon>
+          <span class="param-title">${v}</span>
         </div>
         <div class="param-kpi-container">
-          <div class="param-main-value kpi-val" style="color: ${x}">
-            ${v}%
+          <div class="param-main-value kpi-val" style="color: ${k}">
+            ${$}%
           </div>
           <div class="arc-gauge-wrapper">
-            ${function(e,t){const i=19.75*Math.PI,r=Math.max(0,Math.min(100,e));return q`
+            ${function(e,t){const i=19.75*Math.PI,a=Math.max(0,Math.min(100,e));return q`
     <svg class="arc-gauge-svg" viewBox="0 0 50 30">
       <!-- Background track -->
       <path
@@ -1614,32 +1641,46 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
         stroke-width="${4.5}"
         stroke-linecap="round"
         stroke-dasharray="${i}"
-        stroke-dashoffset="${i*(1-r/100)}"
+        stroke-dashoffset="${i*(1-a/100)}"
       />
     </svg>
-  `}(v,x)}
+  `}($,k)}
           </div>
         </div>
       </div>
     </div>
-  `}function Ne(e){const{dailyConfig:t,loadEnergy:i,gridImportEnergy:r,batteryChargeEnergy:a,batteryDischargeEnergy:o,onEnergyClick:n}=e,s=null!==i?Math.max(0,i):0,l=null!==r?Math.max(0,r):0,c=null!==a?Math.max(0,a):0,d=null!==o?Math.max(0,o):0,p=Math.max(s,l,c,d,.1),h=[{id:t.load_energy_entity,label:"Home Consumption",value:s,color:"#e2e8f0",icon:"mdi:home-lightning-bolt",pct:s>0?100:0},{id:t.grid_import_entity,label:"Grid Import",value:l,color:"#4285f4",icon:"mdi:transmission-tower",pct:s>0?Math.round(l/s*100):0},{id:t.battery_charge_entity,label:"Battery Charged",value:c,color:"#10b981",icon:"mdi:battery-plus-variant",pct:s>0?Math.round(c/s*100):0},{id:t.battery_discharge_entity,label:"Battery Discharged",value:d,color:"#f59e0b",icon:"mdi:battery-minus-variant",pct:s>0?Math.round(d/s*100):0}];return W`
+  `}function Ie(e){const{hass:t,language:i,dailyConfig:a,loadEnergy:r,gridImportEnergy:n,batteryChargeEnergy:o,batteryDischargeEnergy:s,selfConsumptionDailyEnergy:l,selfConsumptionDailyEntity:c,selfConsumptionMonthlyEnergy:d,selfConsumptionMonthlyEntity:p,onEnergyClick:h}=e,g=null===r||isNaN(r)?0:Math.max(0,r),u=null===n||isNaN(n)?0:Math.max(0,n),_=null===o||isNaN(o)?0:Math.max(0,o),m=null===s||isNaN(s)?0:Math.max(0,s),y=null==l||isNaN(l)?null:Math.max(0,l),b=null==d||isNaN(d)?null:Math.max(0,d),f=Math.max(g,u,_,m,y??0,.1),v=[{id:a.load_energy_entity,label:Ne("energy.load",t,i),value:g,color:"#e2e8f0",icon:"mdi:home-lightning-bolt",pct:g>0?100:0},{id:a.grid_import_entity,label:Ne("energy.grid_import",t,i),value:u,color:"#4285f4",icon:"mdi:transmission-tower",pct:g>0?Math.round(u/g*100):0},{id:a.battery_charge_entity,label:Ne("energy.bat_charge",t,i),value:_,color:"#10b981",icon:"mdi:battery-plus-variant",pct:g>0?Math.round(_/g*100):0},{id:a.battery_discharge_entity,label:Ne("energy.bat_discharge",t,i),value:m,color:"#f59e0b",icon:"mdi:battery-minus-variant",pct:g>0?Math.round(m/g*100):0}];return null!==y&&v.push({id:c||a.self_consumption_daily_entity,label:Ne("energy.self_consumption",t,i),value:y,color:"#a855f7",icon:"mdi:flash-outline",pct:0,extraTag:null!==b?`${Ne("energy.month_short",t,i)}: ${b.toFixed(1)} kWh`:void 0}),U`
     <div class="energy-card-section">
       <!-- Section Header -->
       <div class="energy-header">
         <div class="energy-header-title">
           <ha-icon icon="mdi:chart-box-outline"></ha-icon>
-          <span>Daily Energy Balance</span>
+          <span>${Ne("energy.title",t,i)}</span>
         </div>
-        <span class="energy-total-pill">Total: ${function(e,t=1){return null==e||isNaN(e)?"0.0 kWh":`${e.toFixed(t)} kWh`}(s)}</span>
+        <div class="energy-header-pills">
+          ${null!==b?U`
+                <span
+                  class="energy-total-pill"
+                  style="color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); cursor: pointer;"
+                  @click=${()=>h(p||a.self_consumption_monthly_entity)}
+                  title="${Ne("energy.self_consumption",t,i)} (${Ne("energy.month_short",t,i)})"
+                >
+                  ${Ne("flow.self",t,i)} ${Ne("energy.month_short",t,i)}: ${b.toFixed(2)} kWh
+                </span>
+              `:""}
+          <span class="energy-total-pill">
+            ${Ne("energy.total",t,i)}: ${function(e,t=1){return null==e||isNaN(e)?"0.0 kWh":`${e.toFixed(t)} kWh`}(g)}
+          </span>
+        </div>
       </div>
 
       <!-- Horizontal Energy Bars List -->
       <div class="energy-bars-container">
-        ${h.map(e=>{const t=Math.max(3,Math.min(100,Math.round(e.value/p*100)));return W`
+        ${v.map(e=>{const t=Math.max(3,Math.min(100,Math.round(e.value/f*100)));return U`
             <div
               class="energy-row"
-              @click=${()=>n(e.id)}
-              title="${e.label}: ${e.value.toFixed(2)} kWh"
+              @click=${()=>h(e.id)}
+              title="${e.label}: ${e.value.toFixed(2)} kWh ${e.extraTag?`(${e.extraTag})`:""}"
             >
               <!-- Icon and Label -->
               <div class="energy-row-info">
@@ -1660,21 +1701,41 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
               <!-- Numeric Value & Percentage -->
               <div class="energy-row-val">
                 <span class="energy-kwh" style="color: ${e.color}">
-                  ${e.value.toFixed(1)} <small>kWh</small>
+                  ${e.value.toFixed(2)} <small>kWh</small>
                 </span>
-                ${e.pct>0&&100!==e.pct?W`<span class="energy-pct">(${e.pct}%)</span>`:""}
+                ${e.pct>0&&100!==e.pct?U`<span class="energy-pct">(${e.pct}%)</span>`:""}
               </div>
             </div>
           `})}
       </div>
     </div>
-  `}const Be={0:{code:0,title:"Normal",description:"Inverter is operating normally. No faults detected.",recommendation:"System is functioning properly.",severity:"info"},1:{code:1,title:"Fan Locked",description:"Cooling fan is locked or stopped by an obstruction.",recommendation:"Inspect cooling vents, remove dust or foreign objects from fans.",severity:"critical"},2:{code:2,title:"Inverter Over-Temperature",description:"Internal heatsink temperature exceeded the safe operating limit (>100°C).",recommendation:"Ensure adequate ventilation, reduce inverter load and allow it to cool down.",severity:"critical"},3:{code:3,title:"Battery Over-Voltage",description:"Battery terminal voltage exceeded the maximum safety threshold.",recommendation:"Verify Bulk/Float charging voltage settings and BMS parameters.",severity:"critical"},4:{code:4,title:"Battery Under-Voltage (Critical Discharge)",description:"Battery voltage dropped below the critical cut-off protection threshold.",recommendation:"Connect AC grid power to charge the battery or shed heavy loads.",severity:"warning"},5:{code:5,title:"Output Short Circuit",description:"Short circuit or extreme over-current detected on the AC output circuit.",recommendation:"Immediately disconnect AC load breakers and resolve short circuits in wiring or appliances.",severity:"critical"},6:{code:6,title:"Output Voltage Too High",description:"Inverter AC output voltage exceeded the safe operating range (>260V).",recommendation:"Disconnect sensitive appliances, restart inverter. If error persists, service is required.",severity:"critical"},7:{code:7,title:"Overload Time-Out",description:"Connected load exceeded rated inverter power longer than allowed duration.",recommendation:"Disconnect high-power loads (heaters, water heaters, kettles).",severity:"warning"},8:{code:8,title:"DC Bus Over-Voltage",description:"Internal DC bus voltage exceeded the maximum safety limit.",recommendation:"Restart inverter. If issue persists, check solar panel array Voc specifications.",severity:"critical"},9:{code:9,title:"DC Bus Soft-Start Failed",description:"High-voltage DC bus pre-charge circuit failed during startup.",recommendation:"Check battery and PV input voltages, then restart the inverter.",severity:"critical"},10:{code:10,title:"PV Over-Current",description:"Solar array input current exceeded MPPT controller maximum rating.",recommendation:"Verify solar string configuration and parallel panel wiring.",severity:"critical"},11:{code:11,title:"PV Over-Voltage",description:"Solar panel open-circuit voltage (Voc) exceeded the maximum MPPT limit.",recommendation:"Immediately disconnect solar input, reduce number of panels in series.",severity:"critical"},12:{code:12,title:"DC-DC Converter Over-Current",description:"Over-current detected in the battery DC-DC converter stage.",recommendation:"Check battery cable integrity, terminal torque, and eliminate surge loads.",severity:"critical"},13:{code:13,title:"Inverter Current Surge",description:"Hardware protection triggered due to sudden current spike or inrush surge.",recommendation:"Avoid simultaneous starting of heavy inductive loads (motors, pumps, compressors).",severity:"critical"},14:{code:14,title:"DC Bus Under-Voltage",description:"DC bus voltage dropped below minimum required operating level.",recommendation:"Check battery health under load and AC grid input stability.",severity:"warning"},51:{code:51,title:"Inverter Over-Current",description:"Hardware over-current protection triggered on power bridge transistors (IGBT/MOSFET).",recommendation:"Disconnect devices with high inrush currents, power cycle the inverter.",severity:"critical"},52:{code:52,title:"DC Bus Voltage Low",description:"DC bus voltage dropped sharply below 230V generation threshold.",recommendation:"Inspect battery condition, terminal connections, and cable lugs.",severity:"warning"},53:{code:53,title:"Inverter Soft-Start Failed",description:"Failed to establish smooth AC output waveform during startup.",recommendation:"Disconnect all AC output loads before powering on the inverter.",severity:"critical"},55:{code:55,title:"DC Voltage on AC Output",description:"Dangerous DC voltage component detected on the 230V AC output.",recommendation:"Hazardous to transformers and motors! Immediately disconnect loads and contact service.",severity:"critical"},56:{code:56,title:"Battery Connection Open",description:"Inverter did not detect a connected battery during operation.",recommendation:"Check battery breaker, DC fuse, and terminal connections.",severity:"critical"},57:{code:57,title:"Current Sensor Failed",description:"Internal current measurement sensor (Hall sensor) communication or calibration failure.",recommendation:"Restart the inverter. If error persists, main control board repair is needed.",severity:"critical"},58:{code:58,title:"Output Voltage Too Low",description:"Inverter cannot maintain 230V AC output (voltage dropped below 190V) due to overload.",recommendation:"Reduce load on the inverter.",severity:"warning"},59:{code:59,title:"Control Board Communication Error",description:"Internal communication loss between control board and power module.",recommendation:"Restart the inverter. If error persists, inspect internal ribbon cables.",severity:"critical"},60:{code:60,title:"Grid Feedback / Sync Error",description:"Reverse power flow detected or grid synchronization failed during bypass switch.",recommendation:"Verify AC grid input parameters and phase polarity.",severity:"warning"},71:{code:71,title:"Firmware / BMS Incompatibility",description:"Firmware version mismatch or lost communication with lithium battery BMS.",recommendation:"Check BMS communication cable and selected battery protocol settings.",severity:"critical"},72:{code:72,title:"BMS Critical Error",description:"Battery Management System triggered an emergency protection signal.",recommendation:"Check battery health and error logs in the BMS app.",severity:"critical"},80:{code:80,title:"Parallel CAN Bus Fault",description:"Lost communication over CAN bus between parallel inverters.",recommendation:"Check parallel communication cables and bus termination resistors.",severity:"critical"},81:{code:81,title:"Host Loss in Parallel System",description:"Follower inverter lost communication with Master unit.",recommendation:"Check power and state of the Master inverter and cable connections.",severity:"critical"},82:{code:82,title:"AC Phase Sync Loss",description:"Parallel inverters failed to synchronize AC output phases.",recommendation:"Ensure simultaneous AC grid connection to all parallel units.",severity:"critical"}},Pe={0:{title:"No Warnings",description:"System operating normally without warnings."},1:{title:"Off-Grid / Battery Mode",description:"Inverter operating in autonomous battery mode (grid outage)."},2:{title:"Mains Waveform Abnormal",description:"Utility AC grid waveform distorted during outage or switching."},4:{title:"Low Battery Voltage",description:"Battery voltage below warning threshold (recharge recommended)."},7:{title:"Overload Warning",description:"Home consumption approaching rated inverter limit (4.2 kW)."},8:{title:"Mains Low Voltage",description:"Utility AC grid voltage is 0V or below acceptable threshold (grid outage)."},10:{title:"Output Power Derating",description:"Inverter automatically derating power to prevent overheating."},14:{title:"Fan Blocked",description:"Cooling fan is blocked or operating at reduced speed."},15:{title:"PV Energy Weak",description:"Solar voltage below MPPT operating threshold (panels not connected or night).",isPvRelated:!0},16:{title:"Mains Over Frequency",description:"Utility AC grid frequency out of acceptable range."},19:{title:"Lithium Battery Comm Abnormal",description:"Lost RS485/CAN telemetry communication with lithium battery BMS."},20:{title:"Battery Discharge Over-Current",description:"Battery discharge current exceeded configured threshold."},32:{title:"Mains Low Frequency",description:"Utility AC grid frequency dropped below acceptable range."},64:{title:"PV Low Voltage",description:"Solar array voltage below MPPT operating threshold (panels not connected or overcast).",isPvRelated:!0},128:{title:"Inverter Over-Temperature",description:"Internal heatsink temperature is too high."},256:{title:"Battery Low Voltage",description:"Battery voltage has dropped below warning threshold (recharge needed)."},512:{title:"Battery Not Connected",description:"Battery circuit is open or battery is not detected."},1024:{title:"Overload Warning",description:"Home consumption is approaching or exceeding rated inverter limit (4.2 kW)."},2048:{title:"Battery Equalization Active",description:"Battery equalization charging cycle is currently active."},4096:{title:"Battery Discharged Below Recovery",description:"Battery voltage discharged below recovery threshold."},8192:{title:"Output Power Derating",description:"Inverter automatically derating output power due to thermal or voltage limits."},16384:{title:"Fan Blocked",description:"Cooling fan is blocked or operating at reduced speed."},32768:{title:"PV Energy Too Low",description:"Solar input power is too weak for MPPT conversion.",isPvRelated:!0},524288:{title:"Lithium Battery Comm Abnormal",description:"Lost RS485/CAN telemetry communication with lithium battery BMS."},1048576:{title:"Battery Discharge Over-Current",description:"Battery discharge current exceeded configured safety threshold."}},Oe=[{bit:0,mask:1,code:0,title:"Off-Grid Mode",description:"Inverter operating in autonomous battery mode (grid outage).",isInformational:!0},{bit:1,mask:2,code:1,title:"Mains Waveform Abnormal",description:"Utility AC grid waveform distorted during outage or switching.",isInformational:!0},{bit:2,mask:4,code:2,title:"Vendor Status Bit 2",description:"Vendor-specific operational status bit 2.",isInformational:!0},{bit:3,mask:8,code:3,title:"Mains Low Voltage",description:"Utility AC grid voltage is low or 0V (grid outage).",isInformational:!0},{bit:4,mask:16,code:4,title:"Mains Over Frequency",description:"Utility AC grid frequency exceeded upper bound.",isInformational:!0},{bit:5,mask:32,code:5,title:"Mains Low Frequency",description:"Utility AC grid frequency dropped below lower bound.",isInformational:!0},{bit:6,mask:64,code:6,title:"PV Low Voltage",description:"Solar array voltage below MPPT startup range (panels not connected or night).",isPvRelated:!0},{bit:7,mask:128,code:7,title:"W02: Over Temperature",description:"Internal inverter heatsink temperature is elevated."},{bit:8,mask:256,code:8,title:"W04: Battery Low Voltage",description:"Battery voltage has dropped below warning threshold."},{bit:9,mask:512,code:9,title:"W09: Battery Not Connected",description:"Battery circuit is open or battery is not detected."},{bit:10,mask:1024,code:10,title:"W07: Overload",description:"Home consumption is approaching rated inverter power (4.2 kW)."},{bit:11,mask:2048,code:11,title:"Battery Equalization Charging",description:"Battery equalization charging cycle is active.",isInformational:!0},{bit:12,mask:4096,code:12,title:"Battery Discharged Below Recovery",description:"Battery discharged below recovery voltage threshold."},{bit:13,mask:8192,code:13,title:"W10: Output Power Derating",description:"Output power derating active due to high temperature."},{bit:14,mask:16384,code:14,title:"W14: Fan Blocked",description:"Cooling fan is blocked or operating at reduced speed."},{bit:15,mask:32768,code:15,title:"W15: PV Energy Too Low",description:"Solar input energy is too low to use.",isPvRelated:!0},{bit:16,mask:65536,code:16,title:"Parallel Comm Interrupted",description:"Parallel communication link interrupted."},{bit:17,mask:1<<17,code:17,title:"Output Mode Mismatch",description:"Single/Parallel output mode mismatch."},{bit:18,mask:1<<18,code:18,title:"Parallel Battery Voltage Diff",description:"Parallel battery voltage difference is too large."},{bit:19,mask:1<<19,code:19,title:"Lithium Battery Comm Abnormal",description:"Lithium battery BMS communication abnormal."},{bit:20,mask:1<<20,code:20,title:"Battery Discharge Over-Current",description:"Battery discharge current exceeds set value."}];function Ie(e){const{safetyConfig:t,isFault:i,faultCode:r,faultDetailsText:a,isWarning:o,warningCode:n,warningDetailsText:s,onAlertClick:l}=e;if(!i&&!o)return W``;const c=r??0,d=function(e,t){const i=Be[e];return i?t&&t!==i.title&&"N/A"!==t&&"0"!==t?{...i,description:`${i.description} (Inverter: ${t})`}:i:{code:e,title:t||`Fault Code F${e}`,description:t?`Inverter reports error: ${t}`:"Hardware or firmware fault detected by inverter.",recommendation:"Check inverter LCD display messages and documentation.",severity:"critical"}}(c,a),p=n??0,h=function(e,t){if(0===e||isNaN(e))return{title:"No Warnings",description:"Warnings are absent.",isBitmask:!1,isPv:!1};const i=Oe.filter(t=>0!==(e&t.mask));if(i.length>1){const e=i.map(e=>e.title).join("; "),r=i.map(e=>`${e.title}: ${e.description}`).join(" | "),a=i.some(e=>e.isPvRelated);return{title:e,description:t?`${r} (Status: ${t})`:r,isBitmask:!0,isPv:a}}if(1===i.length){const e=i[0];return{title:e.title,description:t&&t!==e.title?`${e.description} (Status: ${t})`:e.description,isBitmask:!0,isPv:!!e.isPvRelated}}const r=Pe[e];return r?{title:r.title,description:t&&t!==r.title?`${r.description} (Status: ${t})`:r.description,isBitmask:!1,isPv:!!r.isPvRelated}:{title:t||`Warning W${e}`,description:t?`Inverter reports: ${t}`:"Inverter reported an operational parameter deviation.",isBitmask:!1,isPv:64===e||15===e}}(p,s);return W`
+  `}const Te={0:{code:0,title:"Normal",description:"Inverter is operating normally. No faults detected.",recommendation:"System is functioning properly.",severity:"info"},1:{code:1,title:"Fan Locked",description:"Cooling fan is locked or stopped by an obstruction.",recommendation:"Inspect cooling vents, remove dust or foreign objects from fans.",severity:"critical"},2:{code:2,title:"Inverter Over-Temperature",description:"Internal heatsink temperature exceeded the safe operating limit (>100°C).",recommendation:"Ensure adequate ventilation, reduce inverter load and allow it to cool down.",severity:"critical"},3:{code:3,title:"Battery Over-Voltage",description:"Battery terminal voltage exceeded the maximum safety threshold.",recommendation:"Verify Bulk/Float charging voltage settings and BMS parameters.",severity:"critical"},4:{code:4,title:"Battery Under-Voltage (Critical Discharge)",description:"Battery voltage dropped below the critical cut-off protection threshold.",recommendation:"Connect AC grid power to charge the battery or shed heavy loads.",severity:"warning"},5:{code:5,title:"Output Short Circuit",description:"Short circuit or extreme over-current detected on the AC output circuit.",recommendation:"Immediately disconnect AC load breakers and resolve short circuits in wiring or appliances.",severity:"critical"},6:{code:6,title:"Output Voltage Too High",description:"Inverter AC output voltage exceeded the safe operating range (>260V).",recommendation:"Disconnect sensitive appliances, restart inverter. If error persists, service is required.",severity:"critical"},7:{code:7,title:"Overload Time-Out",description:"Connected load exceeded rated inverter power longer than allowed duration.",recommendation:"Disconnect high-power loads (heaters, water heaters, kettles).",severity:"warning"},8:{code:8,title:"DC Bus Over-Voltage",description:"Internal DC bus voltage exceeded the maximum safety limit.",recommendation:"Restart inverter. If issue persists, check solar panel array Voc specifications.",severity:"critical"},9:{code:9,title:"DC Bus Soft-Start Failed",description:"High-voltage DC bus pre-charge circuit failed during startup.",recommendation:"Check battery and PV input voltages, then restart the inverter.",severity:"critical"},10:{code:10,title:"PV Over-Current",description:"Solar array input current exceeded MPPT controller maximum rating.",recommendation:"Verify solar string configuration and parallel panel wiring.",severity:"critical"},11:{code:11,title:"PV Over-Voltage",description:"Solar panel open-circuit voltage (Voc) exceeded the maximum MPPT limit.",recommendation:"Immediately disconnect solar input, reduce number of panels in series.",severity:"critical"},12:{code:12,title:"DC-DC Converter Over-Current",description:"Over-current detected in the battery DC-DC converter stage.",recommendation:"Check battery cable integrity, terminal torque, and eliminate surge loads.",severity:"critical"},13:{code:13,title:"Inverter Current Surge",description:"Hardware protection triggered due to sudden current spike or inrush surge.",recommendation:"Avoid simultaneous starting of heavy inductive loads (motors, pumps, compressors).",severity:"critical"},14:{code:14,title:"DC Bus Under-Voltage",description:"DC bus voltage dropped below minimum required operating level.",recommendation:"Check battery health under load and AC grid input stability.",severity:"warning"},51:{code:51,title:"Inverter Over-Current",description:"Hardware over-current protection triggered on power bridge transistors (IGBT/MOSFET).",recommendation:"Disconnect devices with high inrush currents, power cycle the inverter.",severity:"critical"},52:{code:52,title:"DC Bus Voltage Low",description:"DC bus voltage dropped sharply below 230V generation threshold.",recommendation:"Inspect battery condition, terminal connections, and cable lugs.",severity:"warning"},53:{code:53,title:"Inverter Soft-Start Failed",description:"Failed to establish smooth AC output waveform during startup.",recommendation:"Disconnect all AC output loads before powering on the inverter.",severity:"critical"},55:{code:55,title:"DC Voltage on AC Output",description:"Dangerous DC voltage component detected on the 230V AC output.",recommendation:"Hazardous to transformers and motors! Immediately disconnect loads and contact service.",severity:"critical"},56:{code:56,title:"Battery Connection Open",description:"Inverter did not detect a connected battery during operation.",recommendation:"Check battery breaker, DC fuse, and terminal connections.",severity:"critical"},57:{code:57,title:"Current Sensor Failed",description:"Internal current measurement sensor (Hall sensor) communication or calibration failure.",recommendation:"Restart the inverter. If error persists, main control board repair is needed.",severity:"critical"},58:{code:58,title:"Output Voltage Too Low",description:"Inverter cannot maintain 230V AC output (voltage dropped below 190V) due to overload.",recommendation:"Reduce load on the inverter.",severity:"warning"},59:{code:59,title:"Control Board Communication Error",description:"Internal communication loss between control board and power module.",recommendation:"Restart the inverter. If error persists, inspect internal ribbon cables.",severity:"critical"},60:{code:60,title:"Grid Feedback / Sync Error",description:"Reverse power flow detected or grid synchronization failed during bypass switch.",recommendation:"Verify AC grid input parameters and phase polarity.",severity:"warning"},71:{code:71,title:"Firmware / BMS Incompatibility",description:"Firmware version mismatch or lost communication with lithium battery BMS.",recommendation:"Check BMS communication cable and selected battery protocol settings.",severity:"critical"},72:{code:72,title:"BMS Critical Error",description:"Battery Management System triggered an emergency protection signal.",recommendation:"Check battery health and error logs in the BMS app.",severity:"critical"},80:{code:80,title:"Parallel CAN Bus Fault",description:"Lost communication over CAN bus between parallel inverters.",recommendation:"Check parallel communication cables and bus termination resistors.",severity:"critical"},81:{code:81,title:"Host Loss in Parallel System",description:"Follower inverter lost communication with Master unit.",recommendation:"Check power and state of the Master inverter and cable connections.",severity:"critical"},82:{code:82,title:"AC Phase Sync Loss",description:"Parallel inverters failed to synchronize AC output phases.",recommendation:"Ensure simultaneous AC grid connection to all parallel units.",severity:"critical"}},ze={0:{title:"No Warnings",description:"System operating normally without warnings."},1:{title:"Off-Grid / Battery Mode",description:"Inverter operating in autonomous battery mode (grid outage)."},2:{title:"Mains Waveform Abnormal",description:"Utility AC grid waveform distorted during outage or switching."},4:{title:"Low Battery Voltage",description:"Battery voltage below warning threshold (recharge recommended)."},7:{title:"Overload Warning",description:"Home consumption approaching rated inverter limit (4.2 kW)."},8:{title:"Mains Low Voltage",description:"Utility AC grid voltage is 0V or below acceptable threshold (grid outage)."},10:{title:"Output Power Derating",description:"Inverter automatically derating power to prevent overheating."},14:{title:"Fan Blocked",description:"Cooling fan is blocked or operating at reduced speed."},15:{title:"PV Energy Weak",description:"Solar voltage below MPPT operating threshold (panels not connected or night).",isPvRelated:!0},16:{title:"Mains Over Frequency",description:"Utility AC grid frequency out of acceptable range."},19:{title:"Lithium Battery Comm Abnormal",description:"Lost RS485/CAN telemetry communication with lithium battery BMS."},20:{title:"Battery Discharge Over-Current",description:"Battery discharge current exceeded configured threshold."},32:{title:"Mains Low Frequency",description:"Utility AC grid frequency dropped below acceptable range."},64:{title:"PV Low Voltage",description:"Solar array voltage below MPPT operating threshold (panels not connected or overcast).",isPvRelated:!0},128:{title:"Inverter Over-Temperature",description:"Internal heatsink temperature is too high."},256:{title:"Battery Low Voltage",description:"Battery voltage has dropped below warning threshold (recharge needed)."},512:{title:"Battery Not Connected",description:"Battery circuit is open or battery is not detected."},1024:{title:"Overload Warning",description:"Home consumption is approaching or exceeding rated inverter limit (4.2 kW)."},2048:{title:"Battery Equalization Active",description:"Battery equalization charging cycle is currently active."},4096:{title:"Battery Discharged Below Recovery",description:"Battery voltage discharged below recovery threshold."},8192:{title:"Output Power Derating",description:"Inverter automatically derating output power due to thermal or voltage limits."},16384:{title:"Fan Blocked",description:"Cooling fan is blocked or operating at reduced speed."},32768:{title:"PV Energy Too Low",description:"Solar input power is too weak for MPPT conversion.",isPvRelated:!0},524288:{title:"Lithium Battery Comm Abnormal",description:"Lost RS485/CAN telemetry communication with lithium battery BMS."},1048576:{title:"Battery Discharge Over-Current",description:"Battery discharge current exceeded configured safety threshold."}},Le=[{bit:0,mask:1,code:0,title:"Off-Grid Mode",description:"Inverter operating in autonomous battery mode (grid outage).",isInformational:!0},{bit:1,mask:2,code:1,title:"Mains Waveform Abnormal",description:"Utility AC grid waveform distorted during outage or switching.",isInformational:!0},{bit:2,mask:4,code:2,title:"Vendor Status Bit 2",description:"Vendor-specific operational status bit 2.",isInformational:!0},{bit:3,mask:8,code:3,title:"Mains Low Voltage",description:"Utility AC grid voltage is low or 0V (grid outage).",isInformational:!0},{bit:4,mask:16,code:4,title:"Mains Over Frequency",description:"Utility AC grid frequency exceeded upper bound.",isInformational:!0},{bit:5,mask:32,code:5,title:"Mains Low Frequency",description:"Utility AC grid frequency dropped below lower bound.",isInformational:!0},{bit:6,mask:64,code:6,title:"PV Low Voltage",description:"Solar array voltage below MPPT startup range (panels not connected or night).",isPvRelated:!0},{bit:7,mask:128,code:7,title:"W02: Over Temperature",description:"Internal inverter heatsink temperature is elevated."},{bit:8,mask:256,code:8,title:"W04: Battery Low Voltage",description:"Battery voltage has dropped below warning threshold."},{bit:9,mask:512,code:9,title:"W09: Battery Not Connected",description:"Battery circuit is open or battery is not detected."},{bit:10,mask:1024,code:10,title:"W07: Overload",description:"Home consumption is approaching rated inverter power (4.2 kW)."},{bit:11,mask:2048,code:11,title:"Battery Equalization Charging",description:"Battery equalization charging cycle is active.",isInformational:!0},{bit:12,mask:4096,code:12,title:"Battery Discharged Below Recovery",description:"Battery discharged below recovery voltage threshold."},{bit:13,mask:8192,code:13,title:"W10: Output Power Derating",description:"Output power derating active due to high temperature."},{bit:14,mask:16384,code:14,title:"W14: Fan Blocked",description:"Cooling fan is blocked or operating at reduced speed."},{bit:15,mask:32768,code:15,title:"W15: PV Energy Too Low",description:"Solar input energy is too low to use.",isPvRelated:!0},{bit:16,mask:65536,code:16,title:"Parallel Comm Interrupted",description:"Parallel communication link interrupted."},{bit:17,mask:1<<17,code:17,title:"Output Mode Mismatch",description:"Single/Parallel output mode mismatch."},{bit:18,mask:1<<18,code:18,title:"Parallel Battery Voltage Diff",description:"Parallel battery voltage difference is too large."},{bit:19,mask:1<<19,code:19,title:"Lithium Battery Comm Abnormal",description:"Lithium battery BMS communication abnormal."},{bit:20,mask:1<<20,code:20,title:"Battery Discharge Over-Current",description:"Battery discharge current exceeds set value."}];function De(e){const{hass:t,language:i,safetyConfig:a,isOffline:r=!1,offlineEntity:n,isFault:o,faultCode:s,faultDetailsText:l,isWarning:c,warningCode:d,warningDetailsText:p,onAlertClick:h}=e;if(!r&&!o&&!c)return U``;const g=s??0,u=function(e,t){const i=Te[e];return i?t&&t!==i.title&&"N/A"!==t&&"0"!==t?{...i,description:`${i.description} (Inverter: ${t})`}:i:{code:e,title:t||`Fault Code F${e}`,description:t?`Inverter reports error: ${t}`:"Hardware or firmware fault detected by inverter.",recommendation:"Check inverter LCD display messages and documentation.",severity:"critical"}}(g,l),_=d??0,m=function(e,t){if(0===e||isNaN(e))return{title:"No Warnings",description:"Warnings are absent.",isBitmask:!1,isPv:!1};const i=Le.filter(t=>0!==(e&t.mask));if(i.length>1){const e=i.map(e=>e.title).join("; "),a=i.map(e=>`${e.title}: ${e.description}`).join(" | "),r=i.some(e=>e.isPvRelated);return{title:e,description:t?`${a} (Status: ${t})`:a,isBitmask:!0,isPv:r}}if(1===i.length){const e=i[0];return{title:e.title,description:t&&t!==e.title?`${e.description} (Status: ${t})`:e.description,isBitmask:!0,isPv:!!e.isPvRelated}}const a=ze[e];return a?{title:a.title,description:t&&t!==a.title?`${a.description} (Status: ${t})`:a.description,isBitmask:!1,isPv:!!a.isPvRelated}:{title:t||`Warning W${e}`,description:t?`Inverter reports: ${t}`:"Inverter reported an operational parameter deviation.",isBitmask:!1,isPv:64===e||15===e}}(_,p);return U`
     <div class="alert-section-wrapper">
+      <!-- Collector / Inverter Offline Banner -->
+      ${r?U`
+            <div
+              class="alert-box alert-warn"
+              @click=${()=>h(n)}
+              title="Click to view entity status"
+            >
+              <div class="alert-icon-col">
+                <ha-icon icon="mdi:lan-disconnect"></ha-icon>
+              </div>
+              <div class="alert-content-col">
+                <div class="alert-headline">
+                  <span class="alert-badge">${Ne("common.offline",t,i)}</span>
+                  <span class="alert-title">${Ne("alerts.offline_title",t,i)}</span>
+                </div>
+                <p class="alert-desc">${Ne("alerts.offline_desc",t,i)}</p>
+              </div>
+            </div>
+          `:""}
+
       <!-- Critical Inverter Fault Banner -->
-      ${i?W`
+      ${o&&!r?U`
             <div
               class="alert-box alert-critical"
-              @click=${()=>l(t.fault_details_entity||t.fault_code_entity||t.fault_active_entity)}
+              @click=${()=>h(a?.fault_details_entity||a?.fault_code_entity||a?.fault_active_entity)}
               title="Click to view details"
             >
               <div class="alert-icon-col">
@@ -1682,23 +1743,23 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
               </div>
               <div class="alert-content-col">
                 <div class="alert-headline">
-                  <span class="alert-badge">FAULT F${c}</span>
-                  <span class="alert-title">${d.title}</span>
+                  <span class="alert-badge">${Ne("common.fault",t,i)} F${g}</span>
+                  <span class="alert-title">${u.title}</span>
                 </div>
-                <p class="alert-desc">${d.description}</p>
+                <p class="alert-desc">${u.description}</p>
                 <div class="alert-rec">
                   <ha-icon icon="mdi:lightbulb-on-outline"></ha-icon>
-                  <span>${d.recommendation}</span>
+                  <span>${u.recommendation}</span>
                 </div>
               </div>
             </div>
           `:""}
 
       <!-- Inverter Warning Banner -->
-      ${o&&!i?W`
+      ${!c||o||r?"":U`
             <div
               class="alert-box alert-warn"
-              @click=${()=>l(t.warning_details_entity||t.warning_code_entity||t.warnings_active_entity)}
+              @click=${()=>h(a?.warning_details_entity||a?.warning_code_entity||a?.warnings_active_entity)}
               title="Click to view details"
             >
               <div class="alert-icon-col">
@@ -1706,162 +1767,207 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
               </div>
               <div class="alert-content-col">
                 <div class="alert-headline">
-                  <span class="alert-badge">WARNING W${p}</span>
-                  <span class="alert-title">${h.title}</span>
+                  <span class="alert-badge">${Ne("common.warn",t,i)} W${_}</span>
+                  <span class="alert-title">${m.title}</span>
                 </div>
-                <p class="alert-desc">${h.description}</p>
+                <p class="alert-desc">${m.description}</p>
               </div>
             </div>
-          `:""}
+          `}
     </div>
-  `}console.info("%c  ANINEREL-POWER-CARD  %c  Version 1.1.3  ","color: #ffffff; background: #F59E0B; font-weight: bold; border-radius: 3px 0 0 3px;","color: #000000; background: #10B981; font-weight: bold; border-radius: 0 3px 3px 0;");let Te=class extends ce{constructor(){super(...arguments),this._controlsExpanded=!1,this._historyMap=new Map,this._maxHistoryPoints=32,this._lastHistoryFetch=0,this._historyFetchInterval=9e5}static{this.styles=[Ce]}setConfig(e){if(!e)throw new Error("Invalid card configuration");if(!e.entities)throw new Error('Required "entities" block is not defined in configuration');if(!e.entities.load_power)throw new Error("At least entities.load_power must be specified");this._config={...me,...e,entities:{...e.entities},bms:e.bms?{...e.bms}:void 0,controls:e.controls?{...e.controls}:void 0,safety:e.safety?{...e.safety}:void 0,daily_energy:e.daily_energy?{...e.daily_energy}:void 0,colors:e.colors?{...e.colors}:void 0}}set hass(e){const t=this._hass;this._hass=e,t||this._fetchHistory(),t&&!this._hasRelevantEntitiesChanged(t,e)||(this._updateHistoryBuffers(),this.requestUpdate())}get hass(){return this._hass}firstUpdated(){this._fetchHistory()}getCardSize(){return 14}getLayoutOptions(){return{grid_rows:14,grid_columns:4,grid_min_rows:8,grid_min_columns:2}}static getStubConfig(){return ke}static async getConfigElement(){return await Promise.resolve().then(function(){return Fe}),document.createElement("aninerel-power-card-editor")}async _fetchHistory(){if(!this._config||!this._hass)return;const e=this._config.battery_voltage_entity||this._config.bms?.voltage_entity,t=this._config.grid_voltage_entity,i=[];if(e&&i.push(e),t&&i.push(t),0===i.length)return;const r=Date.now();if(!(r-this._lastHistoryFetch<this._historyFetchInterval&&this._historyMap.size>0)){this._lastHistoryFetch=r;try{const a=new Date(r-864e5).toISOString();let o=null;if("function"==typeof this._hass.callWS)o=await this._hass.callWS({type:"history/history_during_period",start_time:a,entity_ids:i,minimal_response:!0,no_attributes:!0});else if("function"==typeof this._hass.callApi){const e=`history/period/${a}?filter_entity_id=${i.join(",")}&minimal_response&no_attributes`;o=await this._hass.callApi("GET",e)}if(o){if(e){const t=this._extractStateList(o,e),i=this._sampleHistoryPoints(t,this._maxHistoryPoints);i.length>0&&this._historyMap.set("battery_voltage",i)}if(t){const e=this._extractStateList(o,t),i=this._sampleHistoryPoints(e,this._maxHistoryPoints);i.length>0&&this._historyMap.set("grid_voltage",i)}this.requestUpdate()}}catch(e){console.warn("AninerelPowerCard: using live buffer for sparklines (history API unavailable):",e)}}}_extractStateList(e,t){if(!e)return[];if(e[t]&&Array.isArray(e[t]))return e[t];if(Array.isArray(e)){for(const i of e)if(Array.isArray(i)&&i.length>0){if(i[0]?.entity_id===t)return i}else if(i?.entity_id===t&&Array.isArray(i.states))return i.states;if(void 0!==e[0]?.state||void 0!==e[0]?.s)return e}return e.entity_id===t&&Array.isArray(e.states)?e.states:[]}_sampleHistoryPoints(e,t){if(!e||0===e.length)return[];const i=[];for(const t of e){const e=void 0!==t.s?t.s:t.state,r=parseFloat(e);!isNaN(r)&&isFinite(r)&&i.push(r)}if(0===i.length)return[];if(i.length<=t)return i;const r=[],a=(i.length-1)/(t-1);for(let e=0;e<t;e++)r.push(i[Math.min(Math.round(e*a),i.length-1)]);return r}_updateHistoryBuffers(){if(!this._config||!this._hass)return;const e=this._config.battery_voltage_entity||this._config.bms?.voltage_entity;if(e){const t=this._getNumber(e);null===t||isNaN(t)||this._pushHistory("battery_voltage",t)}if(this._config.grid_voltage_entity){const e=this._getNumber(this._config.grid_voltage_entity);null===e||isNaN(e)||this._pushHistory("grid_voltage",e)}}_pushHistory(e,t){const i=this._historyMap.get(e)||[];(0===i.length||Math.abs(i[i.length-1]-t)>.001)&&(i.push(t),i.length>this._maxHistoryPoints&&i.shift(),this._historyMap.set(e,i))}_hasRelevantEntitiesChanged(e,t){if(!this._config)return!0;const i=this._getMonitoredEntityIds();for(const r of i)if(e.states[r]!==t.states[r])return!0;return!1}_getMonitoredEntityIds(){const e=[];if(!this._config)return e;const{entities:t,bms:i,controls:r,safety:a,daily_energy:o}=this._config;if(t&&(t.solar_power&&e.push(t.solar_power),t.battery_power&&e.push(t.battery_power),t.grid_power&&e.push(t.grid_power),t.load_power&&e.push(t.load_power)),this._config.battery_voltage_entity&&e.push(this._config.battery_voltage_entity),this._config.battery_current_entity&&e.push(this._config.battery_current_entity),this._config.grid_voltage_entity&&e.push(this._config.grid_voltage_entity),this._config.operating_mode_entity&&e.push(this._config.operating_mode_entity),this._config.charging_active_entity&&e.push(this._config.charging_active_entity),this._config.inverter_temperature_entity&&e.push(this._config.inverter_temperature_entity),i){i.soc_entity&&e.push(i.soc_entity),i.voltage_entity&&e.push(i.voltage_entity),i.current_entity&&e.push(i.current_entity),i.temperature_entity&&e.push(i.temperature_entity),i.temperature_2_entity&&e.push(i.temperature_2_entity),i.cycle_count_entity&&e.push(i.cycle_count_entity),i.cell_delta_entity&&e.push(i.cell_delta_entity),i.remaining_capacity_entity&&e.push(i.remaining_capacity_entity),i.full_capacity_entity&&e.push(i.full_capacity_entity);const t=i.cell_count||8,r=i.cell_voltage_prefix||"sensor.redodo_battery_cell_voltage_";for(let i=1;i<=t;i++)e.push(`${r}${i}`);if(i.bat1_soc_entity&&e.push(i.bat1_soc_entity),i.bat1_voltage_entity&&e.push(i.bat1_voltage_entity),i.bat1_temperature_entity&&e.push(i.bat1_temperature_entity),i.bat1_cell_prefix)for(let t=1;t<=4;t++)e.push(`${i.bat1_cell_prefix}${t}`);if(i.battery_1){const t=i.battery_1;if(t.soc_entity&&e.push(t.soc_entity),t.voltage_entity&&e.push(t.voltage_entity),t.temperature_entity&&e.push(t.temperature_entity),t.cell_voltage_prefix)for(let i=1;i<=(t.cell_count||4);i++)e.push(`${t.cell_voltage_prefix}${i}`)}if(i.bat2_soc_entity&&e.push(i.bat2_soc_entity),i.bat2_voltage_entity&&e.push(i.bat2_voltage_entity),i.bat2_temperature_entity&&e.push(i.bat2_temperature_entity),i.bat2_cell_prefix)for(let t=1;t<=4;t++)e.push(`${i.bat2_cell_prefix}${t}`);if(i.battery_2){const t=i.battery_2;if(t.soc_entity&&e.push(t.soc_entity),t.voltage_entity&&e.push(t.voltage_entity),t.temperature_entity&&e.push(t.temperature_entity),t.cell_voltage_prefix)for(let i=1;i<=(t.cell_count||4);i++)e.push(`${t.cell_voltage_prefix}${i}`)}}return r&&(r.charge_source_entity&&e.push(r.charge_source_entity),r.output_priority_entity&&e.push(r.output_priority_entity),r.max_charge_current_entity&&e.push(r.max_charge_current_entity),r.bulk_voltage_entity&&e.push(r.bulk_voltage_entity),r.float_voltage_entity&&e.push(r.float_voltage_entity),r.equalization_entity&&e.push(r.equalization_entity)),a&&(a.fault_active_entity&&e.push(a.fault_active_entity),a.fault_code_entity&&(e.push(a.fault_code_entity),e.push(a.fault_code_entity.replace(/_code$/,"_details"))),a.fault_details_entity&&e.push(a.fault_details_entity),a.warnings_active_entity&&e.push(a.warnings_active_entity),a.warning_code_entity&&(e.push(a.warning_code_entity),e.push(a.warning_code_entity.replace(/_code$/,"_details"))),a.warning_details_entity&&e.push(a.warning_details_entity)),o&&(o.load_energy_entity&&e.push(o.load_energy_entity),o.grid_import_entity&&e.push(o.grid_import_entity),o.battery_charge_entity&&e.push(o.battery_charge_entity),o.battery_discharge_entity&&e.push(o.battery_discharge_entity)),e.filter(Boolean)}_findMatchingEntity(e,t){if(!(e&&t&&this._hass&&this._hass.states))return;const i=e.replace(/_code$/,t.replace(/^_+/,"_"));return this._hass.states[i]?i:void 0}_getState(e){return e&&this._hass&&this._hass.states[e]?this._hass.states[e].state:"N/A"}_getNumber(e){if(!e||!this._hass||!this._hass.states[e])return 0;const t=parseFloat(this._hass.states[e].state);return isNaN(t)?0:t}_getOptions(e){return e&&this._hass&&this._hass.states[e]&&this._hass.states[e].attributes?.options||[]}_handleEntityClick(e){if(!e)return;const t=new CustomEvent("hass-more-info",{bubbles:!0,composed:!0,detail:{entityId:e}});this.dispatchEvent(t)}async _handleSelectOption(e,t){if(this._hass)try{await this._hass.callService("select","select_option",{entity_id:e,option:t})}catch(e){console.error("Failed to set option:",e)}}async _handleSetNumber(e,t){if(this._hass)try{await this._hass.callService("number","set_value",{entity_id:e,value:t})}catch(e){console.error("Failed to set number value:",e)}}async _handleToggleSwitch(e,t){if(this._hass)try{await this._hass.callService("switch",t?"turn_off":"turn_on",{entity_id:e})}catch(e){console.error("Failed to toggle switch:",e)}}render(){if(!this._config)return W``;const e=Boolean(this._config.show_solar&&this._config.entities.solar_power&&""!==this._config.entities.solar_power.trim()),t=e&&this._config.entities.solar_power?this._getNumber(this._config.entities.solar_power):0,i=this._getNumber(this._config.entities.battery_power),r=this._getNumber(this._config.entities.grid_power),a=this._getNumber(this._config.entities.load_power),o=this._config.battery_voltage_entity?this._getNumber(this._config.battery_voltage_entity):null,n=this._config.battery_current_entity?this._getNumber(this._config.battery_current_entity):null,s=this._config.grid_voltage_entity?this._getNumber(this._config.grid_voltage_entity):null;let l=this._config.bms?.soc_entity?this._getNumber(this._config.bms.soc_entity):0;(l<=0||isNaN(l))&&o&&o>=20?l=o>=27.2?100:o>=26.8?Math.round(80+(o-26.8)/.4*20):o>=26.4?Math.round(50+(o-26.4)/.4*30):o>=26?Math.round(20+(o-26)/.4*30):o>=24?Math.max(5,Math.round((o-24)/2*20)):5:l<=0&&(!o||o<20)&&(l=80);const c=this._getState(this._config.operating_mode_entity),d=this._config.inverter_temperature_entity?this._getNumber(this._config.inverter_temperature_entity):null,p="on"===this._getState(this._config.charging_active_entity),h="on"===this._getState(this._config.safety?.fault_active_entity),g=this._config.safety?.fault_code_entity?parseInt(this._getState(this._config.safety.fault_code_entity),10):null,u=this._config.safety?.fault_details_entity||this._findMatchingEntity(this._config.safety?.fault_code_entity,"_fault_details"),_=u?this._getState(u):null,y=_&&"N/A"!==_&&"0"!==_?_:null;let m="on"===this._getState(this._config.safety?.warnings_active_entity);const b=this._config.safety?.warning_code_entity?parseInt(this._getState(this._config.safety.warning_code_entity),10):null,f=this._config.safety?.warning_details_entity||this._findMatchingEntity(this._config.safety?.warning_code_entity,"_warning_details"),v=f?this._getState(f):null,x=v&&"N/A"!==v&&"0"!==v?v:null;let w=b;if(!e){const{effectiveCode:e,hasNonPvWarning:t}=function(e){if(null===e||0===e||isNaN(e))return{effectiveCode:null,hasNonPvWarning:!1};const t=-34944&e;return 0===t?{effectiveCode:null,hasNonPvWarning:!1}:{effectiveCode:t,hasNonPvWarning:!0}}(b);w=e,t||(m=!1)}const $=this._config.daily_energy?.grid_import_entity?this._getNumber(this._config.daily_energy.grid_import_entity):null,k=this._config.daily_energy?.load_energy_entity?this._getNumber(this._config.daily_energy.load_energy_entity):null,C=this._config.daily_energy?.battery_charge_entity?this._getNumber(this._config.daily_energy.battery_charge_entity):null,S=this._config.daily_energy?.battery_discharge_entity?this._getNumber(this._config.daily_energy.battery_discharge_entity):null,A=this._config.bms,M=Boolean(A?.dual_battery||A?.battery_1&&A?.battery_2||A?.bat1_soc_entity||A?.bat1_voltage_entity||A?.bat2_soc_entity||A?.bat2_voltage_entity);let E,N,B=[];if(A)if(M){const e=A.battery_1,t=A.battery_2,i=A.bat1_voltage_entity||e?.voltage_entity,r=A.bat2_voltage_entity||t?.voltage_entity,a=i?this._getNumber(i):o?Number((o/2).toFixed(2)):null,n=r?this._getNumber(r):o?Number((o/2).toFixed(2)):null,s=A.bat1_soc_entity||e?.soc_entity,c=A.bat2_soc_entity||t?.soc_entity,d=s?this._getNumber(s):l||null,p=c?this._getNumber(c):l||null,h=A.bat1_temperature_entity||e?.temperature_entity,g=A.bat2_temperature_entity||t?.temperature_entity,u=h?this._getNumber(h):null,_=g?this._getNumber(g):null,y=[],m=A.bat1_cell_prefix||e?.cell_voltage_prefix||"sensor.redodo_1_cell_voltage_",b=e?.cell_count||4;for(let e=1;e<=b;e++){let t=this._getNumber(`${m}${e}`);t>100&&(t/=1e3),t<=0&&a&&a>0&&(t=Number((a/b).toFixed(3))),y.push({index:e,voltage:t>0?t:3.38,rawEntityId:`${m}${e}`})}const f=[],v=A.bat2_cell_prefix||t?.cell_voltage_prefix||"sensor.redodo_2_cell_voltage_",x=t?.cell_count||4;for(let e=1;e<=x;e++){let t=this._getNumber(`${v}${e}`);t>100&&(t/=1e3),t<=0&&n&&n>0&&(t=Number((n/x).toFixed(3))),f.push({index:e+b,voltage:t>0?t:3.38,rawEntityId:`${v}${e}`})}E={name:A.bat1_name||e?.name||"Battery #1 (12V)",voltage:a,soc:d,temperature:u,cells:y},N={name:A.bat2_name||t?.name||"Battery #2 (12V)",voltage:n,soc:p,temperature:_,cells:f},null!==d&&null!==p&&d>0&&p>0&&(l=Math.min(d,p))}else{const e=A.cell_count||8,t=A.cell_voltage_prefix||"sensor.redodo_battery_cell_voltage_";for(let i=1;i<=e;i++){const r=`${t}${i}`;let a=this._getNumber(r);a>100&&(a/=1e3),a<=0&&o&&o>0&&(a=Number((o/e).toFixed(3))),B.push({index:i,voltage:a>0?a:3.33,rawEntityId:r})}}const P=this._config.controls,O=this._config.safety,I=this._config.daily_energy;return W`
-      <ha-card>
+  `}console.info("%c  ANINEREL-POWER-CARD  %c  Version 1.2.0  ","color: #ffffff; background: #F59E0B; font-weight: bold; border-radius: 3px 0 0 3px;","color: #000000; background: #10B981; font-weight: bold; border-radius: 0 3px 3px 0;");const Re="sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie",Fe="sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_den",Ve="sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_mesiats",We="switch.invertor_vkhod",He="sensor.kukhnia_redodo_24v_bms_to_inverter_rs485_bridge_redodo_24v_remaining_energy",Ue="sensor.aninerel_anl_4200t_24l_w_pro_load_percent";let qe=class extends ce{constructor(){super(...arguments),this._controlsExpanded=!1,this._chargeCurrentPreview=null,this._equalizationConfirmPending=!1,this._historyMap=new Map,this._lastBucketIndexMap=new Map,this._maxHistoryPoints=32,this._bucketDurationMs=27e5,this._lastHistoryFetch=0,this._historyFetchInterval=9e5}static{this.styles=[Ce]}setConfig(e){if(!e)throw new Error("Invalid card configuration");if(!e.entities)throw new Error('Required "entities" block is not defined in configuration');if(!e.entities.load_power)throw new Error("At least entities.load_power must be specified");this._config={...ye,...e,entities:{...e.entities},bms:e.bms?{...e.bms}:void 0,controls:e.controls?{...e.controls}:void 0,safety:e.safety?{...e.safety}:void 0,daily_energy:e.daily_energy?{...e.daily_energy}:void 0,colors:e.colors?{...e.colors}:void 0}}set hass(e){const t=this._hass;this._hass=e,t||this._fetchHistory(),t&&!this._hasRelevantEntitiesChanged(t,e)||(this._updateHistoryBuffers(),this.requestUpdate())}get hass(){return this._hass}firstUpdated(){this._fetchHistory()}getCardSize(){return this._config?.compact_mode?10:14}getLayoutOptions(){return{grid_rows:this._config?.compact_mode?10:14,grid_columns:4,grid_min_rows:8,grid_min_columns:2}}static getStubConfig(){return ke}static async getConfigElement(){return await Promise.resolve().then(function(){return Ge}),document.createElement("aninerel-power-card-editor")}async _fetchHistory(){if(!this._config||!this._hass)return;const e=this._config.battery_voltage_entity||this._config.bms?.voltage_entity,t=this._config.grid_voltage_entity,i=[];if(e&&i.push(e),t&&i.push(t),0===i.length)return;const a=Date.now();if(!(a-this._lastHistoryFetch<this._historyFetchInterval&&this._historyMap.size>0)){this._lastHistoryFetch=a;try{const r=a-864e5,n=new Date(r).toISOString();let o=null;if("function"==typeof this._hass.callWS)o=await this._hass.callWS({type:"history/history_during_period",start_time:n,entity_ids:i,minimal_response:!0,no_attributes:!0});else if("function"==typeof this._hass.callApi){const e=`history/period/${n}?filter_entity_id=${i.join(",")}&minimal_response&no_attributes`;o=await this._hass.callApi("GET",e)}if(o){const i=Math.floor(a/this._bucketDurationMs);if(e){const t=this._extractStateList(o,e),n=this._sampleHistoryPoints(t,this._maxHistoryPoints,r,a);n.length>0&&(this._historyMap.set("battery_voltage",n),this._lastBucketIndexMap.set("battery_voltage",i))}if(t){const e=this._extractStateList(o,t),n=this._sampleHistoryPoints(e,this._maxHistoryPoints,r,a);n.length>0&&(this._historyMap.set("grid_voltage",n),this._lastBucketIndexMap.set("grid_voltage",i))}this.requestUpdate()}}catch(e){console.warn("AninerelPowerCard: using live buffer for sparklines (history API unavailable):",e)}}}_extractStateList(e,t){if(!e)return[];if(e[t]&&Array.isArray(e[t]))return e[t];if(Array.isArray(e)){for(const i of e)if(Array.isArray(i)&&i.length>0){if(i[0]?.entity_id===t)return i}else if(i?.entity_id===t&&Array.isArray(i.states))return i.states;if(void 0!==e[0]?.state||void 0!==e[0]?.s)return e}return e.entity_id===t&&Array.isArray(e.states)?e.states:[]}_sampleHistoryPoints(e,t,i,a){if(!e||0===e.length)return[];const r=[];for(const t of e){const e=void 0!==t.s?t.s:t.state,i=parseFloat(e);if(isNaN(i)||!isFinite(i))continue;let a=NaN;"number"==typeof t.lu?a=1e3*t.lu:"number"==typeof t.lc?a=1e3*t.lc:(t.last_updated||t.last_changed)&&(a=Date.parse(t.last_updated||t.last_changed)),r.push({t:a,v:i})}if(0===r.length)return[];if(r.some(e=>!isNaN(e.t))&&a>i){const e=[],n=a-i;let o=0,s=r[0].v;for(let a=0;a<t;a++){const l=i+(a+1)/t*n;let c=0,d=0;for(;o<r.length;){const e=r[o];if(!isNaN(e.t)&&e.t>l)break;s=e.v,c+=e.v,d++,o++}e.push(d>0?Number((c/d).toFixed(2)):s)}return e}const n=r.map(e=>e.v);if(n.length<=t)return n;const o=[],s=(n.length-1)/(t-1);for(let e=0;e<t;e++)o.push(n[Math.min(Math.round(e*s),n.length-1)]);return o}_updateHistoryBuffers(){if(!this._config||!this._hass)return;const e=this._config.battery_voltage_entity||this._config.bms?.voltage_entity;if(e){const t=this._getNullableNumber(e);null!==t&&this._pushHistory("battery_voltage",t)}if(this._config.grid_voltage_entity){const e=this._getNullableNumber(this._config.grid_voltage_entity);null!==e&&this._pushHistory("grid_voltage",e)}}_pushHistory(e,t){const i=this._historyMap.get(e)||[],a=Math.floor(Date.now()/this._bucketDurationMs),r=this._lastBucketIndexMap.get(e);i.length<this._maxHistoryPoints?(0===i.length||Math.abs(i[i.length-1]-t)>.001)&&(i.push(t),this._historyMap.set(e,i),this._lastBucketIndexMap.set(e,a)):void 0!==r&&a>r?(i.push(t),i.length>this._maxHistoryPoints&&i.shift(),this._historyMap.set(e,i),this._lastBucketIndexMap.set(e,a)):(i[i.length-1]=t,this._historyMap.set(e,i))}_hasRelevantEntitiesChanged(e,t){if(!this._config)return!0;if(e.language!==t.language||e.locale?.language!==t.locale?.language)return!0;const i=this._getMonitoredEntityIds();for(const a of i)if(e.states[a]!==t.states[a])return!0;return!1}_getMonitoredEntityIds(){const e=[Re,Fe,Ve,We,He,Ue];if(!this._config)return e;const{entities:t,bms:i,controls:a,safety:r,daily_energy:n}=this._config;if(t&&(t.solar_power&&e.push(t.solar_power),t.battery_power&&e.push(t.battery_power),t.grid_power&&e.push(t.grid_power),t.load_power&&e.push(t.load_power)),this._config.battery_voltage_entity&&e.push(this._config.battery_voltage_entity),this._config.battery_current_entity&&e.push(this._config.battery_current_entity),this._config.grid_voltage_entity&&e.push(this._config.grid_voltage_entity),this._config.operating_mode_entity&&e.push(this._config.operating_mode_entity),this._config.charging_active_entity&&e.push(this._config.charging_active_entity),this._config.inverter_temperature_entity&&e.push(this._config.inverter_temperature_entity),this._config.inverter_load_percent_entity&&e.push(this._config.inverter_load_percent_entity),this._config.self_consumption_power_entity&&e.push(this._config.self_consumption_power_entity),this._config.grid_breaker_switch_entity&&e.push(this._config.grid_breaker_switch_entity),this._config.grid_breaker_power_entity&&e.push(this._config.grid_breaker_power_entity),this._config.kpi_entity&&e.push(this._config.kpi_entity),i){i.soc_entity&&e.push(i.soc_entity),i.voltage_entity&&e.push(i.voltage_entity),i.current_entity&&e.push(i.current_entity),i.temperature_entity&&e.push(i.temperature_entity),i.temperature_2_entity&&e.push(i.temperature_2_entity),i.cycle_count_entity&&e.push(i.cycle_count_entity),i.cell_delta_entity&&e.push(i.cell_delta_entity),i.remaining_capacity_entity&&e.push(i.remaining_capacity_entity),i.full_capacity_entity&&e.push(i.full_capacity_entity),i.remaining_energy_entity&&e.push(i.remaining_energy_entity);const t=i.cell_count||8,a=i.cell_voltage_prefix||"sensor.redodo_battery_cell_voltage_";for(let i=1;i<=t;i++)e.push(`${a}${i}`);const r=i.battery_1?.cell_count||4;if(i.bat1_soc_entity&&e.push(i.bat1_soc_entity),i.bat1_voltage_entity&&e.push(i.bat1_voltage_entity),i.bat1_temperature_entity&&e.push(i.bat1_temperature_entity),i.bat1_cell_prefix)for(let t=1;t<=r;t++)e.push(`${i.bat1_cell_prefix}${t}`);if(i.battery_1){const t=i.battery_1;if(t.soc_entity&&e.push(t.soc_entity),t.voltage_entity&&e.push(t.voltage_entity),t.temperature_entity&&e.push(t.temperature_entity),t.cell_voltage_prefix)for(let i=1;i<=r;i++)e.push(`${t.cell_voltage_prefix}${i}`)}const n=i.battery_2?.cell_count||4;if(i.bat2_soc_entity&&e.push(i.bat2_soc_entity),i.bat2_voltage_entity&&e.push(i.bat2_voltage_entity),i.bat2_temperature_entity&&e.push(i.bat2_temperature_entity),i.bat2_cell_prefix)for(let t=1;t<=n;t++)e.push(`${i.bat2_cell_prefix}${t}`);if(i.battery_2){const t=i.battery_2;if(t.soc_entity&&e.push(t.soc_entity),t.voltage_entity&&e.push(t.voltage_entity),t.temperature_entity&&e.push(t.temperature_entity),t.cell_voltage_prefix)for(let i=1;i<=n;i++)e.push(`${t.cell_voltage_prefix}${i}`)}}return a&&(a.charge_source_entity&&e.push(a.charge_source_entity),a.output_priority_entity&&e.push(a.output_priority_entity),a.max_charge_current_entity&&e.push(a.max_charge_current_entity),a.bulk_voltage_entity&&e.push(a.bulk_voltage_entity),a.float_voltage_entity&&e.push(a.float_voltage_entity),a.equalization_entity&&e.push(a.equalization_entity)),r&&(r.fault_active_entity&&e.push(r.fault_active_entity),r.fault_code_entity&&(e.push(r.fault_code_entity),e.push(r.fault_code_entity.replace(/_code$/,"_details"))),r.fault_details_entity&&e.push(r.fault_details_entity),r.warnings_active_entity&&e.push(r.warnings_active_entity),r.warning_code_entity&&(e.push(r.warning_code_entity),e.push(r.warning_code_entity.replace(/_code$/,"_details"))),r.warning_details_entity&&e.push(r.warning_details_entity)),n&&(n.load_energy_entity&&e.push(n.load_energy_entity),n.grid_import_entity&&e.push(n.grid_import_entity),n.battery_charge_entity&&e.push(n.battery_charge_entity),n.battery_discharge_entity&&e.push(n.battery_discharge_entity),n.self_consumption_daily_entity&&e.push(n.self_consumption_daily_entity),n.self_consumption_monthly_entity&&e.push(n.self_consumption_monthly_entity)),e.filter(Boolean)}_findMatchingEntity(e,t){if(!(e&&t&&this._hass&&this._hass.states))return;const i=e.replace(/_code$/,t.replace(/^_+/,"_"));return this._hass.states[i]?i:void 0}_resolveEntity(e,t){return e&&""!==e.trim()?e:t&&this._hass?.states?.[t]?t:void 0}_isEntityUnavailable(e){if(!e||!this._hass||!this._hass.states[e])return!0;const t=this._hass.states[e].state;return"unavailable"===t||"unknown"===t||""===t}_getState(e){if(!e||!this._hass||!this._hass.states[e])return"N/A";const t=this._hass.states[e].state;return"unavailable"===t||"unknown"===t?"N/A":t}_getNumber(e){return this._getNullableNumber(e)??0}_getNullableNumber(e){if(!e||!this._hass||!this._hass.states[e])return null;const t=this._hass.states[e].state;if("unavailable"===t||"unknown"===t||""===t)return null;const i=parseFloat(t);return isNaN(i)||!isFinite(i)?null:i}_getOptions(e){return e&&this._hass&&this._hass.states[e]&&this._hass.states[e].attributes?.options||[]}_handleEntityClick(e){if(!e)return;const t=new CustomEvent("hass-more-info",{bubbles:!0,composed:!0,detail:{entityId:e}});this.dispatchEvent(t)}async _handleSelectOption(e,t){if(this._hass)try{await this._hass.callService("select","select_option",{entity_id:e,option:t})}catch(e){console.error("Failed to set option:",e)}}async _handleSetNumber(e,t){if(this._hass)try{await this._hass.callService("number","set_value",{entity_id:e,value:t})}catch(e){console.error("Failed to set number value:",e)}}async _handleToggleEqualization(e,t){if(this._hass){if(!t&&!this._equalizationConfirmPending)return this._equalizationConfirmPending=!0,this._equalizationConfirmTimer&&clearTimeout(this._equalizationConfirmTimer),void(this._equalizationConfirmTimer=setTimeout(()=>{this._equalizationConfirmPending=!1},4e3));this._equalizationConfirmPending=!1,this._equalizationConfirmTimer&&clearTimeout(this._equalizationConfirmTimer);try{await this._hass.callService("switch",t?"turn_off":"turn_on",{entity_id:e})}catch(e){console.error("Failed to toggle switch:",e)}}}render(){if(!this._config)return U``;const e=Ae(this._hass,this._config.language),t=this._config.max_power||4200,i=Boolean(this._config.show_solar&&this._config.entities.solar_power&&""!==this._config.entities.solar_power.trim()),a=this._isEntityUnavailable(this._config.entities.load_power),r=this._config.operating_mode_entity?this._isEntityUnavailable(this._config.operating_mode_entity):a,n=Boolean(this._hass&&a&&r),o=i&&this._config.entities.solar_power?this._getNumber(this._config.entities.solar_power):0,s=this._getNumber(this._config.entities.battery_power),l=this._getNumber(this._config.entities.grid_power),c=this._getNumber(this._config.entities.load_power),d=this._getNullableNumber(this._config.battery_voltage_entity||this._config.bms?.voltage_entity),p=this._getNullableNumber(this._config.battery_current_entity||this._config.bms?.current_entity),h=this._getNullableNumber(this._config.grid_voltage_entity),g=this._resolveEntity(this._config.self_consumption_power_entity,Re),u=g?this._getNullableNumber(g):null,_=this._resolveEntity(this._config.grid_breaker_switch_entity,We),m=_?this._getState(_):null;let y=this._config.bms?.soc_entity?this._getNullableNumber(this._config.bms.soc_entity):null;const b=this._getState(this._config.operating_mode_entity),f=this._getNullableNumber(this._config.inverter_temperature_entity),v="on"===this._getState(this._config.charging_active_entity),x="on"===this._getState(this._config.safety?.fault_active_entity),w=this._getNullableNumber(this._config.safety?.fault_code_entity),$=null!==w?Math.round(w):null,k=this._config.safety?.fault_details_entity||this._findMatchingEntity(this._config.safety?.fault_code_entity,"_fault_details"),C=k?this._getState(k):null,S=C&&"N/A"!==C&&"0"!==C?C:null;let A="on"===this._getState(this._config.safety?.warnings_active_entity);const N=this._getNullableNumber(this._config.safety?.warning_code_entity),M=null!==N?Math.round(N):null,E=this._config.safety?.warning_details_entity||this._findMatchingEntity(this._config.safety?.warning_code_entity,"_warning_details"),B=E?this._getState(E):null,P=B&&"N/A"!==B&&"0"!==B?B:null;let O=M;if(!i){const{effectiveCode:e,hasNonPvWarning:t}=function(e){if(null===e||0===e||isNaN(e))return{effectiveCode:null,hasNonPvWarning:!1};const t=-34944&e;return 0===t?{effectiveCode:null,hasNonPvWarning:!1}:{effectiveCode:t,hasNonPvWarning:!0}}(M);O=e,t||(A=!1)}const I=this._getNullableNumber(this._config.daily_energy?.grid_import_entity),T=this._getNullableNumber(this._config.daily_energy?.load_energy_entity),z=this._getNullableNumber(this._config.daily_energy?.battery_charge_entity),L=this._getNullableNumber(this._config.daily_energy?.battery_discharge_entity),D=this._resolveEntity(this._config.daily_energy?.self_consumption_daily_entity,Fe),R=D?this._getNullableNumber(D):null,F=this._resolveEntity(this._config.daily_energy?.self_consumption_monthly_entity,Ve),V=F?this._getNullableNumber(F):null,W=this._config.bms,H=Boolean(W?.dual_battery||W?.battery_1&&W?.battery_2||W?.bat1_soc_entity||W?.bat1_voltage_entity||W?.bat2_soc_entity||W?.bat2_voltage_entity);let q,j,G=[];if(W)if(H){const e=W.battery_1,t=W.battery_2,i=W.bat1_voltage_entity||e?.voltage_entity,a=W.bat2_voltage_entity||t?.voltage_entity,r=this._getNullableNumber(i),n=this._getNullableNumber(a),o=W.bat1_soc_entity||e?.soc_entity,s=W.bat2_soc_entity||t?.soc_entity,l=this._getNullableNumber(o),c=this._getNullableNumber(s),d=W.bat1_temperature_entity||e?.temperature_entity,p=W.bat2_temperature_entity||t?.temperature_entity,h=this._getNullableNumber(d),g=this._getNullableNumber(p),u=[],_=W.bat1_cell_prefix||e?.cell_voltage_prefix||"sensor.redodo_1_cell_voltage_",m=e?.cell_count||4;for(let e=1;e<=m;e++){let t=this._getNullableNumber(`${_}${e}`)??0;t>100&&(t/=1e3),u.push({index:e,voltage:t>0?t:0,rawEntityId:`${_}${e}`})}const b=[],f=W.bat2_cell_prefix||t?.cell_voltage_prefix||"sensor.redodo_2_cell_voltage_",v=t?.cell_count||4;for(let e=1;e<=v;e++){let t=this._getNullableNumber(`${f}${e}`)??0;t>100&&(t/=1e3),b.push({index:e+m,voltage:t>0?t:0,rawEntityId:`${f}${e}`})}q={name:W.bat1_name||e?.name||"Battery #1 (12V)",voltage:r,soc:l,temperature:h,cells:u},j={name:W.bat2_name||t?.name||"Battery #2 (12V)",voltage:n,soc:c,temperature:g,cells:b},null!==l&&null!==c&&l>=0&&c>=0?y=Math.min(l,c):null!==l?y=l:null!==c&&(y=c)}else{const e=W.cell_count||8,t=W.cell_voltage_prefix||"sensor.redodo_battery_cell_voltage_";for(let i=1;i<=e;i++){const e=`${t}${i}`;let a=this._getNullableNumber(e)??0;a>100&&(a/=1e3),G.push({index:i,voltage:a>0?a:0,rawEntityId:e})}}(null===y||isNaN(y))&&null!==d&&d>=20&&(y=d>=27.2?100:d>=26.8?Math.round(80+(d-26.8)/.4*20):d>=26.4?Math.round(50+(d-26.4)/.4*30):d>=26?Math.round(20+(d-26)/.4*30):d>=24?Math.max(5,Math.round((d-24)/2*20)):5);const Y=W?.nominal_capacity_wh||2560,K=this._resolveEntity(W?.remaining_energy_entity,He);let Z=null;if(K){const e=this._getNullableNumber(K);if(null!==e){Z="kwh"===(this._hass?.states[K]?.attributes?.unit_of_measurement?.toLowerCase()||"")?1e3*e:e}}null===Z&&null!==y&&(Z=Math.max(0,y)/100*Y);let J=null;if(null!==Z&&Math.abs(s)>15)if(s<-15){const t=.1*Y;J=Ee(Math.max(0,Z-t)/Math.abs(s),e)}else if(s>15&&(null===y||y<99.5)){J=Ee(Math.max(0,Y-Z)/s,e)}const X=this._resolveEntity(this._config.inverter_load_percent_entity,Ue),Q=X?this._getNullableNumber(X):null,ee=null!==Q?Q:t>0?Math.min(100,Math.round(c/t*100)):0,te=this._config.controls,ie=this._config.safety,ae=this._config.daily_energy,re=te?.max_charge_current_entity,ne=re?this._hass?.states[re]?.attributes:void 0,oe="number"==typeof ne?.min?ne.min:2,se="number"==typeof ne?.max?ne.max:100,le="number"==typeof ne?.step?ne.step:1;return U`
+      <ha-card class="${this._config.compact_mode?"compact":""}">
         <!-- 1. Header Bar with live status chips -->
-        ${!1!==this._config.show_header?function(e){const{config:t,hasSolar:i=!1,operatingMode:r,temperature:a,isCharging:o,isFault:n,faultCode:s,isWarning:l,warningCode:c,onChipClick:d}=e,p=r?r.toLowerCase():"";let h="#10b981",g="mdi:battery-charging-60";p.includes("mains")||p.includes("line")||p.includes("grid")?(h="#3b82f6",g="mdi:transmission-tower"):p.includes("bypass")?(h="#ef4444",g="mdi:transit-connection-variant"):p.includes("battery")&&(h="#10b981",g="mdi:battery-outline");let u="#10b981";null===a||isNaN(a)||(a>55?u="#ef4444":a>42&&(u="#f59e0b"));const _=i?"mdi:solar-power-variant-outline":"mdi:home-battery-outline",y=i?"Hybrid 24V 4.2kW Inverter":"24V 4.2kW UPS Inverter";return W`
+        ${!1!==this._config.show_header?function(e){const{hass:t,config:i,hasSolar:a=!1,isOffline:r=!1,operatingMode:n,temperature:o,selfConsumptionWatts:s,selfConsumptionEntity:l,gridBreakerState:c,gridBreakerEntity:d,isCharging:p,isFault:h,faultCode:g,isWarning:u,warningCode:_,onChipClick:m}=e,y=i.language,b=n?n.toLowerCase():"";let f="#10b981",v="mdi:battery-charging-60";b.includes("mains")||b.includes("line")||b.includes("grid")?(f="#3b82f6",v="mdi:transmission-tower"):b.includes("bypass")?(f="#ef4444",v="mdi:transit-connection-variant"):(b.includes("battery")||b.includes("off-grid")||b.includes("off_grid"))&&(f="#10b981",v="mdi:battery-outline");let x="#10b981";null===o||isNaN(o)||(o>55?x="#ef4444":o>42&&(x="#f59e0b"));const w=a?"mdi:solar-power-variant-outline":"mdi:home-battery-outline",$=Ne(a?"header.subtitle_solar":"header.subtitle_ups",t,y);return U`
     <div class="header-bar">
       <!-- Card Title & Inverter Model -->
       <div class="header-left">
         <div class="header-icon-box">
-          <ha-icon icon="${t.icon||_}"></ha-icon>
+          <ha-icon icon="${i.icon||w}"></ha-icon>
         </div>
         <div class="header-title-box">
-          <span class="header-title">${t.title||"Aninerel ANL 4200T"}</span>
-          <span class="header-subtitle">${t.subtitle||y}</span>
+          <span class="header-title">${i.title||"Aninerel ANL 4200T"}</span>
+          <span class="header-subtitle">${i.subtitle||$}</span>
         </div>
       </div>
 
       <!-- Live Status Chips -->
       <div class="header-chips">
         <!-- Operating Mode Chip -->
-        ${r&&"N/A"!==r?W`
+        ${n&&"N/A"!==n&&!r?U`
               <button
                 type="button"
                 class="status-chip"
-                style="--chip-color: ${h}"
-                @click=${()=>d(t.operating_mode_entity)}
+                style="--chip-color: ${f}"
+                @click=${()=>m(i.operating_mode_entity)}
                 title="Inverter operating mode"
               >
-                <ha-icon .icon=${g}></ha-icon>
-                <span>${r}</span>
+                <ha-icon .icon=${v}></ha-icon>
+                <span>${n}</span>
               </button>
             `:""}
 
         <!-- Inverter Temperature Chip -->
-        ${null===a||isNaN(a)?"":W`
+        ${null===o||isNaN(o)?"":U`
               <button
                 type="button"
                 class="status-chip"
-                style="--chip-color: ${u}"
-                @click=${()=>d(t.inverter_temperature_entity)}
+                style="--chip-color: ${x}"
+                @click=${()=>m(i.inverter_temperature_entity)}
                 title="Inverter power unit temperature"
               >
                 <ha-icon icon="mdi:thermometer"></ha-icon>
-                <span>${Math.round(a)}°C</span>
+                <span>${Math.round(o)}°C</span>
               </button>
             `}
 
+        <!-- Self-Consumption Power Chip -->
+        ${null!=s&&!isNaN(s)&&s>0?U`
+              <button
+                type="button"
+                class="status-chip"
+                style="--chip-color: #a855f7"
+                @click=${()=>m(l)}
+                title="Inverter own power consumption"
+              >
+                <ha-icon icon="mdi:flash-outline"></ha-icon>
+                <span>${Ne("header.self_power",t,y)}: ${Math.round(s)}W</span>
+              </button>
+            `:""}
+
+        <!-- Input Breaker Chip (Zigbee Smart Plug / Breaker) -->
+        ${"on"===c||"off"===c?U`
+              <button
+                type="button"
+                class="status-chip"
+                style="--chip-color: ${"on"===c?"#3b82f6":"#f59e0b"}"
+                @click=${()=>m(d)}
+                title="AC Input Breaker (${c.toUpperCase()})"
+              >
+                <ha-icon icon="${"on"===c?"mdi:electric-switch-closed":"mdi:electric-switch"}"></ha-icon>
+                <span>${Ne("header.input_breaker",t,y)}: ${c.toUpperCase()}</span>
+              </button>
+            `:""}
+
         <!-- Charging Active Flag -->
-        ${o?W`
+        ${p&&!r?U`
               <button
                 type="button"
                 class="status-chip pulse-chip"
                 style="--chip-color: #10b981"
-                @click=${()=>d(t.charging_active_entity)}
+                @click=${()=>m(i.charging_active_entity)}
                 title="Charging active"
               >
                 <ha-icon icon="mdi:battery-charging"></ha-icon>
-                <span>CHG</span>
+                <span>${Ne("common.chg",t,y)}</span>
               </button>
             `:""}
 
-        <!-- Fault Active Chip -->
-        ${n?W`
+        <!-- Offline Chip -->
+        ${r?U`
               <button
                 type="button"
                 class="status-chip pulse-chip-danger"
                 style="--chip-color: #ef4444"
-                @click=${()=>d(t.safety?.fault_code_entity||t.safety?.fault_active_entity)}
+                @click=${()=>m(i.operating_mode_entity||i.entities?.load_power)}
+                title="${Ne("alerts.offline_title",t,y)}"
+              >
+                <ha-icon icon="mdi:lan-disconnect"></ha-icon>
+                <span>${Ne("common.offline",t,y)}</span>
+              </button>
+            `:""}
+
+        <!-- Fault Active Chip -->
+        ${h&&!r?U`
+              <button
+                type="button"
+                class="status-chip pulse-chip-danger"
+                style="--chip-color: #ef4444"
+                @click=${()=>m(i.safety?.fault_code_entity||i.safety?.fault_active_entity)}
                 title="Inverter fault status"
               >
                 <ha-icon icon="mdi:alert-circle"></ha-icon>
-                <span>${s?`F${s}`:"FAULT"}</span>
+                <span>${g?`F${g}`:Ne("common.fault",t,y)}</span>
               </button>
             `:""}
 
         <!-- Warnings Active Chip -->
-        ${l&&!n?W`
+        ${!u||h||r?"":U`
               <button
                 type="button"
                 class="status-chip"
                 style="--chip-color: #f59e0b"
-                @click=${()=>d(t.safety?.warning_code_entity||t.safety?.warnings_active_entity)}
+                @click=${()=>m(i.safety?.warning_code_entity||i.safety?.warnings_active_entity)}
                 title="Inverter warning"
               >
                 <ha-icon icon="mdi:alert"></ha-icon>
-                <span>${c?`W${c}`:"WARN"}</span>
+                <span>${_?`W${_}`:Ne("common.warn",t,y)}</span>
               </button>
-            `:""}
+            `}
 
         <!-- System Normal Chip -->
-        ${n||l?"":W`
+        ${h||u||r?"":U`
               <div class="status-chip chip-ok" title="System normal">
                 <ha-icon icon="mdi:check-circle"></ha-icon>
-                <span>OK</span>
+                <span>${Ne("common.ok",t,y)}</span>
               </div>
             `}
       </div>
     </div>
-  `}({config:this._config,hasSolar:e,operatingMode:c,temperature:d,isCharging:p,isFault:h,faultCode:g,isWarning:m,warningCode:w,onChipClick:e=>this._handleEntityClick(e)}):""}
+  `}({hass:this._hass,config:this._config,hasSolar:i,isOffline:n,operatingMode:b,temperature:f,selfConsumptionWatts:u,selfConsumptionEntity:g,gridBreakerState:m,gridBreakerEntity:_,isCharging:v,isFault:x,faultCode:$,isWarning:A,warningCode:O,onChipClick:e=>this._handleEntityClick(e)}):""}
 
-        <!-- 2. Active Safety & Diagnostics Alert Banners (if any faults/warnings) -->
-        ${!1!==this._config.show_alerts&&O?Ie({safetyConfig:O,isFault:h,faultCode:g,faultDetailsText:y,isWarning:m,warningCode:w,warningDetailsText:x,onAlertClick:e=>this._handleEntityClick(e)}):""}
+        <!-- 2. Active Safety & Diagnostics Alert Banners (if offline or any faults/warnings) -->
+        ${!1!==this._config.show_alerts&&(ie||n)?De({hass:this._hass,language:this._config.language,safetyConfig:ie,isOffline:n,offlineEntity:this._config.operating_mode_entity||this._config.entities.load_power,isFault:x,faultCode:$,faultDetailsText:S,isWarning:A,warningCode:O,warningDetailsText:P,onAlertClick:e=>this._handleEntityClick(e)}):""}
 
         <!-- 3. Power Flow Animated Diagram -->
-        ${!1!==this._config.show_flow?Ae({hass:this._hass,config:this._config,hasSolar:e,gridPosition:this._config.grid_position||"bottom",solarWatts:t,batteryWatts:i,gridWatts:r,loadWatts:a,batterySoc:l,operatingMode:"N/A"!==c?c:"Inverter",isFault:h,onNodeClick:e=>this._handleEntityClick(e)}):""}
+        ${!1!==this._config.show_flow?Be({hass:this._hass,config:this._config,hasSolar:i,isOffline:n,gridPosition:this._config.grid_position||"bottom",solarWatts:o,batteryWatts:s,gridWatts:l,loadWatts:c,batterySoc:y,batteryRuntimeText:J,selfConsumptionWatts:u,operatingMode:"N/A"!==b?b:"Inverter",isFault:x,onNodeClick:e=>this._handleEntityClick(e)}):""}
 
         <!-- 4. Electrical Telemetry & Battery SoC / Self-Sufficiency KPI -->
-        ${!1!==this._config.show_params?Ee({config:this._config,hasSolar:e,batteryVoltage:o,batteryCurrent:n,gridVoltage:s,batterySoc:l,gridImportEnergyToday:$,loadEnergyToday:k,batteryDischargeEnergyToday:S,inverterLoadPercent:this._config.inverter_load_percent_entity?this._getNumber(this._config.inverter_load_percent_entity):this._getNumber("sensor.aninerel_anl_4200t_24l_w_pro_load_percent"),historyMap:this._historyMap,onParamClick:e=>this._handleEntityClick(e)}):""}
+        ${!1!==this._config.show_params?Oe({hass:this._hass,config:this._config,hasSolar:i,batteryVoltage:d,batteryCurrent:p,gridVoltage:h,batterySoc:y,gridImportEnergyToday:I,loadEnergyToday:T,batteryDischargeEnergyToday:L,inverterLoadPercent:ee,historyMap:this._historyMap,onParamClick:e=>this._handleEntityClick(e)}):""}
 
         <!-- 5. BMS Redodo LiFePO4 Cell Telemetry & Balancing (Single or Dual Battery Series) -->
-        ${!1!==this._config.show_bms&&A?function(e){const{bmsConfig:t,soc:i,temperature:r,cellDelta:a,cycleCount:o,remainingCapacity:n,fullCapacity:s,cells:l,onBmsClick:c,isDual:d=!1,battery1:p,battery2:h}=e,g=3.65-3;if(d&&p&&h){const e=p.voltage??0,i=h.voltage??0,r=e>0&&i>0?Math.round(1e3*Math.abs(e-i)):0;let a="#10b981",s="Balanced";r>200?(a="#ef4444",s="Pack Imbalance!"):r>80&&(a="#f59e0b",s="Pack Drift");const l=[...p.cells,...h.cells].map(e=>e.voltage).filter(e=>e>0),d=l.length>0?Math.min(...l):3,u=l.length>0?Math.max(...l):3.65,_=l.length>0?Math.round(1e3*(u-d)):0;return W`
+        ${!1!==this._config.show_bms&&W?function(e){const{hass:t,language:i,bmsConfig:a,soc:r,temperature:n,cellDelta:o,cycleCount:s,remainingCapacity:l,fullCapacity:c,cells:d,onBmsClick:p,isDual:h=!1,battery1:g,battery2:u}=e,_=3.65-3;if(h&&g&&u){const e=g.voltage??0,r=u.voltage??0,n=e>0&&r>0?Math.round(1e3*Math.abs(e-r)):null;let o="#10b981",c=Ne("bms.balanced",t,i);null===n?(o="#64748b",c=Ne("bms.offline",t,i)):n>200?(o="#ef4444",c=Ne("bms.imbalance",t,i)):n>80&&(o="#f59e0b",c=Ne("bms.drift",t,i));const d=[...g.cells,...u.cells].map(e=>e.voltage).filter(e=>e>0),h=d.length>0?Math.min(...d):0,m=d.length>0?Math.max(...d):0,y=d.length>1?Math.round(1e3*(m-h)):null,b=null!==n&&n>150?Ne("bms.pack_drift_warn",t,i).replace("{delta}",String(n)).replace("{v1}",e.toFixed(2)).replace("{v2}",r.toFixed(2)):"";return U`
       <div class="bms-card-section dual-bms-section">
         <!-- Dual Battery Header -->
         <div class="bms-header">
           <div class="bms-header-title">
             <ha-icon icon="mdi:battery-sync"></ha-icon>
-            <span>BMS Redodo: 2× 12V Series (24V)</span>
+            <span>${Ne("bms.title_dual",t,i)}</span>
           </div>
 
           <div class="bms-header-status">
             <!-- Midpoint battery drift badge -->
             <span
               class="bms-delta-pill"
-              style="--delta-color: ${a}"
-              title="Pack Voltage Delta: ${s}"
+              style="--delta-color: ${o}"
+              title="${c}"
             >
               <ha-icon icon="mdi:scale-balance"></ha-icon>
-              <span>Δ Packs: ${r} mV</span>
+              <span>
+                ${Ne("bms.delta_packs",t,i)}:
+                ${null!==n?`${n} mV`:"—"}
+              </span>
             </span>
 
             <!-- Cell delta badge -->
             <span
               class="bms-delta-pill cell-delta-pill"
-              style="--delta-color: ${_>40?"#f59e0b":"#10b981"}"
+              style="--delta-color: ${null===y?"#64748b":y>40?"#f59e0b":"#10b981"}"
               title="Delta between highest and lowest cell"
             >
-              <span>Δ Cells: ${_} mV</span>
+              <span>
+                ${Ne("bms.delta_cells",t,i)}:
+                ${null!==y?`${y} mV`:"—"}
+              </span>
             </span>
           </div>
         </div>
 
         <!-- Warning banner if series midpoint drift is significant -->
-        ${r>150?W`
+        ${b?U`
               <div class="series-drift-alert">
                 <ha-icon icon="mdi:alert"></ha-icon>
-                <span>
-                  Pack voltage drift detected: ${r} mV (Battery 1: ${e.toFixed(2)}V, Battery 2: ${i.toFixed(2)}V).
-                  A 24V active battery equalizer is recommended.
-                </span>
+                <span>${b}</span>
               </div>
             `:""}
 
@@ -1871,35 +1977,37 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
           <div class="pack-column">
             <div
               class="pack-header"
-              @click=${()=>c(t.bat1_voltage_entity||t.bat1_soc_entity||t.battery_1?.voltage_entity||t.battery_1?.soc_entity)}
+              @click=${()=>p(a.bat1_voltage_entity||a.bat1_soc_entity||a.battery_1?.voltage_entity||a.battery_1?.soc_entity)}
               style="cursor: pointer;"
-              title="Click for Battery #1 details"
+              title="${g.name}"
             >
               <div class="pack-name-row">
-                <span class="pack-name">${p.name}</span>
-                ${null===p.soc||isNaN(p.soc)?"":W`<span class="pack-soc-badge">${Math.round(p.soc)}%</span>`}
+                <span class="pack-name">${g.name}</span>
+                ${null===g.soc||isNaN(g.soc)?"":U`<span class="pack-soc-badge">${Math.round(g.soc)}%</span>`}
               </div>
               <div class="pack-telemetry-row">
-                <span class="pack-voltage">${p.voltage?`${p.voltage.toFixed(2)}V`:"-"}</span>
-                ${null===p.temperature||isNaN(p.temperature)?"":W`<span class="pack-temp">${Math.round(p.temperature)}°C</span>`}
+                <span class="pack-voltage">
+                  ${g.voltage&&g.voltage>0?`${g.voltage.toFixed(2)}V`:"—"}
+                </span>
+                ${null===g.temperature||isNaN(g.temperature)?"":U`<span class="pack-temp">${Math.round(g.temperature)}°C</span>`}
               </div>
             </div>
 
-            <!-- 4 Cells of Battery 1 -->
-            <div class="cells-grid pack-cells" role="group" aria-label="${p.name} Cells">
-              ${p.cells.map(e=>{const t=e.voltage===d&&l.length>1,i=e.voltage===u&&l.length>1,r=Math.max(15,Math.min(100,Math.round((e.voltage-3)/g*100))),a=i?"#10b981":t?"#3b82f6":"#0ea5e9";return W`
+            <!-- Cells of Battery 1 -->
+            <div class="cells-grid pack-cells" role="group" aria-label="${g.name} Cells">
+              ${g.cells.map(e=>{const t=e.voltage>0,i=t&&e.voltage===h&&d.length>1&&h!==m,a=t&&e.voltage===m&&d.length>1&&h!==m,r=t?Math.max(15,Math.min(100,Math.round((e.voltage-3)/_*100))):8,n=t?a?"#10b981":i?"#3b82f6":"#0ea5e9":"rgba(255,255,255,0.12)";return U`
                   <div
                     class="cell-col"
-                    @click=${()=>c(e.rawEntityId)}
-                    title="Cell #${e.index}: ${e.voltage.toFixed(3)} V ${i?"(MAX)":t?"(MIN)":""}"
+                    @click=${()=>p(e.rawEntityId)}
+                    title="Cell #${e.index}: ${t?`${e.voltage.toFixed(3)} V`:"Offline"} ${a?"(MAX)":i?"(MIN)":""}"
                   >
                     <div class="cell-bar-track">
                       <div
-                        class="cell-bar-fill ${i?"cell-max":""} ${t?"cell-min":""}"
-                        style="height: ${r}%; background-color: ${a};"
+                        class="cell-bar-fill ${a?"cell-max":""} ${i?"cell-min":""}"
+                        style="height: ${r}%; background-color: ${n};"
                       ></div>
                     </div>
-                    <span class="cell-voltage">${e.voltage>0?e.voltage.toFixed(2):"-"}V</span>
+                    <span class="cell-voltage">${t?`${e.voltage.toFixed(2)}V`:"—"}</span>
                     <span class="cell-id">#${e.index}</span>
                   </div>
                 `})}
@@ -1909,7 +2017,7 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
           <!-- Series Bridge Divider -->
           <div class="series-bridge" title="24V Series Connection (+ to -)">
             <span class="bridge-line"></span>
-            <span class="bridge-badge">24V Series</span>
+            <span class="bridge-badge">${Ne("bms.series_badge",t,i)}</span>
             <span class="bridge-line"></span>
           </div>
 
@@ -1917,35 +2025,37 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
           <div class="pack-column">
             <div
               class="pack-header"
-              @click=${()=>c(t.bat2_voltage_entity||t.bat2_soc_entity||t.battery_2?.voltage_entity||t.battery_2?.soc_entity)}
+              @click=${()=>p(a.bat2_voltage_entity||a.bat2_soc_entity||a.battery_2?.voltage_entity||a.battery_2?.soc_entity)}
               style="cursor: pointer;"
-              title="Click for Battery #2 details"
+              title="${u.name}"
             >
               <div class="pack-name-row">
-                <span class="pack-name">${h.name}</span>
-                ${null===h.soc||isNaN(h.soc)?"":W`<span class="pack-soc-badge">${Math.round(h.soc)}%</span>`}
+                <span class="pack-name">${u.name}</span>
+                ${null===u.soc||isNaN(u.soc)?"":U`<span class="pack-soc-badge">${Math.round(u.soc)}%</span>`}
               </div>
               <div class="pack-telemetry-row">
-                <span class="pack-voltage">${h.voltage?`${h.voltage.toFixed(2)}V`:"-"}</span>
-                ${null===h.temperature||isNaN(h.temperature)?"":W`<span class="pack-temp">${Math.round(h.temperature)}°C</span>`}
+                <span class="pack-voltage">
+                  ${u.voltage&&u.voltage>0?`${u.voltage.toFixed(2)}V`:"—"}
+                </span>
+                ${null===u.temperature||isNaN(u.temperature)?"":U`<span class="pack-temp">${Math.round(u.temperature)}°C</span>`}
               </div>
             </div>
 
-            <!-- 4 Cells of Battery 2 -->
-            <div class="cells-grid pack-cells" role="group" aria-label="${h.name} Cells">
-              ${h.cells.map(e=>{const t=e.voltage===d&&l.length>1,i=e.voltage===u&&l.length>1,r=Math.max(15,Math.min(100,Math.round((e.voltage-3)/g*100))),a=i?"#10b981":t?"#3b82f6":"#0ea5e9";return W`
+            <!-- Cells of Battery 2 -->
+            <div class="cells-grid pack-cells" role="group" aria-label="${u.name} Cells">
+              ${u.cells.map(e=>{const t=e.voltage>0,i=t&&e.voltage===h&&d.length>1&&h!==m,a=t&&e.voltage===m&&d.length>1&&h!==m,r=t?Math.max(15,Math.min(100,Math.round((e.voltage-3)/_*100))):8,n=t?a?"#10b981":i?"#3b82f6":"#0ea5e9":"rgba(255,255,255,0.12)";return U`
                   <div
                     class="cell-col"
-                    @click=${()=>c(e.rawEntityId)}
-                    title="Cell #${e.index}: ${e.voltage.toFixed(3)} V ${i?"(MAX)":t?"(MIN)":""}"
+                    @click=${()=>p(e.rawEntityId)}
+                    title="Cell #${e.index}: ${t?`${e.voltage.toFixed(3)} V`:"Offline"} ${a?"(MAX)":i?"(MIN)":""}"
                   >
                     <div class="cell-bar-track">
                       <div
-                        class="cell-bar-fill ${i?"cell-max":""} ${t?"cell-min":""}"
-                        style="height: ${r}%; background-color: ${a};"
+                        class="cell-bar-fill ${a?"cell-max":""} ${i?"cell-min":""}"
+                        style="height: ${r}%; background-color: ${n};"
                       ></div>
                     </div>
-                    <span class="cell-voltage">${e.voltage>0?e.voltage.toFixed(2):"-"}V</span>
+                    <span class="cell-voltage">${t?`${e.voltage.toFixed(2)}V`:"—"}</span>
                     <span class="cell-id">#${e.index}</span>
                   </div>
                 `})}
@@ -1954,63 +2064,66 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
         </div>
 
         <!-- Optional summary footer if cycleCount or capacity is configured -->
-        ${null!==o||null!==n?W`
+        ${null!==s||null!==l?U`
               <div class="bms-footer-stats">
-                ${null===o||isNaN(o)?"":W`
-                      <div class="bms-footer-item" @click=${()=>c(t.cycle_count_entity)}>
+                ${null===s||isNaN(s)?"":U`
+                      <div class="bms-footer-item" @click=${()=>p(a.cycle_count_entity)}>
                         <ha-icon icon="mdi:refresh"></ha-icon>
-                        <span>Cycles: <strong>${o}</strong></span>
+                        <span>${Ne("bms.cycles",t,i)}: <strong>${s}</strong></span>
                       </div>
                     `}
-                ${null===n||isNaN(n)?"":W`
-                      <div class="bms-footer-item" @click=${()=>c(t.remaining_capacity_entity)}>
+                ${null===l||isNaN(l)?"":U`
+                      <div class="bms-footer-item" @click=${()=>p(a.remaining_capacity_entity)}>
                         <ha-icon icon="mdi:battery-charging-high"></ha-icon>
-                        <span>Remaining: <strong>${n.toFixed(1)} Ah</strong></span>
+                        <span>
+                          ${Ne("bms.remaining",t,i)}:
+                          <strong>${l.toFixed(1)} Ah</strong>
+                        </span>
                       </div>
                     `}
               </div>
             `:""}
       </div>
-    `}const u=l.map(e=>e.voltage).filter(e=>e>0),_=u.length>0?Math.min(...u):3,y=u.length>0?Math.max(...u):3.65,m=null===a||isNaN(a)?u.length>0?Math.round(1e3*(y-_)):0:a;let b="#10b981",f="Balanced";return m>50?(b="#ef4444",f="Imbalance Alert"):m>20&&(b="#f59e0b",f="Normal Drift"),W`
+    `}const m=d.map(e=>e.voltage).filter(e=>e>0),y=m.length>0?Math.min(...m):0,b=m.length>0?Math.max(...m):0,f=null===o||isNaN(o)?m.length>1?Math.round(1e3*(b-y)):null:o;let v="#10b981",x=Ne("bms.balanced",t,i);return null===f?(v="#64748b",x=Ne("bms.offline",t,i)):f>50?(v="#ef4444",x=Ne("bms.imbalance",t,i)):f>20&&(v="#f59e0b",x=Ne("bms.drift",t,i)),U`
     <div class="bms-card-section">
       <!-- Section Header -->
       <div class="bms-header">
         <div class="bms-header-title">
           <ha-icon icon="mdi:battery-heart-variant"></ha-icon>
-          <span>BMS Redodo LiFePO4</span>
-          ${null===i||isNaN(i)?"":W`<span class="bms-soc-badge">${Math.round(i)}% SOC</span>`}
+          <span>${Ne("bms.title",t,i)}</span>
+          ${null===r||isNaN(r)?"":U`<span class="bms-soc-badge">${Math.round(r)}% SOC</span>`}
         </div>
 
         <div class="bms-header-status">
           <span
             class="bms-delta-pill"
-            style="--delta-color: ${b}"
-            @click=${()=>c(t.cell_delta_entity)}
-            title="Delta between highest and lowest cell: ${f}"
+            style="--delta-color: ${v}"
+            @click=${()=>p(a.cell_delta_entity)}
+            title="${x}"
           >
             <ha-icon icon="mdi:scale-balance"></ha-icon>
-            <span>Δ ${m} mV</span>
+            <span>Δ ${null!==f?`${f} mV`:"—"}</span>
           </span>
         </div>
       </div>
 
       <!-- Main BMS Body: Cell Bars + Key Telemetry -->
       <div class="bms-body">
-        <!-- 8-Cell Bar Chart -->
+        <!-- Cell Bar Chart -->
         <div class="cells-grid" role="group" aria-label="LiFePO4 Cell Voltages">
-          ${l.map(e=>{const t=e.voltage===_&&u.length>1,i=e.voltage===y&&u.length>1,r=Math.max(15,Math.min(100,Math.round((e.voltage-3)/g*100))),a=i?"#10b981":t?"#3b82f6":"#0ea5e9";return W`
+          ${d.map(e=>{const t=e.voltage>0,i=t&&e.voltage===y&&m.length>1&&y!==b,a=t&&e.voltage===b&&m.length>1&&y!==b,r=t?Math.max(15,Math.min(100,Math.round((e.voltage-3)/_*100))):8,n=t?a?"#10b981":i?"#3b82f6":"#0ea5e9":"rgba(255,255,255,0.12)";return U`
               <div
                 class="cell-col"
-                @click=${()=>c(e.rawEntityId)}
-                title="Cell #${e.index}: ${e.voltage.toFixed(3)} V ${i?"(MAX)":t?"(MIN)":""}"
+                @click=${()=>p(e.rawEntityId)}
+                title="Cell #${e.index}: ${t?`${e.voltage.toFixed(3)} V`:"Offline"} ${a?"(MAX)":i?"(MIN)":""}"
               >
                 <div class="cell-bar-track">
                   <div
-                    class="cell-bar-fill ${i?"cell-max":""} ${t?"cell-min":""}"
-                    style="height: ${r}%; background-color: ${a};"
+                    class="cell-bar-fill ${a?"cell-max":""} ${i?"cell-min":""}"
+                    style="height: ${r}%; background-color: ${n};"
                   ></div>
                 </div>
-                <span class="cell-voltage">${e.voltage>0?e.voltage.toFixed(2):"-"}V</span>
+                <span class="cell-voltage">${t?`${e.voltage.toFixed(2)}V`:"—"}</span>
                 <span class="cell-id">#${e.index}</span>
               </div>
             `})}
@@ -2018,92 +2131,90 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
 
         <!-- Right Side: BMS Telemetry Columns -->
         <div class="bms-telemetry-panel">
-          ${null===r||isNaN(r)?"":W`
+          ${null===n||isNaN(n)?"":U`
                 <div
                   class="bms-stat-item"
-                  @click=${()=>c(t.temperature_entity)}
-                  title="BMS Temperature Probe"
+                  @click=${()=>p(a.temperature_entity)}
+                  title="${Ne("bms.temp",t,i)}"
                 >
                   <ha-icon icon="mdi:thermometer"></ha-icon>
                   <div class="bms-stat-text">
-                    <span class="bms-stat-val">${r.toFixed(1)}°C</span>
-                    <span class="bms-stat-lbl">Temp</span>
+                    <span class="bms-stat-val">${n.toFixed(1)}°C</span>
+                    <span class="bms-stat-lbl">${Ne("bms.temp",t,i)}</span>
                   </div>
                 </div>
               `}
 
-          ${null===o||isNaN(o)?"":W`
+          ${null===s||isNaN(s)?"":U`
                 <div
                   class="bms-stat-item"
-                  @click=${()=>c(t.cycle_count_entity)}
-                  title="Charge/Discharge Cycle Count"
+                  @click=${()=>p(a.cycle_count_entity)}
+                  title="${Ne("bms.cycles",t,i)}"
                 >
                   <ha-icon icon="mdi:refresh"></ha-icon>
                   <div class="bms-stat-text">
-                    <span class="bms-stat-val">${o}</span>
-                    <span class="bms-stat-lbl">Cycles</span>
+                    <span class="bms-stat-val">${s}</span>
+                    <span class="bms-stat-lbl">${Ne("bms.cycles",t,i)}</span>
                   </div>
                 </div>
               `}
 
-          ${null===n||isNaN(n)?"":W`
+          ${null===l||isNaN(l)?"":U`
                 <div
                   class="bms-stat-item"
-                  @click=${()=>c(t.remaining_capacity_entity)}
-                  title="Remaining Battery Capacity"
+                  @click=${()=>p(a.remaining_capacity_entity)}
+                  title="${Ne("bms.capacity",t,i)}"
                 >
                   <ha-icon icon="mdi:battery-high"></ha-icon>
                   <div class="bms-stat-text">
                     <span class="bms-stat-val">
-                      ${Math.round(n)}${s?`/${Math.round(s)}`:""}Ah
+                      ${Math.round(l)}${c?`/${Math.round(c)}`:""}Ah
                     </span>
-                    <span class="bms-stat-lbl">Capacity</span>
+                    <span class="bms-stat-lbl">${Ne("bms.capacity",t,i)}</span>
                   </div>
                 </div>
               `}
         </div>
       </div>
     </div>
-  `}({bmsConfig:A,isDual:M,battery1:E,battery2:N,soc:l,temperature:A.temperature_entity?this._getNumber(A.temperature_entity):null,temperature2:A.temperature_2_entity?this._getNumber(A.temperature_2_entity):null,cycleCount:A.cycle_count_entity?this._getNumber(A.cycle_count_entity):null,remainingCapacity:A.remaining_capacity_entity?this._getNumber(A.remaining_capacity_entity):null,fullCapacity:A.full_capacity_entity?this._getNumber(A.full_capacity_entity):null,cellDelta:A.cell_delta_entity?this._getNumber(A.cell_delta_entity):null,cells:B,onBmsClick:e=>this._handleEntityClick(e)}):""}
+  `}({hass:this._hass,language:this._config.language,bmsConfig:W,isDual:H,battery1:q,battery2:j,soc:y,temperature:this._getNullableNumber(W.temperature_entity),temperature2:this._getNullableNumber(W.temperature_2_entity),cycleCount:this._getNullableNumber(W.cycle_count_entity),remainingCapacity:this._getNullableNumber(W.remaining_capacity_entity),fullCapacity:this._getNullableNumber(W.full_capacity_entity),cellDelta:this._getNullableNumber(W.cell_delta_entity),cells:G,onBmsClick:e=>this._handleEntityClick(e)}):""}
 
         <!-- 6. Inverter Controls & Automations Panel -->
-        ${!1!==this._config.show_controls&&P?function(e){const{controlsConfig:t,expanded:i,chargeSource:r,chargeSourceOptions:a,outputPriority:o,outputPriorityOptions:n,maxChargeCurrent:s,bulkVoltage:l,floatVoltage:c,isEqualization:d,onToggleExpand:p,onSelectOption:h,onSetNumber:g,onToggleSwitch:u}=e;return W`
-    <div class="controls-card-section ${i?"expanded":""}">
+        ${!1!==this._config.show_controls&&te?function(e){const{controlsConfig:t,hass:i,language:a,expanded:r,chargeSource:n,chargeSourceOptions:o,outputPriority:s,outputPriorityOptions:l,maxChargeCurrent:c,maxChargeCurrentPreview:d,maxChargeCurrentMin:p=2,maxChargeCurrentMax:h=100,maxChargeCurrentStep:g=1,bulkVoltage:u,floatVoltage:_,isEqualization:m,equalizationConfirmPending:y=!1,onToggleExpand:b,onSelectOption:f,onPreviewNumber:v,onSetNumber:x,onToggleEqualization:w}=e,$=d??c??15,k=[];s&&"N/A"!==s&&"unavailable"!==s&&k.push(s),null==c||isNaN(c)||k.push(`${c}A`);const C=k.join(" • ");return U`
+    <div class="controls-card-section ${r?"expanded":""}">
       <!-- Accordion Header -->
-      <div class="controls-header" @click=${p}>
+      <div class="controls-header" @click=${b}>
         <div class="controls-header-title">
           <ha-icon icon="mdi:tune-vertical"></ha-icon>
-          <span>Inverter: Controls & Settings</span>
+          <span>${Ne("controls.title",i,a)}</span>
         </div>
         <div class="controls-header-right">
-          <span class="controls-quick-summary">
-            ${o||"SBU"} • ${s?`${s}A`:"15A"}
-          </span>
+          ${C?U`<span class="controls-quick-summary">${C}</span>`:""}
           <ha-icon
-            class="chevron-icon ${i?"open":""}"
+            class="chevron-icon ${r?"open":""}"
             icon="mdi:chevron-down"
           ></ha-icon>
         </div>
       </div>
 
       <!-- Expandable Controls Content -->
-      ${i?W`
+      ${r?U`
             <div class="controls-body">
               <!-- Grid Row: Priority Selectors -->
               <div class="controls-grid-2">
-                <!-- Select 1: Charge Source Priority (SNU / Only Solar) -->
-                ${t.charge_source_entity?W`
+                <!-- Select 1: Charge Source Priority -->
+                ${t.charge_source_entity?U`
                       <div class="control-box">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:battery-charging-wireless"></ha-icon>
-                          <label>Charge Source Priority</label>
+                          <label>${Ne("controls.charge_source",i,a)}</label>
                         </div>
                         <div class="pill-selector">
-                          ${(a.length>0?a:["Solar First","Solar and Utility","Only Solar"]).map(e=>W`
+                          ${(o.length>0?o:["Solar First","Solar and Utility","Only Solar"]).map(e=>U`
                               <button
                                 type="button"
-                                class="pill-btn ${r===e?"active":""}"
-                                @click=${()=>h(t.charge_source_entity,e)}
+                                class="pill-btn ${n===e?"active":""}"
+                                @click=${()=>f(t.charge_source_entity,e)}
                               >
                                 ${e}
                               </button>
@@ -2112,19 +2223,19 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
                       </div>
                     `:""}
 
-                <!-- Select 2: Output Source Priority (SUB, SBU, USB) -->
-                ${t.output_priority_entity?W`
+                <!-- Select 2: Output Source Priority -->
+                ${t.output_priority_entity?U`
                       <div class="control-box">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:power-plug-outline"></ha-icon>
-                          <label>Output Source Priority</label>
+                          <label>${Ne("controls.output_priority",i,a)}</label>
                         </div>
                         <div class="pill-selector">
-                          ${(n.length>0?n:["SUB","SBU","USB"]).map(e=>W`
+                          ${(l.length>0?l:["SUB","SBU","USB"]).map(e=>U`
                               <button
                                 type="button"
-                                class="pill-btn ${o===e?"active":""}"
-                                @click=${()=>h(t.output_priority_entity,e)}
+                                class="pill-btn ${s===e?"active":""}"
+                                @click=${()=>f(t.output_priority_entity,e)}
                               >
                                 ${e}
                               </button>
@@ -2134,28 +2245,29 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
                     `:""}
               </div>
 
-              <!-- Slider: Max AC Charging Current (2 to 30 A) -->
-              ${t.max_charge_current_entity?W`
+              <!-- Slider: Max AC Charging Current (Dynamic min/max/step) -->
+              ${t.max_charge_current_entity?U`
                     <div class="control-box slider-box">
                       <div class="control-box-header">
                         <div class="control-label-wrap">
                           <ha-icon icon="mdi:current-ac"></ha-icon>
-                          <label>Max AC Charge Current</label>
+                          <label>${Ne("controls.max_charge_current",i,a)}</label>
                         </div>
-                        <span class="control-live-val">${s??15} A</span>
+                        <span class="control-live-val">${$} A</span>
                       </div>
                       <div class="slider-input-container">
-                        <span class="slider-boundary">2A</span>
+                        <span class="slider-boundary">${p}A</span>
                         <input
                           type="range"
                           class="control-range"
-                          min="2"
-                          max="30"
-                          step="1"
-                          .value=${String(s??15)}
-                          @change=${e=>{const i=parseFloat(e.target.value);g(t.max_charge_current_entity,i)}}
+                          min="${p}"
+                          max="${h}"
+                          step="${g}"
+                          .value=${String($)}
+                          @input=${e=>{const t=parseFloat(e.target.value);v?.(t)}}
+                          @change=${e=>{const i=parseFloat(e.target.value);v?.(null),x(t.max_charge_current_entity,i)}}
                         />
-                        <span class="slider-boundary">30A</span>
+                        <span class="slider-boundary">${h}A</span>
                       </div>
                     </div>
                   `:""}
@@ -2163,25 +2275,25 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
               <!-- Dual Voltage Inputs: Bulk & Float -->
               <div class="controls-grid-2">
                 <!-- Bulk Voltage -->
-                ${t.bulk_voltage_entity?W`
+                ${t.bulk_voltage_entity?U`
                       <div class="control-box mini-voltage">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:arrow-up-bold-box-outline"></ha-icon>
-                          <label>Bulk Voltage</label>
+                          <label>${Ne("controls.bulk_voltage",i,a)}</label>
                         </div>
                         <div class="voltage-stepper">
                           <button
                             type="button"
                             class="stepper-btn"
-                            @click=${()=>{const e=Number(((l??28.2)-.1).toFixed(1));g(t.bulk_voltage_entity,e)}}
+                            @click=${()=>{const e=Number(((u??28.2)-.1).toFixed(1));x(t.bulk_voltage_entity,e)}}
                           >
                             -
                           </button>
-                          <span class="stepper-val">${l?.toFixed(1)??"28.2"} V</span>
+                          <span class="stepper-val">${null!=u?u.toFixed(1):"28.2"} V</span>
                           <button
                             type="button"
                             class="stepper-btn"
-                            @click=${()=>{const e=Number(((l??28.2)+.1).toFixed(1));g(t.bulk_voltage_entity,e)}}
+                            @click=${()=>{const e=Number(((u??28.2)+.1).toFixed(1));x(t.bulk_voltage_entity,e)}}
                           >
                             +
                           </button>
@@ -2190,25 +2302,25 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
                     `:""}
 
                 <!-- Float Voltage -->
-                ${t.float_voltage_entity?W`
+                ${t.float_voltage_entity?U`
                       <div class="control-box mini-voltage">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:arrow-down-bold-box-outline"></ha-icon>
-                          <label>Float Voltage</label>
+                          <label>${Ne("controls.float_voltage",i,a)}</label>
                         </div>
                         <div class="voltage-stepper">
                           <button
                             type="button"
                             class="stepper-btn"
-                            @click=${()=>{const e=Number(((c??27)-.1).toFixed(1));g(t.float_voltage_entity,e)}}
+                            @click=${()=>{const e=Number(((_??27)-.1).toFixed(1));x(t.float_voltage_entity,e)}}
                           >
                             -
                           </button>
-                          <span class="stepper-val">${c?.toFixed(1)??"27.0"} V</span>
+                          <span class="stepper-val">${null!=_?_.toFixed(1):"27.0"} V</span>
                           <button
                             type="button"
                             class="stepper-btn"
-                            @click=${()=>{const e=Number(((c??27)+.1).toFixed(1));g(t.float_voltage_entity,e)}}
+                            @click=${()=>{const e=Number(((_??27)+.1).toFixed(1));x(t.float_voltage_entity,e)}}
                           >
                             +
                           </button>
@@ -2217,42 +2329,42 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
                     `:""}
               </div>
 
-              <!-- DANGER ZONE: Equalization Switch -->
-              ${t.equalization_entity?W`
-                    <div class="danger-switch-row ${d?"danger-active":""}">
+              <!-- DANGER ZONE: Equalization Switch (Inline 2-Step Confirmation) -->
+              ${t.equalization_entity?U`
+                    <div class="danger-switch-row ${m||y?"danger-active":""}">
                       <div class="danger-info">
                         <div class="danger-title">
                           <ha-icon icon="mdi:alert-octagon"></ha-icon>
-                          <span>Battery Equalization</span>
+                          <span>${Ne("controls.equalization",i,a)}</span>
                         </div>
                         <span class="danger-desc">
-                          ⚠️ For LiFePO4, must ALWAYS BE OFF to prevent cell overcharging!
+                          ${Ne("controls.equalization_warning",i,a)}
                         </span>
                       </div>
 
                       <button
                         type="button"
-                        class="toggle-switch-btn ${d?"switch-on":"switch-off"}"
-                        @click=${()=>{(d||confirm("WARNING!\nEqualization mode is strictly not recommended for LiFePO4 batteries (Redodo) and can permanently damage the cells!\n\nAre you sure you want to enable Equalization?"))&&u(t.equalization_entity,d)}}
+                        class="toggle-switch-btn ${m||y?"switch-on":"switch-off"}"
+                        @click=${()=>w(t.equalization_entity,m)}
                       >
-                        ${d?"ON":"OFF"}
+                        ${m?"ON":y?Ne("controls.confirm_on",i,a):"OFF"}
                       </button>
                     </div>
                   `:""}
             </div>
           `:""}
     </div>
-  `}({controlsConfig:P,hass:this._hass,expanded:this._controlsExpanded,onToggleExpand:()=>{this._controlsExpanded=!this._controlsExpanded},chargeSource:P.charge_source_entity?this._getState(P.charge_source_entity):void 0,chargeSourceOptions:this._getOptions(P.charge_source_entity),outputPriority:P.output_priority_entity?this._getState(P.output_priority_entity):void 0,outputPriorityOptions:this._getOptions(P.output_priority_entity),maxChargeCurrent:P.max_charge_current_entity?this._getNumber(P.max_charge_current_entity):void 0,bulkVoltage:P.bulk_voltage_entity?this._getNumber(P.bulk_voltage_entity):void 0,floatVoltage:P.float_voltage_entity?this._getNumber(P.float_voltage_entity):void 0,isEqualization:!!P.equalization_entity&&"on"===this._getState(P.equalization_entity),onSelectOption:(e,t)=>this._handleSelectOption(e,t),onSetNumber:(e,t)=>this._handleSetNumber(e,t),onToggleSwitch:(e,t)=>this._handleToggleSwitch(e,t)}):""}
+  `}({controlsConfig:te,hass:this._hass,language:this._config.language,expanded:this._controlsExpanded,onToggleExpand:()=>{this._controlsExpanded=!this._controlsExpanded},chargeSource:te.charge_source_entity?this._getState(te.charge_source_entity):void 0,chargeSourceOptions:this._getOptions(te.charge_source_entity),outputPriority:te.output_priority_entity?this._getState(te.output_priority_entity):void 0,outputPriorityOptions:this._getOptions(te.output_priority_entity),maxChargeCurrent:this._getNullableNumber(te.max_charge_current_entity),maxChargeCurrentPreview:this._chargeCurrentPreview,maxChargeCurrentMin:oe,maxChargeCurrentMax:se,maxChargeCurrentStep:le,bulkVoltage:this._getNullableNumber(te.bulk_voltage_entity),floatVoltage:this._getNullableNumber(te.float_voltage_entity),isEqualization:!!te.equalization_entity&&"on"===this._getState(te.equalization_entity),equalizationConfirmPending:this._equalizationConfirmPending,onSelectOption:(e,t)=>this._handleSelectOption(e,t),onPreviewNumber:e=>{this._chargeCurrentPreview=e},onSetNumber:(e,t)=>this._handleSetNumber(e,t),onToggleEqualization:(e,t)=>this._handleToggleEqualization(e,t)}):""}
 
-        <!-- 7. Daily Energy Statistics (Today's Production & Consumption) -->
-        ${!1!==this._config.show_energy&&I?Ne({dailyConfig:I,loadEnergy:k,gridImportEnergy:$,batteryChargeEnergy:C,batteryDischargeEnergy:S,onEnergyClick:e=>this._handleEntityClick(e)}):""}
+        <!-- 7. Daily Energy Statistics (Today's Production, Consumption & Self-Consumption) -->
+        ${!1!==this._config.show_energy&&ae?Ie({hass:this._hass,language:this._config.language,dailyConfig:ae,loadEnergy:T,gridImportEnergy:I,batteryChargeEnergy:z,batteryDischargeEnergy:L,selfConsumptionDailyEnergy:R,selfConsumptionDailyEntity:D,selfConsumptionMonthlyEnergy:V,selfConsumptionMonthlyEntity:F,onEnergyClick:e=>this._handleEntityClick(e)}):""}
       </ha-card>
-    `}};e([_e()],Te.prototype,"_config",void 0),e([_e()],Te.prototype,"_hass",void 0),e([_e()],Te.prototype,"_controlsExpanded",void 0),Te=e([pe(ye)],Te),window.customCards=window.customCards||[],window.customCards.push({type:ye,name:"Aninerel Power Card",description:"Ultimate power card for Aninerel ANL 4200T inverter + Redodo BMS",preview:!0,documentationURL:"https://github.com/ziffmafiya/aninerel-power-card"});const Le={en:{common:{version:"Version",name:"Aninerel Power Card",description:"Ultimate card for Aninerel ANL 4200T inverter + Redodo BMS"},mode:{battery:"Battery",mains:"Mains",bypass:"Bypass",line:"Line",grid:"Grid"},nodes:{solar:"Solar",battery:"Battery",inverter:"Inverter",home:"Home",grid:"Grid"},flow:{charge:"Charge",discharge:"Discharge",standby:"Standby",import:"Import",export:"Export"},params:{battery:"Battery DC",grid:"Grid AC",self_sufficiency:"Self-Sufficiency",normal:"Normal",deviated:"Deviated",sag:"Low (Sag)",surge:"High (Surge)"},bms:{title:"BMS Redodo LiFePO4",temp:"Temp",cycles:"Cycles",capacity:"Capacity",balanced:"Balanced",drift:"Normal Drift",imbalance:"Imbalance Alert"},controls:{title:"Inverter: Controls & Automations",charge_source:"Charge Source Priority",output_priority:"Home Output Priority",max_charge_current:"Max AC Charging Current",bulk_voltage:"Bulk Voltage",float_voltage:"Float Voltage",equalization:"Equalization Mode",equalization_warning:"⚠️ For LiFePO4 MUST ALWAYS BE OFF to prevent cell damage!"},energy:{title:"Daily Energy Balance",total:"Total",load:"Home Consumption",grid_import:"Grid Import",bat_charge:"Battery Charge",bat_discharge:"Battery Discharge"},editor:{title:"Card Title",entities_group:"⚡ Real-time Power Entities (Required)",params_group:"📊 Electrical Parameters & Telemetry",bms_group:"🔋 BMS Redodo LiFePO4 Telemetry",controls_group:"🎛️ Inverter Controls & Settings",safety_group:"🛡️ Safety & Diagnostics",energy_group:"📈 Daily Energy Counters",display_group:"🎨 Layout & Visualization Toggles"}},ru:{common:{version:"Версия",name:"Aninerel Power Card",description:"Ультимативная карточка для инвертора Aninerel ANL 4200T + BMS Redodo"},mode:{battery:"Батарея",mains:"Сеть",bypass:"Байпас",line:"Сеть",grid:"Сеть"},nodes:{solar:"Солнце",battery:"АКБ",inverter:"Инвертор",home:"Дом",grid:"Сеть"},flow:{charge:"Заряд",discharge:"Разряд",standby:"Ожидание",import:"Импорт",export:"Экспорт"},params:{battery:"Батарея DC",grid:"Сеть AC",self_sufficiency:"Автономность",normal:"Норма",deviated:"Отклонение",sag:"Просадка",surge:"Перенапряжение"},bms:{title:"BMS Redodo LiFePO4",temp:"Темп.",cycles:"Циклы",capacity:"Емкость",balanced:"Сбалансировано",drift:"Естественный дрейф",imbalance:"Алерт разбаланса"},controls:{title:"Инвертор: Управление и автоматизации",charge_source:"Источник заряда",output_priority:"Приоритет питания дома",max_charge_current:"Макс. ток сетевого заряда",bulk_voltage:"Напряжение Bulk",float_voltage:"Напряжение Float",equalization:"Режим Equalization (Выравнивание)",equalization_warning:"⚠️ Для LiFePO4 должен быть ВСЕГДА ВЫКЛЮЧЕН во избежание перезаряда ячеек!"},energy:{title:"Суточный баланс энергии",total:"Итого",load:"Потребление дома",grid_import:"Импорт из сети",bat_charge:"Закачано в АКБ",bat_discharge:"Отдано батареей"},editor:{title:"Заголовок карточки",entities_group:"⚡ Мощности реального времени (Обязательно)",params_group:"📊 Электрические параметры и телеметрия",bms_group:"🔋 Телеметрия BMS Redodo LiFePO4",controls_group:"🎛️ Управление инвертором и настройки",safety_group:"🛡️ Безопасность и диагностика сбоев",energy_group:"📈 Суточные счетчики электроэнергии",display_group:"🎨 Настройки отображения и видимости секций"}}};function ze(e,t,i,r){const a=(t?.locale?.language||t?.language||navigator.language||"ru").toLowerCase().split("-")[0],o=Le[a]?a:"ru";let n;try{n=e.split(".").reduce((e,t)=>e?.[t],Le[o])}catch(e){n=void 0}if(void 0===n)try{n=e.split(".").reduce((e,t)=>e?.[t],Le.ru)}catch(e){n=void 0}if(void 0===n)try{n=e.split(".").reduce((e,t)=>e?.[t],Le.en)}catch(e){n=void 0}return void 0!==n&&"string"==typeof n||(n=e),n}let De=class extends ce{setConfig(e){const t=JSON.parse(JSON.stringify(e||{}));t.bms&&(t.bms.battery_1&&(!t.bms.bat1_name&&t.bms.battery_1.name&&(t.bms.bat1_name=t.bms.battery_1.name),!t.bms.bat1_soc_entity&&t.bms.battery_1.soc_entity&&(t.bms.bat1_soc_entity=t.bms.battery_1.soc_entity),!t.bms.bat1_voltage_entity&&t.bms.battery_1.voltage_entity&&(t.bms.bat1_voltage_entity=t.bms.battery_1.voltage_entity),!t.bms.bat1_temperature_entity&&t.bms.battery_1.temperature_entity&&(t.bms.bat1_temperature_entity=t.bms.battery_1.temperature_entity),!t.bms.bat1_cell_prefix&&t.bms.battery_1.cell_voltage_prefix&&(t.bms.bat1_cell_prefix=t.bms.battery_1.cell_voltage_prefix)),t.bms.battery_2&&(!t.bms.bat2_name&&t.bms.battery_2.name&&(t.bms.bat2_name=t.bms.battery_2.name),!t.bms.bat2_soc_entity&&t.bms.battery_2.soc_entity&&(t.bms.bat2_soc_entity=t.bms.battery_2.soc_entity),!t.bms.bat2_voltage_entity&&t.bms.battery_2.voltage_entity&&(t.bms.bat2_voltage_entity=t.bms.battery_2.voltage_entity),!t.bms.bat2_temperature_entity&&t.bms.battery_2.temperature_entity&&(t.bms.bat2_temperature_entity=t.bms.battery_2.temperature_entity),!t.bms.bat2_cell_prefix&&t.bms.battery_2.cell_voltage_prefix&&(t.bms.bat2_cell_prefix=t.bms.battery_2.cell_voltage_prefix))),this._config=t}_computeLabel(e){return e.label?e.label:ze(`editor.${e.name}`,this.hass)||e.name}_valueChanged(e){const t=e.detail.value,i=new CustomEvent("config-changed",{detail:{config:t},bubbles:!0,composed:!0});this.dispatchEvent(i)}_getSchema(){return[{name:"title",label:ze("editor.title",this.hass)||"Card Title",selector:{text:{}}},{name:"subtitle",label:"Card Subtitle",selector:{text:{}}},{name:"icon",label:"Header Icon (MDI)",selector:{icon:{}}},{name:"entities",type:"expandable",title:ze("editor.entities_group",this.hass)||"⚡ Real-time Power Entities (Required)",schema:[{name:"solar_power",label:"Solar Generation (PV Power) [Optional]",required:!1,selector:{entity:{domain:"sensor"}}},{name:"battery_power",label:"Battery Power (+Charge / -Discharge)",required:!0,selector:{entity:{domain:"sensor"}}},{name:"grid_power",label:"Grid Power (AC Input)",required:!0,selector:{entity:{domain:"sensor"}}},{name:"load_power",label:"Home Load Power",required:!0,selector:{entity:{domain:"sensor"}}}]},{name:"",type:"expandable",title:ze("editor.params_group",this.hass)||"📊 Electrical Parameters & Telemetry",schema:[{name:"battery_voltage_entity",label:"Battery Voltage (V)",selector:{entity:{domain:"sensor"}}},{name:"battery_current_entity",label:"Battery Current (A)",selector:{entity:{domain:"sensor"}}},{name:"grid_voltage_entity",label:"Grid AC Voltage (V)",selector:{entity:{domain:"sensor"}}},{name:"operating_mode_entity",label:"Inverter Operating Mode",selector:{entity:{domain:"sensor"}}},{name:"inverter_temperature_entity",label:"Inverter Temperature (°C)",selector:{entity:{domain:"sensor"}}},{name:"charging_active_entity",label:"Charging Active Flag",selector:{entity:{domain:"binary_sensor"}}},{name:"kpi_mode",label:"3rd Radial Gauge KPI Metric",selector:{select:{options:[{value:"auto",label:"Auto (Battery SoC for UPS, Self-Sufficiency for Solar)"},{value:"battery_soc",label:"Battery SoC % (State of Charge)"},{value:"battery_autonomy",label:"Battery Autonomy % (Daily Load Powered by Battery)"},{value:"self_sufficiency",label:"Solar Self-Sufficiency % (Autarky)"},{value:"inverter_load",label:"Inverter Load %"}]}}},{name:"kpi_entity",label:"Custom KPI Entity (Overrides click/gauge entity)",selector:{entity:{domain:"sensor"}}}]},{name:"bms",type:"expandable",title:ze("editor.bms_group",this.hass)||"🔋 BMS Redodo LiFePO4 Telemetry",schema:[{name:"dual_battery",label:"🔋 Mode: Dual 12V Batteries in Series (24V Pack)",selector:{boolean:{}}},{name:"bat1_name",label:"Battery #1: Name (e.g. Redodo #1)",selector:{text:{}}},{name:"bat1_soc_entity",label:"Battery #1: State of Charge (SOC %)",selector:{entity:{domain:"sensor"}}},{name:"bat1_voltage_entity",label:"Battery #1: Voltage (~13.5V)",selector:{entity:{domain:"sensor"}}},{name:"bat1_temperature_entity",label:"Battery #1: Temperature (°C)",selector:{entity:{domain:"sensor"}}},{name:"bat1_cell_prefix",label:"Battery #1: Cell Sensor Prefix (1..4)",selector:{text:{}}},{name:"bat2_name",label:"Battery #2: Name (e.g. Redodo #2)",selector:{text:{}}},{name:"bat2_soc_entity",label:"Battery #2: State of Charge (SOC %)",selector:{entity:{domain:"sensor"}}},{name:"bat2_voltage_entity",label:"Battery #2: Voltage (~13.5V)",selector:{entity:{domain:"sensor"}}},{name:"bat2_temperature_entity",label:"Battery #2: Temperature (°C)",selector:{entity:{domain:"sensor"}}},{name:"bat2_cell_prefix",label:"Battery #2: Cell Sensor Prefix (1..4)",selector:{text:{}}},{name:"soc_entity",label:"Total / Average SOC % (Single Pack)",selector:{entity:{domain:"sensor"}}},{name:"voltage_entity",label:"Total Battery Voltage via BMS (24V)",selector:{entity:{domain:"sensor"}}},{name:"temperature_entity",label:"BMS Cell Temperature Probe (°C)",selector:{entity:{domain:"sensor"}}},{name:"cell_delta_entity",label:"Cell Imbalance (Delta mV)",selector:{entity:{domain:"sensor"}}},{name:"cycle_count_entity",label:"Battery Cycle Count",selector:{entity:{domain:"sensor"}}},{name:"remaining_capacity_entity",label:"Remaining Capacity (Ah)",selector:{entity:{domain:"sensor"}}},{name:"cell_count",label:"Single Pack Cell Count (8 for 24V)",selector:{number:{min:4,max:16,step:1,mode:"box"}}},{name:"cell_voltage_prefix",label:"Single Pack Cell Sensor Prefix (1..8)",selector:{text:{}}}]},{name:"controls",type:"expandable",title:ze("editor.controls_group",this.hass)||"🎛️ Inverter Controls & Settings",schema:[{name:"charge_source_entity",label:"Charge Source Priority (Select)",selector:{entity:{domain:"select"}}},{name:"output_priority_entity",label:"Output Source Priority (Select)",selector:{entity:{domain:"select"}}},{name:"max_charge_current_entity",label:"Max AC Charge Current (Number)",selector:{entity:{domain:"number"}}},{name:"bulk_voltage_entity",label:"Bulk Voltage Setting (Number)",selector:{entity:{domain:"number"}}},{name:"float_voltage_entity",label:"Float Voltage Setting (Number)",selector:{entity:{domain:"number"}}},{name:"equalization_entity",label:"Battery Equalization Mode (Switch)",selector:{entity:{domain:"switch"}}}]},{name:"safety",type:"expandable",title:ze("editor.safety_group",this.hass)||"🛡️ Safety & Diagnostics",schema:[{name:"fault_active_entity",label:"Fault Active Flag (Binary Sensor)",selector:{entity:{domain:"binary_sensor"}}},{name:"fault_code_entity",label:"Fault Code (Sensor)",selector:{entity:{domain:"sensor"}}},{name:"fault_details_entity",label:"Fault Details Text [Optional]",selector:{entity:{domain:"sensor"}}},{name:"warnings_active_entity",label:"Warnings Active Flag (Binary Sensor)",selector:{entity:{domain:"binary_sensor"}}},{name:"warning_code_entity",label:"Warning Code (Sensor)",selector:{entity:{domain:"sensor"}}},{name:"warning_details_entity",label:"Warning Details Text [Optional]",selector:{entity:{domain:"sensor"}}}]},{name:"daily_energy",type:"expandable",title:ze("editor.energy_group",this.hass)||"📈 Daily Energy Counters",schema:[{name:"load_energy_entity",label:"Daily Home Consumption (kWh)",selector:{entity:{domain:"sensor"}}},{name:"grid_import_entity",label:"Daily Grid Import (kWh)",selector:{entity:{domain:"sensor"}}},{name:"battery_charge_entity",label:"Daily Battery Charge (kWh)",selector:{entity:{domain:"sensor"}}},{name:"battery_discharge_entity",label:"Daily Battery Discharge (kWh)",selector:{entity:{domain:"sensor"}}}]},{name:"",type:"expandable",title:ze("editor.display_group",this.hass)||"🎨 Layout & Visualization Toggles",schema:[{name:"max_power",label:"Scale Max Power Rating (W)",selector:{number:{min:1e3,max:2e4,step:200,mode:"box"}}},{name:"use_log_flow_model",label:"Logarithmic flow animation speed model",selector:{boolean:{}}},{name:"show_header",label:"Show header bar with status chips",selector:{boolean:{}}},{name:"show_flow",label:"Show animated power flow diagram",selector:{boolean:{}}},{name:"show_solar",label:"Show solar generation (PV)",selector:{boolean:{}}},{name:"grid_position",label:"Grid position when solar is hidden",selector:{select:{options:[{value:"bottom",label:"Bottom (Default)"},{value:"top",label:"Top (Replaces solar)"}]}}},{name:"show_params",label:"Show electrical telemetry parameters",selector:{boolean:{}}},{name:"show_bms",label:"Show Redodo BMS section",selector:{boolean:{}}},{name:"show_controls",label:"Show inverter controls & settings",selector:{boolean:{}}},{name:"show_energy",label:"Show daily energy statistics",selector:{boolean:{}}},{name:"show_alerts",label:"Show diagnostic alerts & warnings",selector:{boolean:{}}}]}]}static{this.styles=n`
+    `}};e([_e()],qe.prototype,"_config",void 0),e([_e()],qe.prototype,"_hass",void 0),e([_e()],qe.prototype,"_controlsExpanded",void 0),e([_e()],qe.prototype,"_chargeCurrentPreview",void 0),e([_e()],qe.prototype,"_equalizationConfirmPending",void 0),qe=e([pe(me)],qe),window.customCards=window.customCards||[],window.customCards.push({type:me,name:"Aninerel Power Card",description:"Ultimate power card for Aninerel ANL 4200T inverter + Redodo BMS",preview:!0,documentationURL:"https://github.com/ziffmafiya/aninerel-power-card"});let je=class extends ce{setConfig(e){const t=JSON.parse(JSON.stringify(e||{}));t.bms&&(t.bms.battery_1&&(!t.bms.bat1_name&&t.bms.battery_1.name&&(t.bms.bat1_name=t.bms.battery_1.name),!t.bms.bat1_soc_entity&&t.bms.battery_1.soc_entity&&(t.bms.bat1_soc_entity=t.bms.battery_1.soc_entity),!t.bms.bat1_voltage_entity&&t.bms.battery_1.voltage_entity&&(t.bms.bat1_voltage_entity=t.bms.battery_1.voltage_entity),!t.bms.bat1_temperature_entity&&t.bms.battery_1.temperature_entity&&(t.bms.bat1_temperature_entity=t.bms.battery_1.temperature_entity),!t.bms.bat1_cell_prefix&&t.bms.battery_1.cell_voltage_prefix&&(t.bms.bat1_cell_prefix=t.bms.battery_1.cell_voltage_prefix)),t.bms.battery_2&&(!t.bms.bat2_name&&t.bms.battery_2.name&&(t.bms.bat2_name=t.bms.battery_2.name),!t.bms.bat2_soc_entity&&t.bms.battery_2.soc_entity&&(t.bms.bat2_soc_entity=t.bms.battery_2.soc_entity),!t.bms.bat2_voltage_entity&&t.bms.battery_2.voltage_entity&&(t.bms.bat2_voltage_entity=t.bms.battery_2.voltage_entity),!t.bms.bat2_temperature_entity&&t.bms.battery_2.temperature_entity&&(t.bms.bat2_temperature_entity=t.bms.battery_2.temperature_entity),!t.bms.bat2_cell_prefix&&t.bms.battery_2.cell_voltage_prefix&&(t.bms.bat2_cell_prefix=t.bms.battery_2.cell_voltage_prefix))),this._config=t}_computeLabel(e){return e.label?e.label:Ne(`editor.${e.name}`,this.hass,this._config?.language)||e.name}_valueChanged(e){const t=e.detail.value,i=new CustomEvent("config-changed",{detail:{config:t},bubbles:!0,composed:!0});this.dispatchEvent(i)}_getSchema(){const e=this._config?.language;return[{name:"title",label:Ne("editor.title",this.hass,e)||"Card Title",selector:{text:{}}},{name:"subtitle",label:"Card Subtitle",selector:{text:{}}},{name:"icon",label:"Header Icon (MDI)",selector:{icon:{}}},{name:"language",label:"Interface Language (Язык интерфейса)",selector:{select:{options:[{value:"auto",label:"Auto (Home Assistant Default)"},{value:"ru",label:"Русский (Russian)"},{value:"en",label:"English"}]}}},{name:"entities",type:"expandable",title:Ne("editor.entities_group",this.hass,e)||"⚡ Real-time Power Entities (Required)",schema:[{name:"solar_power",label:"Solar Generation (PV Power) [Optional]",required:!1,selector:{entity:{domain:"sensor"}}},{name:"battery_power",label:"Battery Power (+Charge / -Discharge)",required:!0,selector:{entity:{domain:"sensor"}}},{name:"grid_power",label:"Grid Power (AC Input)",required:!0,selector:{entity:{domain:"sensor"}}},{name:"load_power",label:"Home Load Power",required:!0,selector:{entity:{domain:"sensor"}}}]},{name:"",type:"expandable",title:Ne("editor.params_group",this.hass,e)||"📊 Electrical Parameters & Telemetry",schema:[{name:"battery_voltage_entity",label:"Battery Voltage (V)",selector:{entity:{domain:"sensor"}}},{name:"battery_current_entity",label:"Battery Current (A)",selector:{entity:{domain:"sensor"}}},{name:"grid_voltage_entity",label:"Grid AC Voltage (V)",selector:{entity:{domain:"sensor"}}},{name:"operating_mode_entity",label:"Inverter Operating Mode",selector:{entity:{domain:"sensor"}}},{name:"inverter_temperature_entity",label:"Inverter Temperature (°C)",selector:{entity:{domain:"sensor"}}},{name:"inverter_load_percent_entity",label:"Inverter Load Percentage (%)",selector:{entity:{domain:"sensor"}}},{name:"self_consumption_power_entity",label:"Inverter Self-Consumption Power (W)",selector:{entity:{domain:"sensor"}}},{name:"grid_breaker_switch_entity",label:"AC Input Zigbee Breaker / Smart Plug (Switch)",selector:{entity:{domain:"switch"}}},{name:"charging_active_entity",label:"Charging Active Flag",selector:{entity:{domain:"binary_sensor"}}},{name:"kpi_mode",label:"3rd Radial Gauge KPI Metric",selector:{select:{options:[{value:"auto",label:"Auto (Battery SoC for UPS, Self-Sufficiency for Solar)"},{value:"battery_soc",label:"Battery SoC % (State of Charge)"},{value:"battery_autonomy",label:"Battery Autonomy % (Daily Load Powered by Battery)"},{value:"self_sufficiency",label:"Solar Self-Sufficiency % (Autarky)"},{value:"inverter_load",label:"Inverter Load %"}]}}},{name:"kpi_entity",label:"Custom KPI Entity (Overrides click/gauge entity)",selector:{entity:{domain:"sensor"}}}]},{name:"bms",type:"expandable",title:Ne("editor.bms_group",this.hass,e)||"🔋 BMS Redodo LiFePO4 Telemetry",schema:[{name:"dual_battery",label:"🔋 Mode: Dual 12V Batteries in Series (24V Pack)",selector:{boolean:{}}},{name:"nominal_capacity_wh",label:"Total Battery Nominal Energy Capacity (Wh, e.g. 2560 for 24V 100Ah)",selector:{number:{min:500,max:3e4,step:100,mode:"box"}}},{name:"remaining_energy_entity",label:"Remaining Battery Energy Entity (Wh / kWh, for Runtime calc)",selector:{entity:{domain:"sensor"}}},{name:"bat1_name",label:"Battery #1: Name (e.g. Redodo #1)",selector:{text:{}}},{name:"bat1_soc_entity",label:"Battery #1: State of Charge (SOC %)",selector:{entity:{domain:"sensor"}}},{name:"bat1_voltage_entity",label:"Battery #1: Voltage (~13.5V)",selector:{entity:{domain:"sensor"}}},{name:"bat1_temperature_entity",label:"Battery #1: Temperature (°C)",selector:{entity:{domain:"sensor"}}},{name:"bat1_cell_prefix",label:"Battery #1: Cell Sensor Prefix (1..4)",selector:{text:{}}},{name:"bat2_name",label:"Battery #2: Name (e.g. Redodo #2)",selector:{text:{}}},{name:"bat2_soc_entity",label:"Battery #2: State of Charge (SOC %)",selector:{entity:{domain:"sensor"}}},{name:"bat2_voltage_entity",label:"Battery #2: Voltage (~13.5V)",selector:{entity:{domain:"sensor"}}},{name:"bat2_temperature_entity",label:"Battery #2: Temperature (°C)",selector:{entity:{domain:"sensor"}}},{name:"bat2_cell_prefix",label:"Battery #2: Cell Sensor Prefix (1..4)",selector:{text:{}}},{name:"soc_entity",label:"Total / Average SOC % (Single Pack)",selector:{entity:{domain:"sensor"}}},{name:"voltage_entity",label:"Total Battery Voltage via BMS (24V)",selector:{entity:{domain:"sensor"}}},{name:"temperature_entity",label:"BMS Cell Temperature Probe (°C)",selector:{entity:{domain:"sensor"}}},{name:"cell_delta_entity",label:"Cell Imbalance (Delta mV)",selector:{entity:{domain:"sensor"}}},{name:"cycle_count_entity",label:"Battery Cycle Count",selector:{entity:{domain:"sensor"}}},{name:"remaining_capacity_entity",label:"Remaining Capacity (Ah)",selector:{entity:{domain:"sensor"}}},{name:"cell_count",label:"Single Pack Cell Count (8 for 24V)",selector:{number:{min:4,max:16,step:1,mode:"box"}}},{name:"cell_voltage_prefix",label:"Single Pack Cell Sensor Prefix (1..8)",selector:{text:{}}}]},{name:"controls",type:"expandable",title:Ne("editor.controls_group",this.hass,e)||"🎛️ Inverter Controls & Settings",schema:[{name:"charge_source_entity",label:"Charge Source Priority (Select)",selector:{entity:{domain:"select"}}},{name:"output_priority_entity",label:"Output Source Priority (Select)",selector:{entity:{domain:"select"}}},{name:"max_charge_current_entity",label:"Max AC Charge Current (Number)",selector:{entity:{domain:"number"}}},{name:"bulk_voltage_entity",label:"Bulk Voltage Setting (Number)",selector:{entity:{domain:"number"}}},{name:"float_voltage_entity",label:"Float Voltage Setting (Number)",selector:{entity:{domain:"number"}}},{name:"equalization_entity",label:"Battery Equalization Mode (Switch)",selector:{entity:{domain:"switch"}}}]},{name:"safety",type:"expandable",title:Ne("editor.safety_group",this.hass,e)||"🛡️ Safety & Diagnostics",schema:[{name:"fault_active_entity",label:"Fault Active Flag (Binary Sensor)",selector:{entity:{domain:"binary_sensor"}}},{name:"fault_code_entity",label:"Fault Code (Sensor)",selector:{entity:{domain:"sensor"}}},{name:"fault_details_entity",label:"Fault Details Text [Optional]",selector:{entity:{domain:"sensor"}}},{name:"warnings_active_entity",label:"Warnings Active Flag (Binary Sensor)",selector:{entity:{domain:"binary_sensor"}}},{name:"warning_code_entity",label:"Warning Code (Sensor)",selector:{entity:{domain:"sensor"}}},{name:"warning_details_entity",label:"Warning Details Text [Optional]",selector:{entity:{domain:"sensor"}}}]},{name:"daily_energy",type:"expandable",title:Ne("editor.energy_group",this.hass,e)||"📈 Daily Energy Counters",schema:[{name:"load_energy_entity",label:"Daily Home Consumption (kWh)",selector:{entity:{domain:"sensor"}}},{name:"grid_import_entity",label:"Daily Grid Import (kWh)",selector:{entity:{domain:"sensor"}}},{name:"battery_charge_entity",label:"Daily Battery Charge (kWh)",selector:{entity:{domain:"sensor"}}},{name:"battery_discharge_entity",label:"Daily Battery Discharge (kWh)",selector:{entity:{domain:"sensor"}}},{name:"self_consumption_daily_entity",label:"Daily Inverter Self-Consumption (kWh)",selector:{entity:{domain:"sensor"}}},{name:"self_consumption_monthly_entity",label:"Monthly Inverter Self-Consumption (kWh)",selector:{entity:{domain:"sensor"}}}]},{name:"",type:"expandable",title:Ne("editor.display_group",this.hass,e)||"🎨 Layout & Visualization Toggles",schema:[{name:"max_power",label:"Scale Max Power Rating (W)",selector:{number:{min:1e3,max:2e4,step:200,mode:"box"}}},{name:"use_log_flow_model",label:"Logarithmic flow animation speed model",selector:{boolean:{}}},{name:"compact_mode",label:"Compact layout mode (smaller padding & spacing)",selector:{boolean:{}}},{name:"show_header",label:"Show header bar with status chips",selector:{boolean:{}}},{name:"show_flow",label:"Show animated power flow diagram",selector:{boolean:{}}},{name:"show_solar",label:"Show solar generation (PV)",selector:{boolean:{}}},{name:"grid_position",label:"Grid position when solar is hidden",selector:{select:{options:[{value:"bottom",label:"Bottom (Default)"},{value:"top",label:"Top (Replaces solar)"}]}}},{name:"show_params",label:"Show electrical telemetry parameters",selector:{boolean:{}}},{name:"show_bms",label:"Show Redodo BMS section",selector:{boolean:{}}},{name:"show_controls",label:"Show inverter controls & settings",selector:{boolean:{}}},{name:"show_energy",label:"Show daily energy statistics",selector:{boolean:{}}},{name:"show_alerts",label:"Show diagnostic alerts & warnings",selector:{boolean:{}}}]}]}static{this.styles=o`
     ha-form {
       display: block;
       padding: 12px 0;
     }
-  `}render(){return this.hass&&this._config?W`
+  `}render(){return this.hass&&this._config?U`
       <ha-form
         .hass=${this.hass}
         .data=${this._config}
@@ -2260,4 +2372,4 @@ function e(e,t,i,r){var a,o=arguments.length,n=o<3?t:null===r?r=Object.getOwnPro
         .computeLabel=${e=>this._computeLabel(e)}
         @value-changed=${this._valueChanged}
       ></ha-form>
-    `:W``}};e([ue({attribute:!1})],De.prototype,"hass",void 0),e([_e()],De.prototype,"_config",void 0),De=e([pe("aninerel-power-card-editor")],De);var Fe=Object.freeze({__proto__:null,get AninerelPowerCardEditor(){return De}});export{Te as AninerelPowerCard};
+    `:U``}};e([ue({attribute:!1})],je.prototype,"hass",void 0),e([_e()],je.prototype,"_config",void 0),je=e([pe("aninerel-power-card-editor")],je);var Ge=Object.freeze({__proto__:null,get AninerelPowerCardEditor(){return je}});export{qe as AninerelPowerCard};

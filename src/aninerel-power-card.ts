@@ -1,5 +1,5 @@
-import { LitElement, html, PropertyValues } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { LitElement, html } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
 import { HomeAssistant, AninerelCardConfig, LovelaceCard } from './types';
 import { CARD_NAME, CARD_VERSION, DEFAULT_CONFIG, STUB_CONFIG } from './const';
 import { cardStyles } from './styles';
@@ -11,6 +11,8 @@ import { renderControlsPanel } from './components/controls-panel';
 import { renderEnergyStats } from './components/energy-stats';
 import { renderAlertPanel } from './components/alert-panel';
 import { filterWarningCodeForNoSolar } from './utils/fault-codes';
+import { formatDurationHours } from './utils/format';
+import { getActiveLanguage } from './localize/localize';
 
 // Console banner on load
 console.info(
@@ -19,15 +21,32 @@ console.info(
   'color: #000000; background: #10B981; font-weight: bold; border-radius: 0 3px 3px 0;'
 );
 
+const DEFAULT_SELF_POWER_ENTITY =
+  'sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie';
+const DEFAULT_SELF_DAILY_ENTITY =
+  'sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_den';
+const DEFAULT_SELF_MONTHLY_ENTITY =
+  'sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_mesiats';
+const DEFAULT_BREAKER_ENTITY = 'switch.invertor_vkhod';
+const DEFAULT_REMAINING_ENERGY_ENTITY =
+  'sensor.kukhnia_redodo_24v_bms_to_inverter_rs485_bridge_redodo_24v_remaining_energy';
+const DEFAULT_LOAD_PERCENT_ENTITY =
+  'sensor.aninerel_anl_4200t_24l_w_pro_load_percent';
+
 @customElement(CARD_NAME)
 export class AninerelPowerCard extends LitElement implements LovelaceCard {
   @state() private _config!: AninerelCardConfig;
   @state() private _hass!: HomeAssistant;
   @state() private _controlsExpanded = false;
+  @state() private _chargeCurrentPreview: number | null = null;
+  @state() private _equalizationConfirmPending = false;
+  private _equalizationConfirmTimer?: ReturnType<typeof setTimeout>;
 
-  // Sliding history buffer for sparkline generation
+  // Time-bucketed 24-hour history buffer for sparkline generation (32 buckets * 45 min = 24h)
   private _historyMap: Map<string, number[]> = new Map();
+  private _lastBucketIndexMap: Map<string, number> = new Map();
   private readonly _maxHistoryPoints = 32;
+  private readonly _bucketDurationMs = (24 * 60 * 60 * 1000) / 32; // 45 minutes per bucket
   private _lastHistoryFetch = 0;
   private readonly _historyFetchInterval = 15 * 60 * 1000; // 15 minutes
 
@@ -82,13 +101,13 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
   // 3. Lovelace Sizing for Masonry layout (1 unit = 50px)
   public getCardSize(): number {
-    return 14;
+    return this._config?.compact_mode ? 10 : 14;
   }
 
   // 4. Modern Sections View Grid Options (HA 2024.3+)
   public getLayoutOptions() {
     return {
-      grid_rows: 14,
+      grid_rows: this._config?.compact_mode ? 10 : 14,
       grid_columns: 4,
       grid_min_rows: 8,
       grid_min_columns: 2,
@@ -127,7 +146,8 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     this._lastHistoryFetch = now;
 
     try {
-      const startTime = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+      const startTimeMs = now - 24 * 60 * 60 * 1000;
+      const startTime = new Date(startTimeMs).toISOString();
       let historyData: any = null;
 
       if (typeof this._hass.callWS === 'function') {
@@ -144,18 +164,21 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       }
 
       if (historyData) {
+        const curBucket = Math.floor(now / this._bucketDurationMs);
         if (batEntity) {
           const rawList = this._extractStateList(historyData, batEntity);
-          const points = this._sampleHistoryPoints(rawList, this._maxHistoryPoints);
+          const points = this._sampleHistoryPoints(rawList, this._maxHistoryPoints, startTimeMs, now);
           if (points.length > 0) {
             this._historyMap.set('battery_voltage', points);
+            this._lastBucketIndexMap.set('battery_voltage', curBucket);
           }
         }
         if (gridEntity) {
           const rawList = this._extractStateList(historyData, gridEntity);
-          const points = this._sampleHistoryPoints(rawList, this._maxHistoryPoints);
+          const points = this._sampleHistoryPoints(rawList, this._maxHistoryPoints, startTimeMs, now);
           if (points.length > 0) {
             this._historyMap.set('grid_voltage', points);
+            this._lastBucketIndexMap.set('grid_voltage', curBucket);
           }
         }
         this.requestUpdate();
@@ -188,19 +211,65 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     return [];
   }
 
-  private _sampleHistoryPoints(rawStates: any[], targetPoints: number): number[] {
+  /**
+   * Time-bucketed sampling across 24 hours so long steady periods and bursty periods
+   * are represented proportionally in time rather than skewed by array index density.
+   */
+  private _sampleHistoryPoints(
+    rawStates: any[],
+    targetPoints: number,
+    startTimeMs: number,
+    endTimeMs: number
+  ): number[] {
     if (!rawStates || rawStates.length === 0) return [];
-    const values: number[] = [];
+
+    const timedValues: Array<{ t: number; v: number }> = [];
     for (const item of rawStates) {
       const s = item.s !== undefined ? item.s : item.state;
       const v = parseFloat(s);
-      if (!isNaN(v) && isFinite(v)) {
-        values.push(v);
-      }
-    }
-    if (values.length === 0) return [];
-    if (values.length <= targetPoints) return values;
+      if (isNaN(v) || !isFinite(v)) continue;
 
+      let t = NaN;
+      if (typeof item.lu === 'number') {
+        t = item.lu * 1000;
+      } else if (typeof item.lc === 'number') {
+        t = item.lc * 1000;
+      } else if (item.last_updated || item.last_changed) {
+        t = Date.parse(item.last_updated || item.last_changed);
+      }
+      timedValues.push({ t, v });
+    }
+
+    if (timedValues.length === 0) return [];
+
+    // If timestamps are present, sample evenly across time buckets
+    const hasTimestamps = timedValues.some((pt) => !isNaN(pt.t));
+    if (hasTimestamps && endTimeMs > startTimeMs) {
+      const result: number[] = [];
+      const span = endTimeMs - startTimeMs;
+      let cursor = 0;
+      let lastKnownVal = timedValues[0].v;
+
+      for (let i = 0; i < targetPoints; i++) {
+        const bucketEnd = startTimeMs + ((i + 1) / targetPoints) * span;
+        let sum = 0;
+        let count = 0;
+        while (cursor < timedValues.length) {
+          const pt = timedValues[cursor];
+          if (!isNaN(pt.t) && pt.t > bucketEnd) break;
+          lastKnownVal = pt.v;
+          sum += pt.v;
+          count++;
+          cursor++;
+        }
+        result.push(count > 0 ? Number((sum / count).toFixed(2)) : lastKnownVal);
+      }
+      return result;
+    }
+
+    // Fallback: index-based sampling if timestamps are unavailable
+    const values = timedValues.map((pt) => pt.v);
+    if (values.length <= targetPoints) return values;
     const result: number[] = [];
     const step = (values.length - 1) / (targetPoints - 1);
     for (let i = 0; i < targetPoints; i++) {
@@ -209,22 +278,22 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     return result;
   }
 
-  // Records numeric history points for sparklines
+  // Records numeric history points for sparklines without evicting 24h history on rapid updates
   private _updateHistoryBuffers(): void {
     if (!this._config || !this._hass) return;
 
     const batEntity =
       this._config.battery_voltage_entity || this._config.bms?.voltage_entity;
     if (batEntity) {
-      const batV = this._getNumber(batEntity);
-      if (batV !== null && !isNaN(batV)) {
+      const batV = this._getNullableNumber(batEntity);
+      if (batV !== null) {
         this._pushHistory('battery_voltage', batV);
       }
     }
 
     if (this._config.grid_voltage_entity) {
-      const gridV = this._getNumber(this._config.grid_voltage_entity);
-      if (gridV !== null && !isNaN(gridV)) {
+      const gridV = this._getNullableNumber(this._config.grid_voltage_entity);
+      if (gridV !== null) {
         this._pushHistory('grid_voltage', gridV);
       }
     }
@@ -232,11 +301,27 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
   private _pushHistory(key: string, val: number): void {
     const arr = this._historyMap.get(key) || [];
-    if (arr.length === 0 || Math.abs(arr[arr.length - 1] - val) > 0.001) {
+    const curBucket = Math.floor(Date.now() / this._bucketDurationMs);
+    const lastBucket = this._lastBucketIndexMap.get(key);
+
+    if (arr.length < this._maxHistoryPoints) {
+      // Initial live fill when history API has not populated 32 points yet
+      if (arr.length === 0 || Math.abs(arr[arr.length - 1] - val) > 0.001) {
+        arr.push(val);
+        this._historyMap.set(key, arr);
+        this._lastBucketIndexMap.set(key, curBucket);
+      }
+    } else if (lastBucket !== undefined && curBucket > lastBucket) {
+      // A new 45-minute time bucket started: advance window by 1
       arr.push(val);
       if (arr.length > this._maxHistoryPoints) {
         arr.shift();
       }
+      this._historyMap.set(key, arr);
+      this._lastBucketIndexMap.set(key, curBucket);
+    } else {
+      // Within the same 45-minute bucket: update the current (latest) point in place
+      arr[arr.length - 1] = val;
       this._historyMap.set(key, arr);
     }
   }
@@ -244,6 +329,9 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   // Dirty checking helper: only re-render if monitored entities update
   private _hasRelevantEntitiesChanged(oldHass: HomeAssistant, newHass: HomeAssistant): boolean {
     if (!this._config) return true;
+    if (oldHass.language !== newHass.language || oldHass.locale?.language !== newHass.locale?.language) {
+      return true;
+    }
     const watched = this._getMonitoredEntityIds();
     for (const id of watched) {
       if (oldHass.states[id] !== newHass.states[id]) {
@@ -254,7 +342,14 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   }
 
   private _getMonitoredEntityIds(): string[] {
-    const ids: string[] = [];
+    const ids: string[] = [
+      DEFAULT_SELF_POWER_ENTITY,
+      DEFAULT_SELF_DAILY_ENTITY,
+      DEFAULT_SELF_MONTHLY_ENTITY,
+      DEFAULT_BREAKER_ENTITY,
+      DEFAULT_REMAINING_ENERGY_ENTITY,
+      DEFAULT_LOAD_PERCENT_ENTITY,
+    ];
     if (!this._config) return ids;
 
     const { entities, bms, controls, safety, daily_energy } = this._config;
@@ -272,6 +367,11 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     if (this._config.operating_mode_entity) ids.push(this._config.operating_mode_entity);
     if (this._config.charging_active_entity) ids.push(this._config.charging_active_entity);
     if (this._config.inverter_temperature_entity) ids.push(this._config.inverter_temperature_entity);
+    if (this._config.inverter_load_percent_entity) ids.push(this._config.inverter_load_percent_entity);
+    if (this._config.self_consumption_power_entity) ids.push(this._config.self_consumption_power_entity);
+    if (this._config.grid_breaker_switch_entity) ids.push(this._config.grid_breaker_switch_entity);
+    if (this._config.grid_breaker_power_entity) ids.push(this._config.grid_breaker_power_entity);
+    if (this._config.kpi_entity) ids.push(this._config.kpi_entity);
 
     if (bms) {
       if (bms.soc_entity) ids.push(bms.soc_entity);
@@ -283,6 +383,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       if (bms.cell_delta_entity) ids.push(bms.cell_delta_entity);
       if (bms.remaining_capacity_entity) ids.push(bms.remaining_capacity_entity);
       if (bms.full_capacity_entity) ids.push(bms.full_capacity_entity);
+      if (bms.remaining_energy_entity) ids.push(bms.remaining_energy_entity);
 
       const count = bms.cell_count || 8;
       const prefix = bms.cell_voltage_prefix || 'sensor.redodo_battery_cell_voltage_';
@@ -291,11 +392,12 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       }
 
       // Battery 1 (flat & nested)
+      const count1 = bms.battery_1?.cell_count || 4;
       if (bms.bat1_soc_entity) ids.push(bms.bat1_soc_entity);
       if (bms.bat1_voltage_entity) ids.push(bms.bat1_voltage_entity);
       if (bms.bat1_temperature_entity) ids.push(bms.bat1_temperature_entity);
       if (bms.bat1_cell_prefix) {
-        for (let i = 1; i <= 4; i++) ids.push(`${bms.bat1_cell_prefix}${i}`);
+        for (let i = 1; i <= count1; i++) ids.push(`${bms.bat1_cell_prefix}${i}`);
       }
       if (bms.battery_1) {
         const b1 = bms.battery_1;
@@ -303,16 +405,17 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         if (b1.voltage_entity) ids.push(b1.voltage_entity);
         if (b1.temperature_entity) ids.push(b1.temperature_entity);
         if (b1.cell_voltage_prefix) {
-          for (let i = 1; i <= (b1.cell_count || 4); i++) ids.push(`${b1.cell_voltage_prefix}${i}`);
+          for (let i = 1; i <= count1; i++) ids.push(`${b1.cell_voltage_prefix}${i}`);
         }
       }
 
       // Battery 2 (flat & nested)
+      const count2 = bms.battery_2?.cell_count || 4;
       if (bms.bat2_soc_entity) ids.push(bms.bat2_soc_entity);
       if (bms.bat2_voltage_entity) ids.push(bms.bat2_voltage_entity);
       if (bms.bat2_temperature_entity) ids.push(bms.bat2_temperature_entity);
       if (bms.bat2_cell_prefix) {
-        for (let i = 1; i <= 4; i++) ids.push(`${bms.bat2_cell_prefix}${i}`);
+        for (let i = 1; i <= count2; i++) ids.push(`${bms.bat2_cell_prefix}${i}`);
       }
       if (bms.battery_2) {
         const b2 = bms.battery_2;
@@ -320,7 +423,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         if (b2.voltage_entity) ids.push(b2.voltage_entity);
         if (b2.temperature_entity) ids.push(b2.temperature_entity);
         if (b2.cell_voltage_prefix) {
-          for (let i = 1; i <= (b2.cell_count || 4); i++) ids.push(`${b2.cell_voltage_prefix}${i}`);
+          for (let i = 1; i <= count2; i++) ids.push(`${b2.cell_voltage_prefix}${i}`);
         }
       }
     }
@@ -354,6 +457,8 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       if (daily_energy.grid_import_entity) ids.push(daily_energy.grid_import_entity);
       if (daily_energy.battery_charge_entity) ids.push(daily_energy.battery_charge_entity);
       if (daily_energy.battery_discharge_entity) ids.push(daily_energy.battery_discharge_entity);
+      if (daily_energy.self_consumption_daily_entity) ids.push(daily_energy.self_consumption_daily_entity);
+      if (daily_energy.self_consumption_monthly_entity) ids.push(daily_energy.self_consumption_monthly_entity);
     }
 
     return ids.filter(Boolean);
@@ -366,15 +471,36 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     return undefined;
   }
 
+  private _resolveEntity(configured?: string, fallback?: string): string | undefined {
+    if (configured && configured.trim() !== '') return configured;
+    if (fallback && this._hass?.states?.[fallback]) return fallback;
+    return undefined;
+  }
+
+  private _isEntityUnavailable(entityId?: string): boolean {
+    if (!entityId || !this._hass || !this._hass.states[entityId]) return true;
+    const st = this._hass.states[entityId].state;
+    return st === 'unavailable' || st === 'unknown' || st === '';
+  }
+
   private _getState(entityId?: string): string {
     if (!entityId || !this._hass || !this._hass.states[entityId]) return 'N/A';
-    return this._hass.states[entityId].state;
+    const st = this._hass.states[entityId].state;
+    if (st === 'unavailable' || st === 'unknown') return 'N/A';
+    return st;
   }
 
   private _getNumber(entityId?: string): number {
-    if (!entityId || !this._hass || !this._hass.states[entityId]) return 0;
-    const val = parseFloat(this._hass.states[entityId].state);
-    return isNaN(val) ? 0 : val;
+    const val = this._getNullableNumber(entityId);
+    return val ?? 0;
+  }
+
+  private _getNullableNumber(entityId?: string): number | null {
+    if (!entityId || !this._hass || !this._hass.states[entityId]) return null;
+    const raw = this._hass.states[entityId].state;
+    if (raw === 'unavailable' || raw === 'unknown' || raw === '') return null;
+    const val = parseFloat(raw);
+    return isNaN(val) || !isFinite(val) ? null : val;
   }
 
   private _getOptions(entityId?: string): string[] {
@@ -417,8 +543,21 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     }
   }
 
-  private async _handleToggleSwitch(entityId: string, currentState: boolean): Promise<void> {
+  private async _handleToggleEqualization(entityId: string, currentState: boolean): Promise<void> {
     if (!this._hass) return;
+    // Inline 2-step confirmation when turning ON Equalization
+    if (!currentState && !this._equalizationConfirmPending) {
+      this._equalizationConfirmPending = true;
+      if (this._equalizationConfirmTimer) clearTimeout(this._equalizationConfirmTimer);
+      this._equalizationConfirmTimer = setTimeout(() => {
+        this._equalizationConfirmPending = false;
+      }, 4000);
+      return;
+    }
+
+    this._equalizationConfirmPending = false;
+    if (this._equalizationConfirmTimer) clearTimeout(this._equalizationConfirmTimer);
+
     try {
       await this._hass.callService('switch', currentState ? 'turn_off' : 'turn_on', {
         entity_id: entityId,
@@ -431,57 +570,66 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   protected render() {
     if (!this._config) return html``;
 
+    const activeLang = getActiveLanguage(this._hass, this._config.language);
+    const maxPower = this._config.max_power || 4200;
+
     const hasSolar = Boolean(
       this._config.show_solar &&
-      this._config.entities.solar_power &&
-      this._config.entities.solar_power.trim() !== ''
+        this._config.entities.solar_power &&
+        this._config.entities.solar_power.trim() !== ''
     );
 
+    // Detect if inverter datalogger collector is offline
+    const loadUnavailable = this._isEntityUnavailable(this._config.entities.load_power);
+    const modeUnavailable = this._config.operating_mode_entity
+      ? this._isEntityUnavailable(this._config.operating_mode_entity)
+      : loadUnavailable;
+    const isOffline = Boolean(this._hass && loadUnavailable && modeUnavailable);
+
     // Power values
-    const solarWatts = hasSolar && this._config.entities.solar_power
-      ? this._getNumber(this._config.entities.solar_power)
-      : 0;
+    const solarWatts =
+      hasSolar && this._config.entities.solar_power
+        ? this._getNumber(this._config.entities.solar_power)
+        : 0;
     const batteryWatts = this._getNumber(this._config.entities.battery_power);
     const gridWatts = this._getNumber(this._config.entities.grid_power);
     const loadWatts = this._getNumber(this._config.entities.load_power);
-    // Electrical telemetry
-    const batteryVoltage = this._config.battery_voltage_entity
-      ? this._getNumber(this._config.battery_voltage_entity)
-      : null;
-    const batteryCurrent = this._config.battery_current_entity
-      ? this._getNumber(this._config.battery_current_entity)
-      : null;
-    const gridVoltage = this._config.grid_voltage_entity
-      ? this._getNumber(this._config.grid_voltage_entity)
-      : null;
 
-    // Battery SOC (reads BMS sensor, with intelligent fallback for 24V 8S LiFePO4 pack)
-    let batterySoc = this._config.bms?.soc_entity
-      ? this._getNumber(this._config.bms.soc_entity)
-      : 0;
+    // Electrical telemetry (honest null when sensor is unavailable)
+    const batteryVoltage = this._getNullableNumber(
+      this._config.battery_voltage_entity || this._config.bms?.voltage_entity
+    );
+    const batteryCurrent = this._getNullableNumber(
+      this._config.battery_current_entity || this._config.bms?.current_entity
+    );
+    const gridVoltage = this._getNullableNumber(this._config.grid_voltage_entity);
 
-    if ((batterySoc <= 0 || isNaN(batterySoc)) && batteryVoltage && batteryVoltage >= 20) {
-      if (batteryVoltage >= 27.2) batterySoc = 100;
-      else if (batteryVoltage >= 26.8) batterySoc = Math.round(80 + ((batteryVoltage - 26.8) / 0.4) * 20);
-      else if (batteryVoltage >= 26.4) batterySoc = Math.round(50 + ((batteryVoltage - 26.4) / 0.4) * 30);
-      else if (batteryVoltage >= 26.0) batterySoc = Math.round(20 + ((batteryVoltage - 26.0) / 0.4) * 30);
-      else if (batteryVoltage >= 24.0) batterySoc = Math.max(5, Math.round(((batteryVoltage - 24.0) / 2.0) * 20));
-      else batterySoc = 5;
-    } else if (batterySoc <= 0 && (!batteryVoltage || batteryVoltage < 20)) {
-      batterySoc = 80;
-    }
+    // Self-consumption & Grid Input Breaker (configured or auto-discovered)
+    const selfPowerEntity = this._resolveEntity(
+      this._config.self_consumption_power_entity,
+      DEFAULT_SELF_POWER_ENTITY
+    );
+    const selfConsumptionWatts = selfPowerEntity ? this._getNullableNumber(selfPowerEntity) : null;
+
+    const gridBreakerEntity = this._resolveEntity(
+      this._config.grid_breaker_switch_entity,
+      DEFAULT_BREAKER_ENTITY
+    );
+    const gridBreakerState = gridBreakerEntity ? this._getState(gridBreakerEntity) : null;
+
+    // Battery SOC (reads BMS sensor, with intelligent fallback for 24V 8S LiFePO4 pack when voltage is valid)
+    let batterySoc: number | null = this._config.bms?.soc_entity
+      ? this._getNullableNumber(this._config.bms.soc_entity)
+      : null;
 
     // Inverter statuses & alerts
     const operatingMode = this._getState(this._config.operating_mode_entity);
-    const temperature = this._config.inverter_temperature_entity
-      ? this._getNumber(this._config.inverter_temperature_entity)
-      : null;
+    const temperature = this._getNullableNumber(this._config.inverter_temperature_entity);
 
     const isCharging = this._getState(this._config.charging_active_entity) === 'on';
     const isFault = this._getState(this._config.safety?.fault_active_entity) === 'on';
-    const faultCode = this._config.safety?.fault_code_entity
-      ? parseInt(this._getState(this._config.safety.fault_code_entity), 10)
-      : null;
+    const rawFaultCode = this._getNullableNumber(this._config.safety?.fault_code_entity);
+    const faultCode = rawFaultCode !== null ? Math.round(rawFaultCode) : null;
     const faultDetailsEntity =
       this._config.safety?.fault_details_entity ||
       this._findMatchingEntity(this._config.safety?.fault_code_entity, '_fault_details');
@@ -492,9 +640,8 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         : null;
 
     let isWarning = this._getState(this._config.safety?.warnings_active_entity) === 'on';
-    const rawWarningCode = this._config.safety?.warning_code_entity
-      ? parseInt(this._getState(this._config.safety.warning_code_entity), 10)
-      : null;
+    const rawWarningNum = this._getNullableNumber(this._config.safety?.warning_code_entity);
+    const rawWarningCode = rawWarningNum !== null ? Math.round(rawWarningNum) : null;
     const warningDetailsEntity =
       this._config.safety?.warning_details_entity ||
       this._findMatchingEntity(this._config.safety?.warning_code_entity, '_warning_details');
@@ -506,7 +653,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
     let warningCode = rawWarningCode;
     // When solar generation is disabled (show_solar: false / no panels),
-    // strip PV-related warning bits/codes (W64 / W15 / bit 6) so normal 0V MPPT doesn't alarm.
+    // strip PV-related warning bits/codes and normal AC blackout status bits.
     if (!hasSolar) {
       const { effectiveCode, hasNonPvWarning } = filterWarningCodeForNoSolar(rawWarningCode);
       warningCode = effectiveCode;
@@ -515,29 +662,44 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       }
     }
 
-    // Daily energy
-    const gridImportEnergyToday = this._config.daily_energy?.grid_import_entity
-      ? this._getNumber(this._config.daily_energy.grid_import_entity)
+    // Daily energy & self-consumption counters
+    const gridImportEnergyToday = this._getNullableNumber(
+      this._config.daily_energy?.grid_import_entity
+    );
+    const loadEnergyToday = this._getNullableNumber(
+      this._config.daily_energy?.load_energy_entity
+    );
+    const batChargeEnergyToday = this._getNullableNumber(
+      this._config.daily_energy?.battery_charge_entity
+    );
+    const batDischargeEnergyToday = this._getNullableNumber(
+      this._config.daily_energy?.battery_discharge_entity
+    );
+    const selfDailyEntity = this._resolveEntity(
+      this._config.daily_energy?.self_consumption_daily_entity,
+      DEFAULT_SELF_DAILY_ENTITY
+    );
+    const selfConsumptionDailyEnergy = selfDailyEntity
+      ? this._getNullableNumber(selfDailyEntity)
       : null;
-    const loadEnergyToday = this._config.daily_energy?.load_energy_entity
-      ? this._getNumber(this._config.daily_energy.load_energy_entity)
-      : null;
-    const batChargeEnergyToday = this._config.daily_energy?.battery_charge_entity
-      ? this._getNumber(this._config.daily_energy.battery_charge_entity)
-      : null;
-    const batDischargeEnergyToday = this._config.daily_energy?.battery_discharge_entity
-      ? this._getNumber(this._config.daily_energy.battery_discharge_entity)
+
+    const selfMonthlyEntity = this._resolveEntity(
+      this._config.daily_energy?.self_consumption_monthly_entity,
+      DEFAULT_SELF_MONTHLY_ENTITY
+    );
+    const selfConsumptionMonthlyEnergy = selfMonthlyEntity
+      ? this._getNullableNumber(selfMonthlyEntity)
       : null;
 
     // BMS Redodo telemetry (Single or Dual 12V Series)
     const bms = this._config.bms;
     const isDual = Boolean(
       bms?.dual_battery ||
-      (bms?.battery_1 && bms?.battery_2) ||
-      bms?.bat1_soc_entity ||
-      bms?.bat1_voltage_entity ||
-      bms?.bat2_soc_entity ||
-      bms?.bat2_voltage_entity
+        (bms?.battery_1 && bms?.battery_2) ||
+        bms?.bat1_soc_entity ||
+        bms?.bat1_voltage_entity ||
+        bms?.bat2_soc_entity ||
+        bms?.bat2_voltage_entity
     );
 
     let bmsCells: CellData[] = [];
@@ -552,49 +714,39 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         const v1Entity = bms.bat1_voltage_entity || b1?.voltage_entity;
         const v2Entity = bms.bat2_voltage_entity || b2?.voltage_entity;
 
-        const v1 = v1Entity
-          ? this._getNumber(v1Entity)
-          : batteryVoltage
-          ? Number((batteryVoltage / 2).toFixed(2))
-          : null;
-        const v2 = v2Entity
-          ? this._getNumber(v2Entity)
-          : batteryVoltage
-          ? Number((batteryVoltage / 2).toFixed(2))
-          : null;
+        const v1 = this._getNullableNumber(v1Entity);
+        const v2 = this._getNullableNumber(v2Entity);
 
         const soc1Entity = bms.bat1_soc_entity || b1?.soc_entity;
         const soc2Entity = bms.bat2_soc_entity || b2?.soc_entity;
 
-        const soc1 = soc1Entity ? this._getNumber(soc1Entity) : (batterySoc || null);
-        const soc2 = soc2Entity ? this._getNumber(soc2Entity) : (batterySoc || null);
+        const soc1 = this._getNullableNumber(soc1Entity);
+        const soc2 = this._getNullableNumber(soc2Entity);
 
         const t1Entity = bms.bat1_temperature_entity || b1?.temperature_entity;
         const t2Entity = bms.bat2_temperature_entity || b2?.temperature_entity;
 
-        const t1 = t1Entity ? this._getNumber(t1Entity) : null;
-        const t2 = t2Entity ? this._getNumber(t2Entity) : null;
+        const t1 = this._getNullableNumber(t1Entity);
+        const t2 = this._getNullableNumber(t2Entity);
 
-        // Scan cells for Battery 1 (default 4 cells)
+        // Scan cells for Battery 1 (honest readings, no fake 3.38V)
         const cells1: CellData[] = [];
         const prefix1 = bms.bat1_cell_prefix || b1?.cell_voltage_prefix || 'sensor.redodo_1_cell_voltage_';
         const count1 = b1?.cell_count || 4;
         for (let i = 1; i <= count1; i++) {
-          let val = this._getNumber(`${prefix1}${i}`);
+          let val = this._getNullableNumber(`${prefix1}${i}`) ?? 0;
           if (val > 100) val = val / 1000;
-          if (val <= 0 && v1 && v1 > 0) val = Number((v1 / count1).toFixed(3));
-          cells1.push({ index: i, voltage: val > 0 ? val : 3.38, rawEntityId: `${prefix1}${i}` });
+          cells1.push({ index: i, voltage: val > 0 ? val : 0, rawEntityId: `${prefix1}${i}` });
         }
 
-        // Scan cells for Battery 2 (default 4 cells)
+        // Scan cells for Battery 2 (honest readings, no fake 3.38V)
         const cells2: CellData[] = [];
         const prefix2 = bms.bat2_cell_prefix || b2?.cell_voltage_prefix || 'sensor.redodo_2_cell_voltage_';
         const count2 = b2?.cell_count || 4;
         for (let i = 1; i <= count2; i++) {
-          let val = this._getNumber(`${prefix2}${i}`);
+          let val = this._getNullableNumber(`${prefix2}${i}`) ?? 0;
           if (val > 100) val = val / 1000;
-          if (val <= 0 && v2 && v2 > 0) val = Number((v2 / count2).toFixed(3));
-          cells2.push({ index: i + count1, voltage: val > 0 ? val : 3.38, rawEntityId: `${prefix2}${i}` });
+          cells2.push({ index: i + count1, voltage: val > 0 ? val : 0, rawEntityId: `${prefix2}${i}` });
         }
 
         bat1Data = {
@@ -614,8 +766,12 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         };
 
         // In series connection, lowest pack limits capacity
-        if (soc1 !== null && soc2 !== null && soc1 > 0 && soc2 > 0) {
+        if (soc1 !== null && soc2 !== null && soc1 >= 0 && soc2 >= 0) {
           batterySoc = Math.min(soc1, soc2);
+        } else if (soc1 !== null) {
+          batterySoc = soc1;
+        } else if (soc2 !== null) {
+          batterySoc = soc2;
         }
       } else {
         const cellCount = bms.cell_count || 8;
@@ -623,36 +779,107 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
         for (let i = 1; i <= cellCount; i++) {
           const entityId = `${prefix}${i}`;
-          let rawVal = this._getNumber(entityId);
+          let rawVal = this._getNullableNumber(entityId) ?? 0;
           if (rawVal > 100) {
             rawVal = rawVal / 1000;
           }
-          if (rawVal <= 0 && batteryVoltage && batteryVoltage > 0) {
-            rawVal = Number((batteryVoltage / cellCount).toFixed(3));
-          }
           bmsCells.push({
             index: i,
-            voltage: rawVal > 0 ? rawVal : 3.33,
+            voltage: rawVal > 0 ? rawVal : 0,
             rawEntityId: entityId,
           });
         }
       }
     }
 
-    // Inverter Controls
+    // Fallback voltage-based SoC estimation ONLY when batteryVoltage is genuinely available (>= 20V)
+    if ((batterySoc === null || isNaN(batterySoc)) && batteryVoltage !== null && batteryVoltage >= 20) {
+      if (batteryVoltage >= 27.2) batterySoc = 100;
+      else if (batteryVoltage >= 26.8) batterySoc = Math.round(80 + ((batteryVoltage - 26.8) / 0.4) * 20);
+      else if (batteryVoltage >= 26.4) batterySoc = Math.round(50 + ((batteryVoltage - 26.4) / 0.4) * 30);
+      else if (batteryVoltage >= 26.0) batterySoc = Math.round(20 + ((batteryVoltage - 26.0) / 0.4) * 30);
+      else if (batteryVoltage >= 24.0) batterySoc = Math.max(5, Math.round(((batteryVoltage - 24.0) / 2.0) * 20));
+      else batterySoc = 5;
+    }
+
+    // Calculate Battery Runtime (Time-to-Empty on discharge / Time-to-Full on charge)
+    const nominalCapWh = bms?.nominal_capacity_wh || 2560;
+    const remEnergyEntity = this._resolveEntity(
+      bms?.remaining_energy_entity,
+      DEFAULT_REMAINING_ENERGY_ENTITY
+    );
+    let remainingWh: number | null = null;
+    if (remEnergyEntity) {
+      const rawRem = this._getNullableNumber(remEnergyEntity);
+      if (rawRem !== null) {
+        const unit = this._hass?.states[remEnergyEntity]?.attributes?.unit_of_measurement?.toLowerCase() || '';
+        remainingWh = unit === 'kwh' ? rawRem * 1000 : rawRem;
+      }
+    }
+    if (remainingWh === null && batterySoc !== null) {
+      remainingWh = (Math.max(0, batterySoc) / 100) * nominalCapWh;
+    }
+
+    let batteryRuntimeText: string | null = null;
+    if (remainingWh !== null && Math.abs(batteryWatts) > 15) {
+      if (batteryWatts < -15) {
+        // Discharging: usable energy down to 10% SoC reserve
+        const reserveWh = nominalCapWh * 0.1;
+        const usableWh = Math.max(0, remainingWh - reserveWh);
+        const hoursLeft = usableWh / Math.abs(batteryWatts);
+        batteryRuntimeText = formatDurationHours(hoursLeft, activeLang);
+      } else if (batteryWatts > 15 && (batterySoc === null || batterySoc < 99.5)) {
+        // Charging: time until full
+        const neededWh = Math.max(0, nominalCapWh - remainingWh);
+        const hoursToFull = neededWh / batteryWatts;
+        batteryRuntimeText = formatDurationHours(hoursToFull, activeLang);
+      }
+    }
+
+    // Inverter Load % (configured sensor, auto-discovered sensor, or mathematical fallback)
+    const loadPctEntity = this._resolveEntity(
+      this._config.inverter_load_percent_entity,
+      DEFAULT_LOAD_PERCENT_ENTITY
+    );
+    const rawLoadPct = loadPctEntity ? this._getNullableNumber(loadPctEntity) : null;
+    const inverterLoadPercent =
+      rawLoadPct !== null
+        ? rawLoadPct
+        : maxPower > 0
+        ? Math.min(100, Math.round((loadWatts / maxPower) * 100))
+        : 0;
+
+    // Inverter Controls & dynamic number attributes
     const controls = this._config.controls;
     const safety = this._config.safety;
     const dailyEnergy = this._config.daily_energy;
 
+    const chargeCurrentEntity = controls?.max_charge_current_entity;
+    const chargeCurrentAttrs = chargeCurrentEntity
+      ? this._hass?.states[chargeCurrentEntity]?.attributes
+      : undefined;
+    const maxChargeCurrentMin =
+      typeof chargeCurrentAttrs?.min === 'number' ? chargeCurrentAttrs.min : 2;
+    const maxChargeCurrentMax =
+      typeof chargeCurrentAttrs?.max === 'number' ? chargeCurrentAttrs.max : 100;
+    const maxChargeCurrentStep =
+      typeof chargeCurrentAttrs?.step === 'number' ? chargeCurrentAttrs.step : 1;
+
     return html`
-      <ha-card>
+      <ha-card class="${this._config.compact_mode ? 'compact' : ''}">
         <!-- 1. Header Bar with live status chips -->
         ${this._config.show_header !== false
           ? renderHeaderBar({
+              hass: this._hass,
               config: this._config,
               hasSolar,
+              isOffline,
               operatingMode,
               temperature,
+              selfConsumptionWatts,
+              selfConsumptionEntity: selfPowerEntity,
+              gridBreakerState,
+              gridBreakerEntity,
               isCharging,
               isFault,
               faultCode,
@@ -662,10 +889,14 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
             })
           : ''}
 
-        <!-- 2. Active Safety & Diagnostics Alert Banners (if any faults/warnings) -->
-        ${this._config.show_alerts !== false && safety
+        <!-- 2. Active Safety & Diagnostics Alert Banners (if offline or any faults/warnings) -->
+        ${this._config.show_alerts !== false && (safety || isOffline)
           ? renderAlertPanel({
+              hass: this._hass,
+              language: this._config.language,
               safetyConfig: safety,
+              isOffline,
+              offlineEntity: this._config.operating_mode_entity || this._config.entities.load_power,
               isFault,
               faultCode,
               faultDetailsText,
@@ -682,12 +913,15 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               hass: this._hass,
               config: this._config,
               hasSolar,
+              isOffline,
               gridPosition: this._config.grid_position || 'bottom',
               solarWatts,
               batteryWatts,
               gridWatts,
               loadWatts,
               batterySoc,
+              batteryRuntimeText,
+              selfConsumptionWatts,
               operatingMode: operatingMode !== 'N/A' ? operatingMode : 'Inverter',
               isFault,
               onNodeClick: (id) => this._handleEntityClick(id),
@@ -697,6 +931,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         <!-- 4. Electrical Telemetry & Battery SoC / Self-Sufficiency KPI -->
         ${this._config.show_params !== false
           ? renderElectricalParams({
+              hass: this._hass,
               config: this._config,
               hasSolar,
               batteryVoltage,
@@ -706,9 +941,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               gridImportEnergyToday,
               loadEnergyToday,
               batteryDischargeEnergyToday: batDischargeEnergyToday,
-              inverterLoadPercent: this._config.inverter_load_percent_entity
-                ? this._getNumber(this._config.inverter_load_percent_entity)
-                : this._getNumber('sensor.aninerel_anl_4200t_24l_w_pro_load_percent'),
+              inverterLoadPercent,
               historyMap: this._historyMap,
               onParamClick: (id) => this._handleEntityClick(id),
             })
@@ -717,17 +950,19 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         <!-- 5. BMS Redodo LiFePO4 Cell Telemetry & Balancing (Single or Dual Battery Series) -->
         ${this._config.show_bms !== false && bms
           ? renderBmsPanel({
+              hass: this._hass,
+              language: this._config.language,
               bmsConfig: bms,
               isDual,
               battery1: bat1Data,
               battery2: bat2Data,
               soc: batterySoc,
-              temperature: bms.temperature_entity ? this._getNumber(bms.temperature_entity) : null,
-              temperature2: bms.temperature_2_entity ? this._getNumber(bms.temperature_2_entity) : null,
-              cycleCount: bms.cycle_count_entity ? this._getNumber(bms.cycle_count_entity) : null,
-              remainingCapacity: bms.remaining_capacity_entity ? this._getNumber(bms.remaining_capacity_entity) : null,
-              fullCapacity: bms.full_capacity_entity ? this._getNumber(bms.full_capacity_entity) : null,
-              cellDelta: bms.cell_delta_entity ? this._getNumber(bms.cell_delta_entity) : null,
+              temperature: this._getNullableNumber(bms.temperature_entity),
+              temperature2: this._getNullableNumber(bms.temperature_2_entity),
+              cycleCount: this._getNullableNumber(bms.cycle_count_entity),
+              remainingCapacity: this._getNullableNumber(bms.remaining_capacity_entity),
+              fullCapacity: this._getNullableNumber(bms.full_capacity_entity),
+              cellDelta: this._getNullableNumber(bms.cell_delta_entity),
               cells: bmsCells,
               onBmsClick: (id) => this._handleEntityClick(id),
             })
@@ -738,32 +973,53 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
           ? renderControlsPanel({
               controlsConfig: controls,
               hass: this._hass,
+              language: this._config.language,
               expanded: this._controlsExpanded,
               onToggleExpand: () => {
                 this._controlsExpanded = !this._controlsExpanded;
               },
-              chargeSource: controls.charge_source_entity ? this._getState(controls.charge_source_entity) : undefined,
+              chargeSource: controls.charge_source_entity
+                ? this._getState(controls.charge_source_entity)
+                : undefined,
               chargeSourceOptions: this._getOptions(controls.charge_source_entity),
-              outputPriority: controls.output_priority_entity ? this._getState(controls.output_priority_entity) : undefined,
+              outputPriority: controls.output_priority_entity
+                ? this._getState(controls.output_priority_entity)
+                : undefined,
               outputPriorityOptions: this._getOptions(controls.output_priority_entity),
-              maxChargeCurrent: controls.max_charge_current_entity ? this._getNumber(controls.max_charge_current_entity) : undefined,
-              bulkVoltage: controls.bulk_voltage_entity ? this._getNumber(controls.bulk_voltage_entity) : undefined,
-              floatVoltage: controls.float_voltage_entity ? this._getNumber(controls.float_voltage_entity) : undefined,
-              isEqualization: controls.equalization_entity ? this._getState(controls.equalization_entity) === 'on' : false,
+              maxChargeCurrent: this._getNullableNumber(controls.max_charge_current_entity),
+              maxChargeCurrentPreview: this._chargeCurrentPreview,
+              maxChargeCurrentMin,
+              maxChargeCurrentMax,
+              maxChargeCurrentStep,
+              bulkVoltage: this._getNullableNumber(controls.bulk_voltage_entity),
+              floatVoltage: this._getNullableNumber(controls.float_voltage_entity),
+              isEqualization: controls.equalization_entity
+                ? this._getState(controls.equalization_entity) === 'on'
+                : false,
+              equalizationConfirmPending: this._equalizationConfirmPending,
               onSelectOption: (id, opt) => this._handleSelectOption(id, opt),
+              onPreviewNumber: (val) => {
+                this._chargeCurrentPreview = val;
+              },
               onSetNumber: (id, val) => this._handleSetNumber(id, val),
-              onToggleSwitch: (id, cur) => this._handleToggleSwitch(id, cur),
+              onToggleEqualization: (id, cur) => this._handleToggleEqualization(id, cur),
             })
           : ''}
 
-        <!-- 7. Daily Energy Statistics (Today's Production & Consumption) -->
+        <!-- 7. Daily Energy Statistics (Today's Production, Consumption & Self-Consumption) -->
         ${this._config.show_energy !== false && dailyEnergy
           ? renderEnergyStats({
+              hass: this._hass,
+              language: this._config.language,
               dailyConfig: dailyEnergy,
               loadEnergy: loadEnergyToday,
               gridImportEnergy: gridImportEnergyToday,
               batteryChargeEnergy: batChargeEnergyToday,
               batteryDischargeEnergy: batDischargeEnergyToday,
+              selfConsumptionDailyEnergy,
+              selfConsumptionDailyEntity: selfDailyEntity,
+              selfConsumptionMonthlyEnergy,
+              selfConsumptionMonthlyEntity: selfMonthlyEntity,
               onEnergyClick: (id?: string) => this._handleEntityClick(id),
             })
           : ''}

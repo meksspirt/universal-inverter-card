@@ -91,6 +91,8 @@ export interface BmsConfig {
   cycle_count_entity?: string;        // sensor.battery_discharge_cycles
   remaining_capacity_entity?: string; // sensor.battery_remaining_capacity (Ah)
   full_capacity_entity?: string;      // sensor.battery_full_charge_capacity (Ah)
+  remaining_energy_entity?: string;   // sensor...remaining_energy (Wh or kWh)
+  nominal_capacity_wh?: number;       // default: 2560 (Wh for 24V 100Ah LiFePO4)
   cell_delta_entity?: string;         // sensor.battery_cell_delta (mV)
 
   // Dual Battery Series (2x 12V LiFePO4 = 24V)
@@ -131,10 +133,12 @@ export interface SafetyConfig {
 }
 
 export interface DailyEnergyConfig {
-  load_energy_entity?: string;        // sensor...load_energy_today (kWh)
-  grid_import_entity?: string;        // sensor...grid_import_energy_today (kWh)
-  battery_charge_entity?: string;     // sensor...battery_charge_energy_today (kWh)
-  battery_discharge_entity?: string;  // sensor...battery_discharge_energy_today (kWh)
+  load_energy_entity?: string;             // sensor...load_energy_today (kWh)
+  grid_import_entity?: string;             // sensor...grid_import_energy_today (kWh)
+  battery_charge_entity?: string;          // sensor...battery_charge_energy_today (kWh)
+  battery_discharge_entity?: string;       // sensor...battery_discharge_energy_today (kWh)
+  self_consumption_daily_entity?: string;  // sensor...invertor_sobstvennoe_potreblenie_za_den (kWh)
+  self_consumption_monthly_entity?: string;// sensor...invertor_sobstvennoe_potreblenie_za_mesiats (kWh)
 }
 
 export interface ColorConfig {
@@ -163,6 +167,9 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
   charging_active_entity?: string;
   inverter_temperature_entity?: string;
   inverter_load_percent_entity?: string;
+  self_consumption_power_entity?: string;
+  grid_breaker_switch_entity?: string;
+  grid_breaker_power_entity?: string;
 
   // 3rd Circular Gauge KPI Configuration
   kpi_mode?: 'auto' | 'battery_soc' | 'battery_autonomy' | 'self_sufficiency' | 'inverter_load';

@@ -7,22 +7,30 @@ const languages: Record<string, any> = {
   ru,
 };
 
-export function localize(
-  key: string,
-  hass?: HomeAssistant,
-  search?: string,
-  replace?: string
-): string {
+export function getActiveLanguage(hass?: HomeAssistant, configLang?: string): 'ru' | 'en' {
+  if (configLang && configLang !== 'auto' && languages[configLang.toLowerCase()]) {
+    return configLang.toLowerCase() as 'ru' | 'en';
+  }
   const userLang = (
     hass?.locale?.language ||
     hass?.language ||
-    navigator.language ||
+    (typeof navigator !== 'undefined' ? navigator.language : '') ||
     'ru'
   )
     .toLowerCase()
     .split('-')[0];
 
-  const activeLang = languages[userLang] ? userLang : 'ru';
+  return languages[userLang] ? (userLang as 'ru' | 'en') : 'ru';
+}
+
+export function localize(
+  key: string,
+  hass?: HomeAssistant,
+  configLang?: string,
+  search?: string,
+  replace?: string
+): string {
+  const activeLang = getActiveLanguage(hass, configLang);
 
   let translated: any;
   try {

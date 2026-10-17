@@ -31,7 +31,7 @@ export class AninerelPowerCardEditor extends LitElement {
 
   private _computeLabel(schema: any): string {
     if (schema.label) return schema.label;
-    return localize(`editor.${schema.name}`, this.hass) || schema.name;
+    return localize(`editor.${schema.name}`, this.hass, this._config?.language) || schema.name;
   }
 
   private _valueChanged(ev: CustomEvent): void {
@@ -45,10 +45,11 @@ export class AninerelPowerCardEditor extends LitElement {
   }
 
   private _getSchema() {
+    const lang = this._config?.language;
     return [
       {
         name: 'title',
-        label: localize('editor.title', this.hass) || 'Card Title',
+        label: localize('editor.title', this.hass, lang) || 'Card Title',
         selector: { text: {} },
       },
       {
@@ -61,11 +62,24 @@ export class AninerelPowerCardEditor extends LitElement {
         label: 'Header Icon (MDI)',
         selector: { icon: {} },
       },
+      {
+        name: 'language',
+        label: 'Interface Language (Язык интерфейса)',
+        selector: {
+          select: {
+            options: [
+              { value: 'auto', label: 'Auto (Home Assistant Default)' },
+              { value: 'ru', label: 'Русский (Russian)' },
+              { value: 'en', label: 'English' },
+            ],
+          },
+        },
+      },
       // 1. Core Power Entities (Required: load_power)
       {
         name: 'entities',
         type: 'expandable',
-        title: localize('editor.entities_group', this.hass) || '⚡ Real-time Power Entities (Required)',
+        title: localize('editor.entities_group', this.hass, lang) || '⚡ Real-time Power Entities (Required)',
         schema: [
           {
             name: 'solar_power',
@@ -97,7 +111,7 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: '',
         type: 'expandable',
-        title: localize('editor.params_group', this.hass) || '📊 Electrical Parameters & Telemetry',
+        title: localize('editor.params_group', this.hass, lang) || '📊 Electrical Parameters & Telemetry',
         schema: [
           {
             name: 'battery_voltage_entity',
@@ -123,6 +137,21 @@ export class AninerelPowerCardEditor extends LitElement {
             name: 'inverter_temperature_entity',
             label: 'Inverter Temperature (°C)',
             selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'inverter_load_percent_entity',
+            label: 'Inverter Load Percentage (%)',
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'self_consumption_power_entity',
+            label: 'Inverter Self-Consumption Power (W)',
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'grid_breaker_switch_entity',
+            label: 'AC Input Zigbee Breaker / Smart Plug (Switch)',
+            selector: { entity: { domain: 'switch' } },
           },
           {
             name: 'charging_active_entity',
@@ -155,12 +184,22 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: 'bms',
         type: 'expandable',
-        title: localize('editor.bms_group', this.hass) || '🔋 BMS Redodo LiFePO4 Telemetry',
+        title: localize('editor.bms_group', this.hass, lang) || '🔋 BMS Redodo LiFePO4 Telemetry',
         schema: [
           {
             name: 'dual_battery',
             label: '🔋 Mode: Dual 12V Batteries in Series (24V Pack)',
             selector: { boolean: {} },
+          },
+          {
+            name: 'nominal_capacity_wh',
+            label: 'Total Battery Nominal Energy Capacity (Wh, e.g. 2560 for 24V 100Ah)',
+            selector: { number: { min: 500, max: 30000, step: 100, mode: 'box' } },
+          },
+          {
+            name: 'remaining_energy_entity',
+            label: 'Remaining Battery Energy Entity (Wh / kWh, for Runtime calc)',
+            selector: { entity: { domain: 'sensor' } },
           },
           // --- Battery #1 (12V LiFePO4) ---
           {
@@ -261,7 +300,7 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: 'controls',
         type: 'expandable',
-        title: localize('editor.controls_group', this.hass) || '🎛️ Inverter Controls & Settings',
+        title: localize('editor.controls_group', this.hass, lang) || '🎛️ Inverter Controls & Settings',
         schema: [
           {
             name: 'charge_source_entity',
@@ -299,7 +338,7 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: 'safety',
         type: 'expandable',
-        title: localize('editor.safety_group', this.hass) || '🛡️ Safety & Diagnostics',
+        title: localize('editor.safety_group', this.hass, lang) || '🛡️ Safety & Diagnostics',
         schema: [
           {
             name: 'fault_active_entity',
@@ -337,7 +376,7 @@ export class AninerelPowerCardEditor extends LitElement {
       {
         name: 'daily_energy',
         type: 'expandable',
-        title: localize('editor.energy_group', this.hass) || '📈 Daily Energy Counters',
+        title: localize('editor.energy_group', this.hass, lang) || '📈 Daily Energy Counters',
         schema: [
           {
             name: 'load_energy_entity',
@@ -359,13 +398,23 @@ export class AninerelPowerCardEditor extends LitElement {
             label: 'Daily Battery Discharge (kWh)',
             selector: { entity: { domain: 'sensor' } },
           },
+          {
+            name: 'self_consumption_daily_entity',
+            label: 'Daily Inverter Self-Consumption (kWh)',
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'self_consumption_monthly_entity',
+            label: 'Monthly Inverter Self-Consumption (kWh)',
+            selector: { entity: { domain: 'sensor' } },
+          },
         ],
       },
       // 7. Visual & Section Visibility Options
       {
         name: '',
         type: 'expandable',
-        title: localize('editor.display_group', this.hass) || '🎨 Layout & Visualization Toggles',
+        title: localize('editor.display_group', this.hass, lang) || '🎨 Layout & Visualization Toggles',
         schema: [
           {
             name: 'max_power',
@@ -375,6 +424,11 @@ export class AninerelPowerCardEditor extends LitElement {
           {
             name: 'use_log_flow_model',
             label: 'Logarithmic flow animation speed model',
+            selector: { boolean: {} },
+          },
+          {
+            name: 'compact_mode',
+            label: 'Compact layout mode (smaller padding & spacing)',
             selector: { boolean: {} },
           },
           {

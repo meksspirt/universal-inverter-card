@@ -32,6 +32,22 @@ export const cardStyles = css`
     position: relative;
   }
 
+  ha-card.compact {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  ha-card.compact .power-flow-container {
+    max-width: 420px;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
   /* ============================================================
      HEADER BAR SECTION
      ============================================================ */
@@ -1103,6 +1119,8 @@ export const cardStyles = css`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .energy-header-title {
@@ -1117,6 +1135,13 @@ export const cardStyles = css`
   .energy-header-title ha-icon {
     --mdc-icon-size: 18px;
     color: #f59e0b;
+  }
+
+  .energy-header-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
   .energy-total-pill {

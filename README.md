@@ -239,17 +239,24 @@ The card includes automated translation and decoding for all standard Voltronic 
 - **F57**: Internal current sensor (Hall sensor) failed
 - **F58**: AC output voltage too low under heavy load (<190V)
 
-### Common Warning Codes (Amber Alert):
-- **W01**: Fan slowed down or dust accumulated (Bit 0 = 1)
-- **W02**: Inverter heatsink temperature elevated (Bit 1 = 2)
-- **W04**: Battery low voltage warning (Bit 2 = 4)
-- **W07**: Overload warning near 4.2 kW limit (Bit 4 = 16)
-- **W08**: Battery open circuit / not detected (Bit 3 = 8)
-- **W10**: Inverter power derating due to heat
-- **W15 / W64**: PV Low Voltage — Solar array voltage below MPPT start threshold (Bit 6 = 64)
-- **W20**: BMS communication timeout over CAN/RS485
-- **W61 / W62**: Battery discharge / charge over-current
-- **W63 / W65**: Battery over-temperature / under-temperature (<0°C)
+### Common Warning Codes (`modbus_smg` Register 108–109 Bitmask):
+- **Bit 0 (`1`)**: Off-Grid / Battery Mode (Grid outage)
+- **Bit 1 (`2`)**: Mains Waveform Abnormal (AC grid distortion during blackout)
+- **Bit 3 (`8`)**: Mains Low Voltage (0V on AC grid input during blackout; e.g. `73 = 64 + 8 + 1`)
+- **Bit 4 (`16`)**: Mains Over Frequency
+- **Bit 5 (`32`)**: Mains Low Frequency
+- **Bit 6 (`64`)**: PV Low Voltage — Solar array voltage below MPPT start threshold
+- **Bit 7 (`128`)**: Inverter Over-Temperature (Heatsink elevated)
+- **Bit 8 (`256`)**: Battery Low Voltage Warning
+- **Bit 9 (`512`)**: Battery Not Connected (Open circuit)
+- **Bit 10 (`1024`)**: Overload Warning near 4.2 kW limit
+- **Bit 11 (`2048`)**: Battery Equalization Charging Active
+- **Bit 12 (`4096`)**: Battery Discharged Below Recovery Point
+- **Bit 13 (`8192`)**: Output Power Derating Active
+- **Bit 14 (`16384`)**: Fan Blocked or Reduced Speed
+- **Bit 15 (`32768`)**: PV Energy Too Low To Use
+- **Bit 19 (`524288`)**: Lithium Battery BMS Communication Abnormal
+- **Bit 20 (`1048576`)**: Battery Discharge Over-Current
 
 ---
 

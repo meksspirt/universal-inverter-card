@@ -2,17 +2,21 @@ import { html, svg, TemplateResult } from 'lit';
 import { AninerelCardConfig, HomeAssistant } from '../types';
 import { getFlowLayout, calculateFlowPaths, calcFlowDuration, calcStrokeWidth } from '../utils/flow-math';
 import { formatPower } from '../utils/format';
+import { localize } from '../localize/localize';
 
 export interface PowerFlowRenderParams {
   hass: HomeAssistant;
   config: AninerelCardConfig;
   hasSolar?: boolean;
+  isOffline?: boolean;
   gridPosition?: 'bottom' | 'top';
   solarWatts?: number;
   batteryWatts: number;
   gridWatts: number;
   loadWatts: number;
-  batterySoc: number;
+  batterySoc: number | null;
+  batteryRuntimeText?: string | null;
+  selfConsumptionWatts?: number | null;
   operatingMode: string;
   isFault: boolean;
   onNodeClick: (entityId?: string) => void;
@@ -20,19 +24,24 @@ export interface PowerFlowRenderParams {
 
 export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
   const {
+    hass,
     config,
     hasSolar = false,
+    isOffline = false,
     gridPosition = 'bottom',
     solarWatts = 0,
     batteryWatts,
     gridWatts,
     loadWatts,
     batterySoc,
+    batteryRuntimeText,
+    selfConsumptionWatts,
     operatingMode,
     isFault,
     onNodeClick,
   } = params;
 
+  const lang = config.language;
   const maxPower = config.max_power || 4200;
   const useLog = config.use_log_flow_model !== false;
   const minRate = config.min_flow_rate || 0.75;
@@ -42,27 +51,44 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
   const { viewBoxHeight } = layout;
   const { solar, inverter, battery, home, grid } = layout.nodes;
 
-  const flowPaths = calculateFlowPaths(
-    solarWatts,
-    batteryWatts,
-    gridWatts,
-    loadWatts,
-    config.colors,
-    hasSolar,
-    gridPosition
-  );
+  const flowPaths = isOffline
+    ? []
+    : calculateFlowPaths(
+        solarWatts,
+        batteryWatts,
+        gridWatts,
+        loadWatts,
+        config.colors,
+        hasSolar,
+        gridPosition
+      );
 
-  // Battery SOC calculations
-  const clampedSoc = Math.max(0, Math.min(100, isNaN(batterySoc) ? 0 : batterySoc));
+  // Battery SOC calculations (honest handling of null/unavailable)
+  const hasValidSoc = batterySoc !== null && !isNaN(batterySoc);
+  const clampedSoc = hasValidSoc ? Math.max(0, Math.min(100, Math.round(batterySoc!))) : 0;
   const gaugeRadius = 32;
   const circumference = 2 * Math.PI * gaugeRadius;
   const strokeOffset = circumference * (1 - clampedSoc / 100);
 
-  const socColor =
-    clampedSoc > 50 ? '#10b981' : clampedSoc > 20 ? '#f59e0b' : '#ef4444';
+  const socColor = !hasValidSoc
+    ? '#64748b'
+    : clampedSoc > 50
+    ? '#10b981'
+    : clampedSoc > 20
+    ? '#f59e0b'
+    : '#ef4444';
 
   const batteryStatusText =
-    batteryWatts > 20 ? 'Charge' : batteryWatts < -20 ? 'Discharge' : 'Standby';
+    batteryWatts > 20
+      ? localize('flow.charge', hass, lang)
+      : batteryWatts < -20
+      ? localize('flow.discharge', hass, lang)
+      : localize('flow.standby', hass, lang);
+
+  const inverterSubLabel =
+    selfConsumptionWatts !== null && selfConsumptionWatts !== undefined && !isNaN(selfConsumptionWatts) && selfConsumptionWatts > 0
+      ? `${localize('flow.self', hass, lang)}: ${Math.round(selfConsumptionWatts)} W`
+      : `${(maxPower / 1000).toFixed(1)} kW`;
 
   return html`
     <div
@@ -101,13 +127,13 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
                 class="flow-node node-solar"
                 style="left: ${(solar.x / 500) * 100}%; top: ${(solar.y / viewBoxHeight) * 100}%;"
                 @click=${() => onNodeClick(config.entities?.solar_power)}
-                title="Solar Generation"
+                title="${localize('nodes.solar', hass, lang)}"
               >
                 <div class="node-badge">
                   <ha-icon icon="mdi:solar-power-variant"></ha-icon>
                 </div>
                 <span class="node-value">${formatPower(solarWatts)}</span>
-                <span class="node-label">Solar</span>
+                <span class="node-label">${localize('nodes.solar', hass, lang)}</span>
               </div>
             `
           : ''}
@@ -116,8 +142,14 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
         <div
           class="flow-node node-battery"
           style="left: ${(battery.x / 500) * 100}%; top: ${(battery.y / viewBoxHeight) * 100}%;"
-          @click=${() => onNodeClick(config.bms?.soc_entity || config.entities?.battery_power)}
-          title="Battery Storage"
+          @click=${() =>
+            onNodeClick(
+              config.bms?.soc_entity ||
+                config.bms?.battery_1?.soc_entity ||
+                config.bms?.bat1_soc_entity ||
+                config.entities?.battery_power
+            )}
+          title="${localize('nodes.battery', hass, lang)}"
         >
           <div class="node-badge">
             <svg class="battery-gauge-svg" viewBox="0 0 80 80">
@@ -139,7 +171,9 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
             </svg>
             <div class="battery-gauge-center">
               <ha-icon
-                icon="${batteryWatts > 20
+                icon="${!hasValidSoc
+                  ? 'mdi:battery-unknown'
+                  : batteryWatts > 20
                   ? 'mdi:battery-charging'
                   : clampedSoc > 80
                   ? 'mdi:battery-high'
@@ -149,32 +183,34 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
                 style="color: ${socColor};"
               ></ha-icon>
               <span class="battery-soc-text" style="color: ${socColor};">
-                ${clampedSoc}%
+                ${hasValidSoc ? `${clampedSoc}%` : '—'}
               </span>
             </div>
           </div>
           <span class="node-value" style="color: ${socColor};">
             ${formatPower(Math.abs(batteryWatts))}
           </span>
-          <span class="node-label">${batteryStatusText}</span>
+          <span class="node-label">
+            ${batteryRuntimeText ? `${batteryStatusText} • ${batteryRuntimeText}` : batteryStatusText}
+          </span>
         </div>
 
         <!-- CENTRAL INVERTER NODE -->
         <div
           class="flow-node node-inverter"
           style="left: ${(inverter.x / 500) * 100}%; top: ${(inverter.y / viewBoxHeight) * 100}%;"
-          @click=${() => onNodeClick(config.operating_mode_entity)}
-          title="Inverter Status"
+          @click=${() => onNodeClick(config.self_consumption_power_entity || config.operating_mode_entity)}
+          title="${localize('nodes.inverter', hass, lang)}"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:inverter"></ha-icon>
             <span
               class="inverter-status-dot"
-              style="background: ${isFault ? '#ef4444' : '#10b981'}; box-shadow: 0 0 6px ${isFault ? '#ef4444' : '#10b981'};"
+              style="background: ${isFault || isOffline ? '#ef4444' : '#10b981'}; box-shadow: 0 0 6px ${isFault || isOffline ? '#ef4444' : '#10b981'};"
             ></span>
           </div>
-          <span class="node-value">${operatingMode || 'Inverter'}</span>
-          <span class="node-label">4.2 kW</span>
+          <span class="node-value">${operatingMode || localize('nodes.inverter', hass, lang)}</span>
+          <span class="node-label">${inverterSubLabel}</span>
         </div>
 
         <!-- HOME LOAD NODE (Right) -->
@@ -182,13 +218,13 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           class="flow-node node-home"
           style="left: ${(home.x / 500) * 100}%; top: ${(home.y / viewBoxHeight) * 100}%;"
           @click=${() => onNodeClick(config.entities?.load_power)}
-          title="Home Consumption"
+          title="${localize('nodes.home', hass, lang)}"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:home-lightning-bolt"></ha-icon>
           </div>
-          <span class="node-value">${formatPower(loadWatts)}</span>
-          <span class="node-label">Home</span>
+          <span class="node-value">${isOffline ? '—' : formatPower(loadWatts)}</span>
+          <span class="node-label">${localize('nodes.home', hass, lang)}</span>
         </div>
 
         <!-- GRID NODE (Bottom or Top) -->
@@ -196,14 +232,18 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           class="flow-node node-grid"
           style="left: ${(grid.x / 500) * 100}%; top: ${(grid.y / viewBoxHeight) * 100}%;"
           @click=${() => onNodeClick(config.entities?.grid_power)}
-          title="Power Grid"
+          title="${localize('nodes.grid', hass, lang)}"
         >
           <div class="node-badge">
             <ha-icon icon="mdi:transmission-tower"></ha-icon>
           </div>
-          <span class="node-value">${formatPower(Math.abs(gridWatts))}</span>
+          <span class="node-value">${isOffline ? '—' : formatPower(Math.abs(gridWatts))}</span>
           <span class="node-label">
-            ${gridWatts > 20 ? 'Import' : gridWatts < -20 ? 'Export' : 'Grid'}
+            ${gridWatts > 20
+              ? localize('flow.import', hass, lang)
+              : gridWatts < -20
+              ? localize('flow.export', hass, lang)
+              : localize('nodes.grid', hass, lang)}
           </span>
         </div>
       </div>

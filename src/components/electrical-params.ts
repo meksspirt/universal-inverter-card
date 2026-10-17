@@ -1,7 +1,9 @@
 import { html, svg, TemplateResult } from 'lit';
-import { AninerelCardConfig } from '../types';
+import { AninerelCardConfig, HomeAssistant } from '../types';
+import { localize } from '../localize/localize';
 
 export interface ElectricalParamsProps {
+  hass?: HomeAssistant;
   config: AninerelCardConfig;
   hasSolar?: boolean;
   batteryVoltage: number | null;
@@ -88,7 +90,7 @@ function renderSparkline(
 }
 
 /**
- * Renders radial arc progress gauge for Autarky / Self-Sufficiency
+ * Renders radial arc progress gauge for Autarky / Self-Sufficiency / Battery SoC
  */
 function renderArcGauge(percent: number, color: string): TemplateResult {
   const radius = 22;
@@ -124,6 +126,7 @@ function renderArcGauge(percent: number, color: string): TemplateResult {
 
 export function renderElectricalParams(props: ElectricalParamsProps): TemplateResult {
   const {
+    hass,
     config,
     hasSolar = false,
     batteryVoltage,
@@ -138,6 +141,9 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
     onParamClick,
   } = props;
 
+  const lang = config.language;
+  const naText = localize('common.na', hass, lang);
+
   // Battery voltage color coding (for 24V LiFePO4 pack)
   let batVColor = '#10b981';
   if (batteryVoltage !== null && !isNaN(batteryVoltage)) {
@@ -146,72 +152,96 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
     } else if (batteryVoltage < 25.6) {
       batVColor = '#f59e0b';
     }
+  } else {
+    batVColor = '#64748b';
   }
 
   // Grid voltage color coding (230V nominal)
   let gridVColor = '#4285f4';
-  let gridStatusLabel = 'Normal';
+  let gridStatusLabel = localize('params.normal', hass, lang);
   if (gridVoltage !== null && !isNaN(gridVoltage)) {
     if (gridVoltage < 190 || gridVoltage > 255) {
       gridVColor = '#ef4444';
-      gridStatusLabel = gridVoltage < 190 ? 'Low (Sag)' : 'High (Surge)';
+      gridStatusLabel =
+        gridVoltage < 190
+          ? localize('params.sag', hass, lang)
+          : localize('params.surge', hass, lang);
     } else if (gridVoltage < 210 || gridVoltage > 245) {
       gridVColor = '#f59e0b';
-      gridStatusLabel = 'Deviated';
+      gridStatusLabel = localize('params.deviated', hass, lang);
     }
+  } else {
+    gridVColor = '#64748b';
+    gridStatusLabel = localize('params.offline', hass, lang);
   }
 
   // KPI (Tile 3) configuration & calculation
-  // Modes: 'auto' | 'battery_soc' | 'battery_autonomy' | 'self_sufficiency' | 'inverter_load'
-  // When 'auto' (default):
-  //   - If hasSolar === true -> 'self_sufficiency' (solar autarky)
-  //   - If hasSolar === false -> 'battery_soc' (UPS / apartment backup readiness)
-  const effectiveKpiMode = (config.kpi_mode && config.kpi_mode !== 'auto')
-    ? config.kpi_mode
-    : (hasSolar ? 'self_sufficiency' : 'battery_soc');
+  const effectiveKpiMode =
+    config.kpi_mode && config.kpi_mode !== 'auto'
+      ? config.kpi_mode
+      : hasSolar
+      ? 'self_sufficiency'
+      : 'battery_soc';
 
-  let kpiTitle = 'Battery SoC';
-  let kpiTooltip = 'Battery State of Charge';
+  let kpiTitle = localize('params.battery_soc', hass, lang);
+  let kpiTooltip = kpiTitle;
   let kpiIcon = 'mdi:battery-heart-variant';
   let kpiValue = 0;
   let kpiColor = '#10b981';
-  let kpiClickEntity = config.kpi_entity
-    || config.bms?.soc_entity
-    || config.bms?.battery_1?.soc_entity
-    || config.bms?.bat1_soc_entity
-    || config.battery_voltage_entity;
+  let kpiClickEntity =
+    config.kpi_entity ||
+    config.bms?.soc_entity ||
+    config.bms?.battery_1?.soc_entity ||
+    config.bms?.bat1_soc_entity ||
+    config.battery_voltage_entity;
 
   if (effectiveKpiMode === 'battery_soc') {
-    kpiTitle = 'Battery SoC';
-    kpiTooltip = 'Battery State of Charge';
-    kpiIcon = batteryCurrent && batteryCurrent > 0.5 ? 'mdi:battery-charging-high' : 'mdi:battery-heart-variant';
-    kpiValue = batterySoc !== null && batterySoc !== undefined && !isNaN(batterySoc)
-      ? Math.max(0, Math.min(100, Math.round(batterySoc)))
-      : 0;
+    kpiTitle = localize('params.battery_soc', hass, lang);
+    kpiTooltip = kpiTitle;
+    kpiIcon =
+      batteryCurrent && batteryCurrent > 0.5
+        ? 'mdi:battery-charging-high'
+        : 'mdi:battery-heart-variant';
+    kpiValue =
+      batterySoc !== null && batterySoc !== undefined && !isNaN(batterySoc)
+        ? Math.max(0, Math.min(100, Math.round(batterySoc)))
+        : 0;
     kpiColor = kpiValue >= 75 ? '#10b981' : kpiValue >= 30 ? '#f59e0b' : '#ef4444';
   } else if (effectiveKpiMode === 'battery_autonomy') {
-    kpiTitle = 'Battery Autonomy';
-    kpiTooltip = 'Daily Load Powered by Battery';
+    kpiTitle = localize('params.battery_autonomy', hass, lang);
+    kpiTooltip = kpiTitle;
     kpiIcon = 'mdi:shield-battery-outline';
-    kpiClickEntity = config.kpi_entity || config.daily_energy?.battery_discharge_entity || config.daily_energy?.load_energy_entity;
+    kpiClickEntity =
+      config.kpi_entity ||
+      config.daily_energy?.battery_discharge_entity ||
+      config.daily_energy?.load_energy_entity;
     kpiValue = 0;
-    if (loadEnergyToday !== null && loadEnergyToday > 0 && batteryDischargeEnergyToday !== null && batteryDischargeEnergyToday !== undefined) {
-      kpiValue = Math.max(0, Math.min(100, Math.round((Math.max(0, batteryDischargeEnergyToday) / loadEnergyToday) * 100)));
+    if (
+      loadEnergyToday !== null &&
+      loadEnergyToday > 0 &&
+      batteryDischargeEnergyToday !== null &&
+      batteryDischargeEnergyToday !== undefined
+    ) {
+      kpiValue = Math.max(
+        0,
+        Math.min(100, Math.round((Math.max(0, batteryDischargeEnergyToday) / loadEnergyToday) * 100))
+      );
     }
     kpiColor = kpiValue >= 75 ? '#10b981' : kpiValue >= 30 ? '#f59e0b' : '#ef4444';
   } else if (effectiveKpiMode === 'inverter_load') {
-    kpiTitle = 'Inverter Load';
-    kpiTooltip = 'Current Inverter Load %';
+    kpiTitle = localize('params.inverter_load', hass, lang);
+    kpiTooltip = kpiTitle;
     kpiIcon = 'mdi:gauge';
-    kpiClickEntity = config.kpi_entity || config.entities?.load_power;
-    kpiValue = inverterLoadPercent !== null && inverterLoadPercent !== undefined && !isNaN(inverterLoadPercent)
-      ? Math.max(0, Math.min(100, Math.round(inverterLoadPercent)))
-      : 0;
+    kpiClickEntity = config.kpi_entity || config.inverter_load_percent_entity || config.entities?.load_power;
+    kpiValue =
+      inverterLoadPercent !== null && inverterLoadPercent !== undefined && !isNaN(inverterLoadPercent)
+        ? Math.max(0, Math.min(100, Math.round(inverterLoadPercent)))
+        : 0;
     kpiColor = kpiValue < 60 ? '#10b981' : kpiValue < 85 ? '#f59e0b' : '#ef4444';
   } else {
     // 'self_sufficiency'
-    kpiTitle = 'Self-Sufficiency';
-    kpiTooltip = 'Daily Solar Self-Sufficiency';
+    kpiTitle = localize('params.self_sufficiency', hass, lang);
+    kpiTooltip = kpiTitle;
     kpiIcon = hasSolar ? 'mdi:shield-sun' : 'mdi:shield-battery-outline';
     kpiClickEntity = config.kpi_entity || config.daily_energy?.grid_import_entity;
     kpiValue = 100;
@@ -231,21 +261,23 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
       <div
         class="param-tile"
         @click=${() => onParamClick(config.battery_voltage_entity)}
-        title="Battery Telemetry"
+        title="${localize('params.battery', hass, lang)}"
       >
         <div class="param-header">
           <ha-icon icon="mdi:car-battery"></ha-icon>
-          <span class="param-title">Battery DC</span>
+          <span class="param-title">${localize('params.battery', hass, lang)}</span>
         </div>
         <div class="param-main-value">
           <span style="color: ${batVColor}">
-            ${batteryVoltage !== null && !isNaN(batteryVoltage) ? `${batteryVoltage.toFixed(1)}V` : 'N/A'}
+            ${batteryVoltage !== null && !isNaN(batteryVoltage)
+              ? `${batteryVoltage.toFixed(1)}V`
+              : naText}
           </span>
           <span class="param-slash">/</span>
           <span style="color: ${batteryCurrent && batteryCurrent > 0 ? '#10b981' : '#f59e0b'}">
             ${batteryCurrent !== null && !isNaN(batteryCurrent)
               ? `${batteryCurrent > 0 ? '+' : ''}${batteryCurrent.toFixed(1)}A`
-              : 'N/A'}
+              : naText}
           </span>
         </div>
         <div class="param-chart-box">
@@ -257,18 +289,18 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
       <div
         class="param-tile"
         @click=${() => onParamClick(config.grid_voltage_entity)}
-        title="Grid AC Voltage"
+        title="${localize('params.grid', hass, lang)}"
       >
         <div class="param-header">
           <ha-icon icon="mdi:transmission-tower"></ha-icon>
-          <span class="param-title">Grid AC</span>
+          <span class="param-title">${localize('params.grid', hass, lang)}</span>
           <span class="param-badge" style="background: ${gridVColor}22; color: ${gridVColor}">
             ${gridStatusLabel}
           </span>
         </div>
         <div class="param-main-value">
           <span style="color: ${gridVColor}">
-            ${gridVoltage !== null && !isNaN(gridVoltage) ? `${Math.round(gridVoltage)}V` : 'N/A'}
+            ${gridVoltage !== null && !isNaN(gridVoltage) ? `${Math.round(gridVoltage)}V` : naText}
           </span>
         </div>
         <div class="param-chart-box">

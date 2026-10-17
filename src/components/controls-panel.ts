@@ -1,41 +1,67 @@
 import { html, TemplateResult } from 'lit';
-import { ControlsConfig } from '../types';
+import { ControlsConfig, HomeAssistant } from '../types';
+import { localize } from '../localize/localize';
 
 export interface ControlsPanelProps {
   controlsConfig: ControlsConfig;
-  hass?: any;
+  hass?: HomeAssistant;
+  language?: string;
   expanded: boolean;
   chargeSource?: string;
   chargeSourceOptions: string[];
   outputPriority?: string;
   outputPriorityOptions: string[];
-  maxChargeCurrent?: number;
-  bulkVoltage?: number;
-  floatVoltage?: number;
+  maxChargeCurrent?: number | null;
+  maxChargeCurrentPreview?: number | null;
+  maxChargeCurrentMin?: number;
+  maxChargeCurrentMax?: number;
+  maxChargeCurrentStep?: number;
+  bulkVoltage?: number | null;
+  floatVoltage?: number | null;
   isEqualization: boolean;
+  equalizationConfirmPending?: boolean;
   onToggleExpand: () => void;
   onSelectOption: (entityId: string, option: string) => void;
+  onPreviewNumber?: (value: number | null) => void;
   onSetNumber: (entityId: string, value: number) => void;
-  onToggleSwitch: (entityId: string, currentState: boolean) => void;
+  onToggleEqualization: (entityId: string, currentState: boolean) => void;
 }
 
 export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
   const {
     controlsConfig,
+    hass,
+    language,
     expanded,
     chargeSource,
     chargeSourceOptions,
     outputPriority,
     outputPriorityOptions,
     maxChargeCurrent,
+    maxChargeCurrentPreview,
+    maxChargeCurrentMin = 2,
+    maxChargeCurrentMax = 100,
+    maxChargeCurrentStep = 1,
     bulkVoltage,
     floatVoltage,
     isEqualization,
+    equalizationConfirmPending = false,
     onToggleExpand,
     onSelectOption,
+    onPreviewNumber,
     onSetNumber,
-    onToggleSwitch,
+    onToggleEqualization,
   } = props;
+
+  const displayedCurrent = maxChargeCurrentPreview ?? maxChargeCurrent ?? 15;
+  const summaryParts: string[] = [];
+  if (outputPriority && outputPriority !== 'N/A' && outputPriority !== 'unavailable') {
+    summaryParts.push(outputPriority);
+  }
+  if (maxChargeCurrent !== null && maxChargeCurrent !== undefined && !isNaN(maxChargeCurrent)) {
+    summaryParts.push(`${maxChargeCurrent}A`);
+  }
+  const summaryText = summaryParts.join(' • ');
 
   return html`
     <div class="controls-card-section ${expanded ? 'expanded' : ''}">
@@ -43,12 +69,12 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
       <div class="controls-header" @click=${onToggleExpand}>
         <div class="controls-header-title">
           <ha-icon icon="mdi:tune-vertical"></ha-icon>
-          <span>Inverter: Controls & Settings</span>
+          <span>${localize('controls.title', hass, language)}</span>
         </div>
         <div class="controls-header-right">
-          <span class="controls-quick-summary">
-            ${outputPriority || 'SBU'} • ${maxChargeCurrent ? `${maxChargeCurrent}A` : '15A'}
-          </span>
+          ${summaryText
+            ? html`<span class="controls-quick-summary">${summaryText}</span>`
+            : ''}
           <ha-icon
             class="chevron-icon ${expanded ? 'open' : ''}"
             icon="mdi:chevron-down"
@@ -62,13 +88,13 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
             <div class="controls-body">
               <!-- Grid Row: Priority Selectors -->
               <div class="controls-grid-2">
-                <!-- Select 1: Charge Source Priority (SNU / Only Solar) -->
+                <!-- Select 1: Charge Source Priority -->
                 ${controlsConfig.charge_source_entity
                   ? html`
                       <div class="control-box">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:battery-charging-wireless"></ha-icon>
-                          <label>Charge Source Priority</label>
+                          <label>${localize('controls.charge_source', hass, language)}</label>
                         </div>
                         <div class="pill-selector">
                           ${(chargeSourceOptions.length > 0
@@ -91,13 +117,13 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                     `
                   : ''}
 
-                <!-- Select 2: Output Source Priority (SUB, SBU, USB) -->
+                <!-- Select 2: Output Source Priority -->
                 ${controlsConfig.output_priority_entity
                   ? html`
                       <div class="control-box">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:power-plug-outline"></ha-icon>
-                          <label>Output Source Priority</label>
+                          <label>${localize('controls.output_priority', hass, language)}</label>
                         </div>
                         <div class="pill-selector">
                           ${(outputPriorityOptions.length > 0
@@ -121,32 +147,37 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                   : ''}
               </div>
 
-              <!-- Slider: Max AC Charging Current (2 to 30 A) -->
+              <!-- Slider: Max AC Charging Current (Dynamic min/max/step) -->
               ${controlsConfig.max_charge_current_entity
                 ? html`
                     <div class="control-box slider-box">
                       <div class="control-box-header">
                         <div class="control-label-wrap">
                           <ha-icon icon="mdi:current-ac"></ha-icon>
-                          <label>Max AC Charge Current</label>
+                          <label>${localize('controls.max_charge_current', hass, language)}</label>
                         </div>
-                        <span class="control-live-val">${maxChargeCurrent ?? 15} A</span>
+                        <span class="control-live-val">${displayedCurrent} A</span>
                       </div>
                       <div class="slider-input-container">
-                        <span class="slider-boundary">2A</span>
+                        <span class="slider-boundary">${maxChargeCurrentMin}A</span>
                         <input
                           type="range"
                           class="control-range"
-                          min="2"
-                          max="30"
-                          step="1"
-                          .value=${String(maxChargeCurrent ?? 15)}
+                          min="${maxChargeCurrentMin}"
+                          max="${maxChargeCurrentMax}"
+                          step="${maxChargeCurrentStep}"
+                          .value=${String(displayedCurrent)}
+                          @input=${(e: Event) => {
+                            const val = parseFloat((e.target as HTMLInputElement).value);
+                            onPreviewNumber?.(val);
+                          }}
                           @change=${(e: Event) => {
                             const val = parseFloat((e.target as HTMLInputElement).value);
+                            onPreviewNumber?.(null);
                             onSetNumber(controlsConfig.max_charge_current_entity!, val);
                           }}
                         />
-                        <span class="slider-boundary">30A</span>
+                        <span class="slider-boundary">${maxChargeCurrentMax}A</span>
                       </div>
                     </div>
                   `
@@ -160,7 +191,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                       <div class="control-box mini-voltage">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:arrow-up-bold-box-outline"></ha-icon>
-                          <label>Bulk Voltage</label>
+                          <label>${localize('controls.bulk_voltage', hass, language)}</label>
                         </div>
                         <div class="voltage-stepper">
                           <button
@@ -173,7 +204,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                           >
                             -
                           </button>
-                          <span class="stepper-val">${bulkVoltage?.toFixed(1) ?? '28.2'} V</span>
+                          <span class="stepper-val">${bulkVoltage !== null && bulkVoltage !== undefined ? bulkVoltage.toFixed(1) : '28.2'} V</span>
                           <button
                             type="button"
                             class="stepper-btn"
@@ -195,7 +226,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                       <div class="control-box mini-voltage">
                         <div class="control-box-header">
                           <ha-icon icon="mdi:arrow-down-bold-box-outline"></ha-icon>
-                          <label>Float Voltage</label>
+                          <label>${localize('controls.float_voltage', hass, language)}</label>
                         </div>
                         <div class="voltage-stepper">
                           <button
@@ -208,7 +239,7 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                           >
                             -
                           </button>
-                          <span class="stepper-val">${floatVoltage?.toFixed(1) ?? '27.0'} V</span>
+                          <span class="stepper-val">${floatVoltage !== null && floatVoltage !== undefined ? floatVoltage.toFixed(1) : '27.0'} V</span>
                           <button
                             type="button"
                             class="stepper-btn"
@@ -225,34 +256,31 @@ export function renderControlsPanel(props: ControlsPanelProps): TemplateResult {
                   : ''}
               </div>
 
-              <!-- DANGER ZONE: Equalization Switch -->
+              <!-- DANGER ZONE: Equalization Switch (Inline 2-Step Confirmation) -->
               ${controlsConfig.equalization_entity
                 ? html`
-                    <div class="danger-switch-row ${isEqualization ? 'danger-active' : ''}">
+                    <div class="danger-switch-row ${isEqualization || equalizationConfirmPending ? 'danger-active' : ''}">
                       <div class="danger-info">
                         <div class="danger-title">
                           <ha-icon icon="mdi:alert-octagon"></ha-icon>
-                          <span>Battery Equalization</span>
+                          <span>${localize('controls.equalization', hass, language)}</span>
                         </div>
                         <span class="danger-desc">
-                          ⚠️ For LiFePO4, must ALWAYS BE OFF to prevent cell overcharging!
+                          ${localize('controls.equalization_warning', hass, language)}
                         </span>
                       </div>
 
                       <button
                         type="button"
-                        class="toggle-switch-btn ${isEqualization ? 'switch-on' : 'switch-off'}"
-                        @click=${() => {
-                          if (!isEqualization) {
-                            const confirmed = confirm(
-                              'WARNING!\nEqualization mode is strictly not recommended for LiFePO4 batteries (Redodo) and can permanently damage the cells!\n\nAre you sure you want to enable Equalization?'
-                            );
-                            if (!confirmed) return;
-                          }
-                          onToggleSwitch(controlsConfig.equalization_entity!, isEqualization);
-                        }}
+                        class="toggle-switch-btn ${isEqualization || equalizationConfirmPending ? 'switch-on' : 'switch-off'}"
+                        @click=${() =>
+                          onToggleEqualization(controlsConfig.equalization_entity!, isEqualization)}
                       >
-                        ${isEqualization ? 'ON' : 'OFF'}
+                        ${isEqualization
+                          ? 'ON'
+                          : equalizationConfirmPending
+                          ? localize('controls.confirm_on', hass, language)
+                          : 'OFF'}
                       </button>
                     </div>
                   `

@@ -1,6 +1,6 @@
 import { AninerelCardConfig } from './types';
 
-export const CARD_VERSION = '1.1.3';
+export const CARD_VERSION = '1.2.0';
 export const CARD_NAME = 'aninerel-power-card';
 
 export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
@@ -20,6 +20,7 @@ export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
   show_energy: true,
   show_alerts: true,
   compact_mode: false,
+  language: 'auto',
 };
 
 export const DEFAULT_COLORS = {
@@ -50,10 +51,14 @@ export const STUB_CONFIG: Record<string, any> = {
   operating_mode_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_operating_mode',
   charging_active_entity: 'binary_sensor.aninerel_anl_4200t_24l_w_pro_charging_active',
   inverter_temperature_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_inverter_temperature',
+  inverter_load_percent_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_load_percent',
+  self_consumption_power_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie',
+  grid_breaker_switch_entity: 'switch.invertor_vkhod',
   bms: {
     soc_entity: 'sensor.redodo_battery_state_of_charge',
     cell_count: 8,
     cell_voltage_prefix: 'sensor.redodo_battery_cell_voltage_',
+    nominal_capacity_wh: 2560,
   },
   controls: {
     charge_source_entity: 'select.aninerel_anl_4200t_24l_w_pro_charge_source_priority',
@@ -75,5 +80,7 @@ export const STUB_CONFIG: Record<string, any> = {
     grid_import_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_estimated_grid_import_energy_today',
     battery_charge_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_estimated_battery_charge_energy_today',
     battery_discharge_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_estimated_battery_discharge_energy_today',
+    self_consumption_daily_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_den',
+    self_consumption_monthly_entity: 'sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_mesiats',
   },
 };
