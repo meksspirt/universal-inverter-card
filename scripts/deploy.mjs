@@ -47,14 +47,16 @@ async function deploy() {
   // 1. Copy bundle and gzip to HA Samba share
   if (HA_SHARE) {
     try {
-      const destJs = path.join(HA_SHARE, 'aninerel-power-card.js');
-      const destGz = path.join(HA_SHARE, 'aninerel-power-card.js.gz');
-
-      fs.writeFileSync(destJs, jsContent);
-      const gzContent = zlib.gzipSync(jsContent, { level: 9 });
-      fs.writeFileSync(destGz, gzContent);
-      console.log(`✅ Files written to HA Samba share: ${destJs}`);
-      console.log(`✅ Gzip archive created: ${destGz} (${(gzContent.length / 1024).toFixed(1)} KB)`);
+      const files = ['aninerel-power-card.js', 'universal-inverter-card.js'];
+      for (const fileName of files) {
+        const destJs = path.join(HA_SHARE, fileName);
+        const destGz = path.join(HA_SHARE, `${fileName}.gz`);
+        fs.writeFileSync(destJs, jsContent);
+        const gzContent = zlib.gzipSync(jsContent, { level: 9 });
+        fs.writeFileSync(destGz, gzContent);
+        console.log(`✅ Files written to HA Samba share: ${destJs}`);
+        console.log(`✅ Gzip archive created: ${destGz} (${(gzContent.length / 1024).toFixed(1)} KB)`);
+      }
     } catch (err) {
       console.warn(`⚠️ Samba share copy failed (${err.message}). Skipping file copy.`);
     }
@@ -69,6 +71,7 @@ async function deploy() {
       const ws = new WebSocket(WS_URL);
       let msgId = 1;
       let resourceId = null;
+      let currentUrl = '';
 
       const timer = setTimeout(() => {
         console.warn('⚠️ WebSocket update timed out.');
@@ -84,12 +87,13 @@ async function deploy() {
           ws.send(JSON.stringify({ id: msgId++, type: 'lovelace/resources' }));
         } else if (msg.type === 'result') {
           if (!resourceId && Array.isArray(msg.result)) {
-            const res = msg.result.find((r) => r.url && r.url.includes('aninerel-power-card'));
+            const res = msg.result.find((r) => r.url && (r.url.includes('aninerel-power-card') || r.url.includes('universal-inverter-card')));
             if (res) {
               resourceId = res.id;
+              currentUrl = res.url.split('?')[0];
               const newTag = Date.now();
-              const newUrl = `/hacsfiles/aninerel-power-card/aninerel-power-card.js?v=${newTag}`;
-              console.log(`📌 Found resource (${resourceId}). Updating URL to ${newUrl}...`);
+              const newUrl = `${currentUrl}?v=${newTag}`;
+              console.log(`📌 Found resource (${resourceId}: ${res.url}). Updating URL to ${newUrl}...`);
               ws.send(
                 JSON.stringify({
                   id: msgId++,
@@ -100,7 +104,7 @@ async function deploy() {
                 })
               );
             } else {
-              console.warn('⚠️ Aninerel power card resource not found in Lovelace resources.');
+              console.warn('⚠️ Card resource not found in Lovelace resources.');
               clearTimeout(timer);
               ws.close();
               resolve();
