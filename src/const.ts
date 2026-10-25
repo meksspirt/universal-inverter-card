@@ -1,10 +1,9 @@
 import { AninerelCardConfig } from './types';
 
-export const CARD_VERSION = '1.2.4';
+export const CARD_VERSION = '1.3.0';
 export const CARD_NAME = 'aninerel-power-card';
 
 export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
-  title: 'Aninerel ANL 4200T',
   max_power: 4200,
   inverter_capacity: 4200,
   min_flow_rate: 0.75,
@@ -12,7 +11,6 @@ export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
   use_log_flow_model: true,
   show_header: true,
   show_flow: true,
-  show_solar: false,
   grid_position: 'bottom',
   show_params: true,
   show_bms: true,

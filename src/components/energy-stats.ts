@@ -7,8 +7,10 @@ export interface EnergyStatsProps {
   hass?: HomeAssistant;
   language?: string;
   dailyConfig: DailyEnergyConfig;
+  solarEnergy?: number | null;
   loadEnergy: number | null;
   gridImportEnergy: number | null;
+  gridExportEnergy?: number | null;
   batteryChargeEnergy: number | null;
   batteryDischargeEnergy: number | null;
   selfConsumptionDailyEnergy?: number | null;
@@ -23,8 +25,10 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
     hass,
     language,
     dailyConfig,
+    solarEnergy,
     loadEnergy,
     gridImportEnergy,
+    gridExportEnergy,
     batteryChargeEnergy,
     batteryDischargeEnergy,
     selfConsumptionDailyEnergy,
@@ -34,8 +38,16 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
     onEnergyClick,
   } = props;
 
+  const solar =
+    solarEnergy !== null && solarEnergy !== undefined && !isNaN(solarEnergy)
+      ? Math.max(0, solarEnergy)
+      : null;
   const load = loadEnergy !== null && !isNaN(loadEnergy) ? Math.max(0, loadEnergy) : 0;
   const grid = gridImportEnergy !== null && !isNaN(gridImportEnergy) ? Math.max(0, gridImportEnergy) : 0;
+  const gridExp =
+    gridExportEnergy !== null && gridExportEnergy !== undefined && !isNaN(gridExportEnergy)
+      ? Math.max(0, gridExportEnergy)
+      : null;
   const batChg = batteryChargeEnergy !== null && !isNaN(batteryChargeEnergy) ? Math.max(0, batteryChargeEnergy) : 0;
   const batDis = batteryDischargeEnergy !== null && !isNaN(batteryDischargeEnergy) ? Math.max(0, batteryDischargeEnergy) : 0;
   const selfDay =
@@ -52,7 +64,16 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
       : null;
 
   // Maximum value for scaling bar widths
-  const maxVal = Math.max(load, grid, batChg, batDis, selfDay ?? 0, 0.1);
+  const maxVal = Math.max(
+    solar ?? 0,
+    load,
+    grid,
+    gridExp ?? 0,
+    batChg,
+    batDis,
+    selfDay ?? 0,
+    0.1
+  );
 
   const items: Array<{
     id?: string;
@@ -62,40 +83,73 @@ export function renderEnergyStats(props: EnergyStatsProps): TemplateResult {
     icon: string;
     pct: number;
     extraTag?: string;
-  }> = [
-    {
+  }> = [];
+
+  if (solar !== null && dailyConfig.solar_energy_entity) {
+    items.push({
+      id: dailyConfig.solar_energy_entity,
+      label: localize('energy.solar_production', hass, language),
+      value: solar,
+      color: '#f59e0b',
+      icon: 'mdi:solar-power',
+      pct: load > 0 ? Math.round((solar / load) * 100) : 0,
+    });
+  }
+
+  if (dailyConfig.load_energy_entity || loadEnergy !== null) {
+    items.push({
       id: dailyConfig.load_energy_entity,
       label: localize('energy.load', hass, language),
       value: load,
       color: '#e2e8f0',
       icon: 'mdi:home-lightning-bolt',
       pct: load > 0 ? 100 : 0,
-    },
-    {
+    });
+  }
+
+  if (dailyConfig.grid_import_entity || gridImportEnergy !== null) {
+    items.push({
       id: dailyConfig.grid_import_entity,
       label: localize('energy.grid_import', hass, language),
       value: grid,
       color: '#4285f4',
       icon: 'mdi:transmission-tower',
       pct: load > 0 ? Math.round((grid / load) * 100) : 0,
-    },
-    {
+    });
+  }
+
+  if (gridExp !== null && dailyConfig.grid_export_entity) {
+    items.push({
+      id: dailyConfig.grid_export_entity,
+      label: localize('energy.grid_export', hass, language),
+      value: gridExp,
+      color: '#2ecc71',
+      icon: 'mdi:transmission-tower-export',
+      pct: solar && solar > 0 ? Math.round((gridExp / solar) * 100) : 0,
+    });
+  }
+
+  if (dailyConfig.battery_charge_entity || batteryChargeEnergy !== null) {
+    items.push({
       id: dailyConfig.battery_charge_entity,
       label: localize('energy.bat_charge', hass, language),
       value: batChg,
       color: '#10b981',
       icon: 'mdi:battery-plus-variant',
       pct: load > 0 ? Math.round((batChg / load) * 100) : 0,
-    },
-    {
+    });
+  }
+
+  if (dailyConfig.battery_discharge_entity || batteryDischargeEnergy !== null) {
+    items.push({
       id: dailyConfig.battery_discharge_entity,
       label: localize('energy.bat_discharge', hass, language),
       value: batDis,
       color: '#f59e0b',
       icon: 'mdi:battery-minus-variant',
       pct: load > 0 ? Math.round((batDis / load) * 100) : 0,
-    },
-  ];
+    });
+  }
 
   if (selfDay !== null) {
     items.push({

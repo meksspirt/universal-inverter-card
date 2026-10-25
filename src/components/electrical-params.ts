@@ -1,11 +1,17 @@
 import { html, svg, TemplateResult } from 'lit';
 import { AninerelCardConfig, HomeAssistant } from '../types';
 import { localize } from '../localize/localize';
+import {
+  getBatteryVoltageStatus,
+  getGridVoltageStatus,
+  NominalSystemVoltage,
+} from '../utils/system-profile';
 
 export interface ElectricalParamsProps {
   hass?: HomeAssistant;
   config: AninerelCardConfig;
   hasSolar?: boolean;
+  systemVoltage?: NominalSystemVoltage;
   batteryVoltage: number | null;
   batteryCurrent: number | null;
   gridVoltage: number | null;
@@ -129,6 +135,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
     hass,
     config,
     hasSolar = false,
+    systemVoltage = 24,
     batteryVoltage,
     batteryCurrent,
     gridVoltage,
@@ -144,36 +151,18 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
   const lang = config.language;
   const naText = localize('common.na', hass, lang);
 
-  // Battery voltage color coding (for 24V LiFePO4 pack)
-  let batVColor = '#10b981';
-  if (batteryVoltage !== null && !isNaN(batteryVoltage)) {
-    if (batteryVoltage < 24.0 || batteryVoltage > 29.0) {
-      batVColor = '#ef4444';
-    } else if (batteryVoltage < 25.6) {
-      batVColor = '#f59e0b';
-    }
-  } else {
-    batVColor = '#64748b';
-  }
+  // Universal Battery voltage color coding & sparkline range (12V / 24V / 36V / 48V)
+  const { color: batVColor, sparklineRange: batSparklineRange } = getBatteryVoltageStatus(
+    batteryVoltage,
+    systemVoltage
+  );
 
-  // Grid voltage color coding (230V nominal)
-  let gridVColor = '#4285f4';
-  let gridStatusLabel = localize('params.normal', hass, lang);
-  if (gridVoltage !== null && !isNaN(gridVoltage)) {
-    if (gridVoltage < 190 || gridVoltage > 255) {
-      gridVColor = '#ef4444';
-      gridStatusLabel =
-        gridVoltage < 190
-          ? localize('params.sag', hass, lang)
-          : localize('params.surge', hass, lang);
-    } else if (gridVoltage < 210 || gridVoltage > 245) {
-      gridVColor = '#f59e0b';
-      gridStatusLabel = localize('params.deviated', hass, lang);
-    }
-  } else {
-    gridVColor = '#64748b';
-    gridStatusLabel = localize('params.offline', hass, lang);
-  }
+  // Universal Grid voltage color coding (supports both 220V-240V and 110V-127V grids)
+  const {
+    color: gridVColor,
+    label: gridStatusLabel,
+    sparklineRange: gridSparklineRange,
+  } = getGridVoltageStatus(gridVoltage, hass, lang);
 
   // KPI (Tile 3) configuration & calculation
   const effectiveKpiMode =
@@ -260,7 +249,12 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
       <!-- TILE 1: BATTERY TELEMETRY -->
       <div
         class="param-tile"
-        @click=${() => onParamClick(config.battery_voltage_entity)}
+        @click=${() =>
+          onParamClick(
+            config.battery_voltage_entity ||
+              config.bms?.voltage_entity ||
+              config.bms?.bat1_voltage_entity
+          )}
         title="${localize('params.battery', hass, lang)}"
       >
         <div class="param-header">
@@ -281,7 +275,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
           </span>
         </div>
         <div class="param-chart-box">
-          ${renderSparkline(batHistory, batVColor, 1.5, 'bat')}
+          ${renderSparkline(batHistory, batVColor, batSparklineRange, 'bat')}
         </div>
       </div>
 
@@ -304,7 +298,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
           </span>
         </div>
         <div class="param-chart-box">
-          ${renderSparkline(gridHistory, gridVColor, 20.0, 'grid')}
+          ${renderSparkline(gridHistory, gridVColor, gridSparklineRange, 'grid')}
         </div>
       </div>
 

@@ -89,8 +89,20 @@ export class AninerelPowerCardEditor extends LitElement {
           },
           {
             name: 'battery_power',
-            label: 'Battery Power (+Charge / -Discharge)',
-            required: true,
+            label: 'Battery Power (+Charge / -Discharge) [Or use split sensors below]',
+            required: false,
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'battery_charge_power',
+            label: 'Battery Charge Power (W) [Optional, for split Deye/Growatt sensors]',
+            required: false,
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'battery_discharge_power',
+            label: 'Battery Discharge Power (W) [Optional, for split Deye/Growatt sensors]',
+            required: false,
             selector: { entity: { domain: 'sensor' } },
           },
           {
@@ -113,6 +125,31 @@ export class AninerelPowerCardEditor extends LitElement {
         type: 'expandable',
         title: localize('editor.params_group', this.hass, lang) || '📊 Electrical Parameters & Telemetry',
         schema: [
+          {
+            name: 'system_voltage',
+            label: 'Nominal System DC Voltage (Auto-detected from battery voltage)',
+            selector: {
+              select: {
+                options: [
+                  { value: 'auto', label: 'Auto-Detect (12V / 24V / 36V / 48V)' },
+                  { value: 12, label: '12V System (4S LiFePO4)' },
+                  { value: 24, label: '24V System (8S LiFePO4)' },
+                  { value: 36, label: '36V System (12S LiFePO4)' },
+                  { value: 48, label: '48V / 51.2V System (15S / 16S LiFePO4)' },
+                ],
+              },
+            },
+          },
+          {
+            name: 'invert_battery_power',
+            label: 'Invert Battery Power & Current Polarity (Use if +W means Discharging)',
+            selector: { boolean: {} },
+          },
+          {
+            name: 'invert_grid_power',
+            label: 'Invert Grid Power Polarity (Use if +W means Grid Export)',
+            selector: { boolean: {} },
+          },
           {
             name: 'battery_voltage_entity',
             label: 'Battery Voltage (V)',
@@ -335,14 +372,34 @@ export class AninerelPowerCardEditor extends LitElement {
             selector: { entity: { domain: 'sensor' } },
           },
           {
+            name: 'soh_entity',
+            label: 'Battery State of Health (SOH %)',
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'active_balancer_entity',
+            label: 'Active Balancer Switch / Balancing Status Sensor',
+            selector: { entity: {} },
+          },
+          {
+            name: 'cell_balancing_prefix',
+            label: 'Cell Active Balancing Sensor Prefix (e.g. binary_sensor.cell_balancing_)',
+            selector: { text: {} },
+          },
+          {
+            name: 'cell_resistance_prefix',
+            label: 'Cell Internal Resistance Prefix (e.g. sensor.cell_resistance_ [mΩ])',
+            selector: { text: {} },
+          },
+          {
             name: 'remaining_capacity_entity',
             label: 'Remaining Capacity (Ah)',
             selector: { entity: { domain: 'sensor' } },
           },
           {
             name: 'cell_count',
-            label: 'Single Pack Cell Count (4 for 12V, 8 for 24V, 16 for 48V)',
-            selector: { number: { min: 3, max: 24, step: 1, mode: 'box' } },
+            label: 'Single Pack Cell Count (0 for CAN-bus without cells, 4 for 12V, 8 for 24V, 16 for 48V)',
+            selector: { number: { min: 0, max: 24, step: 1, mode: 'box' } },
           },
           {
             name: 'cell_voltage_prefix',
@@ -359,33 +416,58 @@ export class AninerelPowerCardEditor extends LitElement {
         schema: [
           {
             name: 'charge_source_entity',
-            label: 'Charge Source Priority (Select)',
-            selector: { entity: { domain: 'select' } },
+            label: 'Charge Source Priority (Select / Input Select)',
+            selector: { entity: { domain: ['select', 'input_select'] } },
           },
           {
             name: 'output_priority_entity',
-            label: 'Output Source Priority (Select)',
-            selector: { entity: { domain: 'select' } },
+            label: 'Output Source Priority / Work Mode (Select / Input Select)',
+            selector: { entity: { domain: ['select', 'input_select'] } },
           },
           {
             name: 'max_charge_current_entity',
             label: 'Max AC Charge Current (Number)',
-            selector: { entity: { domain: 'number' } },
+            selector: { entity: { domain: ['number', 'input_number'] } },
+          },
+          {
+            name: 'max_charge_current_limit',
+            label: 'Max AC Charge Slider Limit (A) [Overrides raw 200A Modbus ceiling]',
+            selector: { number: { min: 10, max: 250, step: 5, mode: 'box' } },
+          },
+          {
+            name: 'max_total_charge_current_entity',
+            label: 'Max Total (PV + AC) Charge Current (Number) [Optional]',
+            selector: { entity: { domain: ['number', 'input_number'] } },
           },
           {
             name: 'bulk_voltage_entity',
-            label: 'Bulk Voltage Setting (Number)',
-            selector: { entity: { domain: 'number' } },
+            label: 'Bulk / Absorption Voltage Setting (Number)',
+            selector: { entity: { domain: ['number', 'input_number'] } },
           },
           {
             name: 'float_voltage_entity',
             label: 'Float Voltage Setting (Number)',
-            selector: { entity: { domain: 'number' } },
+            selector: { entity: { domain: ['number', 'input_number'] } },
+          },
+          {
+            name: 'back_to_grid_voltage_entity',
+            label: 'Back to Grid Voltage / SoC Threshold (Number) [Optional]',
+            selector: { entity: { domain: ['number', 'input_number'] } },
+          },
+          {
+            name: 'cutoff_voltage_entity',
+            label: 'Low DC Cut-off Voltage / SoC Threshold (Number) [Optional]',
+            selector: { entity: { domain: ['number', 'input_number'] } },
+          },
+          {
+            name: 'buzzer_entity',
+            label: 'Inverter Buzzer / Beep Sound (Switch) [Optional]',
+            selector: { entity: { domain: ['switch', 'input_boolean'] } },
           },
           {
             name: 'equalization_entity',
-            label: 'Battery Equalization Mode (Switch)',
-            selector: { entity: { domain: 'switch' } },
+            label: 'Battery Equalization Mode (Switch - Danger Zone)',
+            selector: { entity: { domain: ['switch', 'input_boolean'] } },
           },
         ],
       },
@@ -434,6 +516,11 @@ export class AninerelPowerCardEditor extends LitElement {
         title: localize('editor.energy_group', this.hass, lang) || '📈 Daily Energy Counters',
         schema: [
           {
+            name: 'solar_energy_entity',
+            label: 'Daily Solar Production (PV kWh) [Optional]',
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
             name: 'load_energy_entity',
             label: 'Daily Home Consumption (kWh)',
             selector: { entity: { domain: 'sensor' } },
@@ -441,6 +528,11 @@ export class AninerelPowerCardEditor extends LitElement {
           {
             name: 'grid_import_entity',
             label: 'Daily Grid Import (kWh)',
+            selector: { entity: { domain: 'sensor' } },
+          },
+          {
+            name: 'grid_export_entity',
+            label: 'Daily Grid Export (kWh) [Optional]',
             selector: { entity: { domain: 'sensor' } },
           },
           {

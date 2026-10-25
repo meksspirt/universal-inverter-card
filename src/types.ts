@@ -61,10 +61,12 @@ export interface LovelaceGridOptions {
 // Card Specific Configurations
 
 export interface EntitiesConfig {
-  solar_power?: string;   // sensor...pv_power (W, optional)
-  battery_power?: string; // sensor...battery_power (W, + charge / - discharge)
-  grid_power?: string;    // sensor...grid_power (W)
-  load_power: string;     // sensor...load_power (W)
+  solar_power?: string;             // sensor...pv_power (W, optional)
+  battery_power?: string;           // sensor...battery_power (W, + charge / - discharge)
+  battery_charge_power?: string;    // sensor...battery_charge_power (W, optional for split sensors)
+  battery_discharge_power?: string; // sensor...battery_discharge_power (W, optional for split sensors)
+  grid_power?: string;              // sensor...grid_power (W)
+  load_power: string;               // sensor...load_power (W)
 }
 
 export type BatteryTopology = 'auto' | 'single' | 'series' | 'parallel';
@@ -79,8 +81,11 @@ export interface SingleBatteryConfig {
   cell_count?: number; // default: 4 for 12V, 8 for 24V, 16 for 48V
   cell_voltage_prefix?: string;
   cycle_count_entity?: string;
+  soh_entity?: string; // Battery State of Health (% SOH)
   remaining_capacity_entity?: string;
   cell_delta_entity?: string;
+  cell_balancing_prefix?: string; // binary_sensor...cell_1_balancing or sensor...
+  cell_resistance_prefix?: string; // sensor...cell_1_resistance (mΩ)
 }
 
 export interface BmsConfig {
@@ -93,8 +98,12 @@ export interface BmsConfig {
   current_entity?: string;            // sensor.battery_current (A)
   temperature_entity?: string;        // sensor.battery_temperature_probe_1 (°C)
   temperature_2_entity?: string;      // sensor.battery_temperature_probe_2 (°C)
+  soh_entity?: string;                // sensor.battery_state_of_health (% SOH)
   cell_count?: number;                // default: 8
   cell_voltage_prefix?: string;       // default: 'sensor.redodo_battery_cell_voltage_'
+  cell_balancing_prefix?: string;     // binary_sensor...cell_1_balancing
+  active_balancer_entity?: string;    // binary_sensor...balancer_active or string of active cells (e.g. "1, 4")
+  cell_resistance_prefix?: string;    // sensor...cell_1_resistance (mΩ)
   cycle_count_entity?: string;        // sensor.battery_discharge_cycles
   remaining_capacity_entity?: string; // sensor.battery_remaining_capacity (Ah)
   full_capacity_entity?: string;      // sensor.battery_full_charge_capacity (Ah)
@@ -126,13 +135,32 @@ export interface BmsConfig {
   packs?: SingleBatteryConfig[];
 }
 
+export interface CustomControlItem {
+  entity: string;
+  name?: string;
+  icon?: string;
+  ui_type?: 'auto' | 'select' | 'slider' | 'stepper' | 'switch' | 'button';
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  dangerous?: boolean;
+  warning_text?: string;
+}
+
 export interface ControlsConfig {
   charge_source_entity?: string;      // select...charge_source_priority
   output_priority_entity?: string;    // select...output_source_priority
   max_charge_current_entity?: string; // number...max_ac_charge_current
-  bulk_voltage_entity?: string;       // number...battery_bulk_voltage
+  max_charge_current_limit?: number;  // Optional visual ceiling (e.g. 100A instead of 200A raw Modbus max)
+  max_total_charge_current_entity?: string; // number...max_charge_current (Solar + AC)
+  bulk_voltage_entity?: string;       // number...battery_bulk_voltage (or Absorption V / Charge Limit %)
   float_voltage_entity?: string;      // number...battery_float_voltage
+  back_to_grid_voltage_entity?: string; // number...back_to_grid_voltage (or Back-to-Grid SoC %)
+  cutoff_voltage_entity?: string;     // number...battery_under_voltage / cutoff_voltage (or Shutdown SoC %)
+  buzzer_entity?: string;             // switch...buzzer / sound_alarm / beep
   equalization_entity?: string;       // switch...battery_equalization
+  extra_entities?: Array<string | CustomControlItem>; // Any additional inverter controls (select, number, switch, button)
 }
 
 export interface SafetyConfig {
@@ -145,8 +173,10 @@ export interface SafetyConfig {
 }
 
 export interface DailyEnergyConfig {
+  solar_energy_entity?: string;            // sensor...pv_energy_today (kWh, optional)
   load_energy_entity?: string;             // sensor...load_energy_today (kWh)
   grid_import_entity?: string;             // sensor...grid_import_energy_today (kWh)
+  grid_export_entity?: string;             // sensor...grid_export_energy_today (kWh, optional)
   battery_charge_entity?: string;          // sensor...battery_charge_energy_today (kWh)
   battery_discharge_entity?: string;       // sensor...battery_discharge_energy_today (kWh)
   self_consumption_daily_entity?: string;  // sensor...invertor_sobstvennoe_potreblenie_za_den (kWh)
@@ -193,9 +223,12 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
   safety?: SafetyConfig;
   daily_energy?: DailyEnergyConfig;
 
-  // Power & Capacity limits
+  // Power & Capacity limits & System Profile
+  system_voltage?: 12 | 24 | 36 | 48 | 'auto'; // Auto-detected if omitted
   max_power?: number;         // default: 4200
   inverter_capacity?: number; // default: 4200
+  invert_battery_power?: boolean; // Set true if battery sensor reports + for discharge and - for charge
+  invert_grid_power?: boolean;    // Set true if grid sensor reports + for export and - for import
 
   // Flow & Colors
   colors?: ColorConfig;

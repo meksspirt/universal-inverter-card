@@ -342,14 +342,40 @@ export function filterWarningCodeForNoSolar(warningCode: number | null): {
 /**
  * Resolves comprehensive warning details, decoding bitmasks and utilizing HA details text.
  */
+export const MODBUS_WARNING_BITS_RU: Record<number, { title: string; description: string }> = {
+  0: { title: 'Автономный режим (От батареи)', description: 'Инвертор питает дом от аккумулятора при отсутствии городской сети.' },
+  1: { title: 'Искажение формы сети', description: 'Форма напряжения в городской сети искажена во время аварии или переключения.' },
+  2: { title: 'Статусный бит 2', description: 'Служебный статус инвертора.' },
+  3: { title: 'Отключение сети (0В)', description: 'Напряжение в городской сети 0В или ниже нормы (отключение электричества).' },
+  4: { title: 'Высокая частота сети', description: 'Частота переменного тока в городской сети превысила норму.' },
+  5: { title: 'Низкая частота сети', description: 'Частота переменного тока в городской сети упала ниже нормы.' },
+  6: { title: 'Низкое напряжение панелей', description: 'Напряжение панелей ниже порога запуска MPPT (пасмурно или ночь).' },
+  7: { title: 'W02: Повышенная температура', description: 'Температура радиатора охлаждения инвертора повышена.' },
+  8: { title: 'W04: Низкое напряжение батареи', description: 'Напряжение аккумулятора упало до уровня предупреждения.' },
+  9: { title: 'W09: Батарея не подключена', description: 'Цепь аккумулятора разомкнута или батарея не обнаружена.' },
+  10: { title: 'W07: Перегрузка инвертора', description: 'Потребление дома приближается к номинальной мощности инвертора.' },
+  11: { title: 'Выравнивающий заряд АКБ', description: 'Идет цикл выравнивания аккумулятора.' },
+  12: { title: 'Батарея глубоко разряжена', description: 'Батарея разряжена ниже порога автовосстановления.' },
+  13: { title: 'W10: Ограничение мощности', description: 'Инвертор временно снизил мощность из-за нагрева.' },
+  14: { title: 'W14: Вентилятор заблокирован', description: 'Вентилятор охлаждения остановлен или забит пылью.' },
+  15: { title: 'W15: Слабая энергия солнца', description: 'Мощность солнечных панелей недостаточна для MPPT.' },
+  16: { title: 'Сбой параллельной связи', description: 'Нарушена связь между параллельными блоками.' },
+  17: { title: 'Несовпадение режима выхода', description: 'Несовпадение одиночного и параллельного режима.' },
+  18: { title: 'Разность напряжений батарей', description: 'Большая разница напряжений между параллельными АКБ.' },
+  19: { title: 'Сбой связи с BMS батареи', description: 'Потеряна телеметрия RS485/CAN с BMS аккумулятора.' },
+  20: { title: 'Сверхток разряда АКБ', description: 'Ток разряда аккумулятора превысил безопасный предел.' },
+};
+
 export function getWarningDetail(
   code: number,
-  detailsText?: string | null
+  detailsText?: string | null,
+  language?: string
 ): { title: string; description: string; isBitmask: boolean; isPv: boolean } {
+  const isRu = language === 'ru';
   if (code === 0 || isNaN(code)) {
     return {
-      title: 'No Warnings',
-      description: 'Warnings are absent.',
+      title: isRu ? 'Нет предупреждений' : 'No Warnings',
+      description: isRu ? 'Предупреждения отсутствуют.' : 'Warnings are absent.',
       isBitmask: false,
       isPv: false,
     };
@@ -359,8 +385,16 @@ export function getWarningDetail(
   const activeBits = MODBUS_WARNING_BITS.filter((b) => (code & b.mask) !== 0);
 
   if (activeBits.length > 1) {
-    const titles = activeBits.map((b) => b.title).join('; ');
-    const descriptions = activeBits.map((b) => `${b.title}: ${b.description}`).join(' | ');
+    const titles = activeBits
+      .map((b) => (isRu && MODBUS_WARNING_BITS_RU[b.code]?.title) || b.title)
+      .join('; ');
+    const descriptions = activeBits
+      .map((b) => {
+        const t = (isRu && MODBUS_WARNING_BITS_RU[b.code]?.title) || b.title;
+        const d = (isRu && MODBUS_WARNING_BITS_RU[b.code]?.description) || b.description;
+        return `${t}: ${d}`;
+      })
+      .join(' | ');
     const hasPv = activeBits.some((b) => b.isPvRelated);
     return {
       title: titles,
@@ -373,11 +407,13 @@ export function getWarningDetail(
   // If matched exactly 1 bit from bitmask table, prioritize bitmask definition
   if (activeBits.length === 1) {
     const bit = activeBits[0];
+    const bTitle = (isRu && MODBUS_WARNING_BITS_RU[bit.code]?.title) || bit.title;
+    const bDesc = (isRu && MODBUS_WARNING_BITS_RU[bit.code]?.description) || bit.description;
     return {
-      title: bit.title,
-      description: detailsText && detailsText !== bit.title
-        ? `${bit.description} (Status: ${detailsText})`
-        : bit.description,
+      title: bTitle,
+      description: detailsText && detailsText !== bit.title && detailsText !== bTitle
+        ? `${bDesc} (Status: ${detailsText})`
+        : bDesc,
       isBitmask: true,
       isPv: !!bit.isPvRelated,
     };
@@ -385,22 +421,25 @@ export function getWarningDetail(
 
   // Single direct code lookup in WARNING_CODES
   const direct = WARNING_CODES[code];
+  const directRu = language === 'ru' ? WARNING_CODES_RU[code] : undefined;
   if (direct) {
+    const title = directRu?.title || direct.title;
+    const desc = directRu?.description || direct.description;
     return {
-      title: direct.title,
-      description: detailsText && detailsText !== direct.title
-        ? `${direct.description} (Status: ${detailsText})`
-        : direct.description,
+      title,
+      description: detailsText && detailsText !== direct.title && detailsText !== directRu?.title
+        ? `${desc} (Status: ${detailsText})`
+        : desc,
       isBitmask: false,
       isPv: !!direct.isPvRelated,
     };
   }
 
   // Fallback with HA detailsText if available
-  const fallbackTitle = detailsText || `Warning W${code}`;
+  const fallbackTitle = detailsText || (isRu ? `Предупреждение W${code}` : `Warning W${code}`);
   const fallbackDesc = detailsText
-    ? `Inverter reports: ${detailsText}`
-    : 'Inverter reported an operational parameter deviation.';
+    ? (isRu ? `Отчет инвертора: ${detailsText}` : `Inverter reports: ${detailsText}`)
+    : (isRu ? 'Инвертор сообщил об отклонении рабочего параметра.' : 'Inverter reported an operational parameter deviation.');
 
   return {
     title: fallbackTitle,
@@ -410,28 +449,220 @@ export function getWarningDetail(
   };
 }
 
+export const FAULT_CODES_RU: Record<number, Partial<FaultDetail>> = {
+  0: {
+    title: 'Норма',
+    description: 'Инвертор работает в штатном режиме. Ошибок не обнаружено.',
+    recommendation: 'Система функционирует нормально.',
+  },
+  1: {
+    title: 'Вентилятор заблокирован',
+    description: 'Охлаждающий вентилятор остановлен или заклинен посторонним предметом.',
+    recommendation: 'Проверьте решетки охлаждения, очистите вентиляторы от пыли или помех.',
+  },
+  2: {
+    title: 'Перегрев инвертора',
+    description: 'Температура внутреннего радиатора превысила безопасный порог (>100°C).',
+    recommendation: 'Обеспечьте приток свежего воздуха, снизьте нагрузку дома и дайте инвертору остыть.',
+  },
+  3: {
+    title: 'Перенапряжение батареи',
+    description: 'Напряжение на клеммах аккумулятора превысило максимальный предел безопасности.',
+    recommendation: 'Проверьте настройки напряжения заряда Bulk/Float и параметры BMS.',
+  },
+  4: {
+    title: 'Критический разряд батареи',
+    description: 'Напряжение батареи упало ниже порога защитного отключения.',
+    recommendation: 'Включите сетевое питание AC для заряда или отключите мощные электроприборы.',
+  },
+  5: {
+    title: 'Короткое замыкание на выходе',
+    description: 'Обнаружено короткое замыкание или сверхток в выходной цепи 230В дома.',
+    recommendation: 'Немедленно отключите автоматы нагрузки и устраните замыкание в проводке или приборах.',
+  },
+  6: {
+    title: 'Высокое напряжение на выходе',
+    description: 'Выходное напряжение AC 230В превысило безопасный диапазон (>260В).',
+    recommendation: 'Отключите чувствительную технику, перезапустите инвертор. При повторении требуется сервис.',
+  },
+  7: {
+    title: 'Перегрузка по времени',
+    description: 'Подключенная нагрузка превышала номинальную мощность дольше допустимого времени.',
+    recommendation: 'Отключите мощные потребители (бойлер, электроплиту, чайник, обогреватели).',
+  },
+  8: {
+    title: 'Высокое напряжение шины DC',
+    description: 'Напряжение внутренней высоковольтной шины DC превысило порог безопасности.',
+    recommendation: 'Перезапустите инвертор. Если ошибка повторяется, проверьте напряжение Voc солнечных панелей.',
+  },
+  9: {
+    title: 'Сбой плавного пуска шины',
+    description: 'Цепь плавного предзаряда высоковольтной шины DC не смогла выйти на режим.',
+    recommendation: 'Проверьте стабильность напряжения АКБ и панелей, затем перезапустите инвертор.',
+  },
+  10: {
+    title: 'Сверхток солнечных панелей',
+    description: 'Входной ток от солнечных панелей превысил допустимый предел контроллера MPPT.',
+    recommendation: 'Проверьте схему параллельного соединения солнечных стрингов.',
+  },
+  11: {
+    title: 'Перенапряжение солнечных панелей',
+    description: 'Напряжение холостого хода панелей (Voc) превысило максимальный предел MPPT.',
+    recommendation: 'Немедленно отключите солнечный автомат, уменьшите число панелей в последовательной цепочке.',
+  },
+  12: {
+    title: 'Сверхток преобразователя DC-DC',
+    description: 'Обнаружен сверхток в каскаде DC-DC преобразования батареи.',
+    recommendation: 'Проверьте надежность затяжки клемм АКБ, целостность кабелей и исключите броски пусковых токов.',
+  },
+  13: {
+    title: 'Бросок тока инвертора',
+    description: 'Сработала аппаратная защита из-за резкого импульса тока или пусковой перегрузки.',
+    recommendation: 'Избегайте одновременного пуска мощных индуктивных нагрузок (насосы, компрессоры, моторы).',
+  },
+  14: {
+    title: 'Низкое напряжение шины DC',
+    description: 'Напряжение шины DC просело ниже минимально допустимого рабочего уровня.',
+    recommendation: 'Проверьте просадку напряжения аккумулятора под нагрузкой и стабильность сети.',
+  },
+  51: {
+    title: 'Сверхток силового моста',
+    description: 'Сработала аппаратная защита силовых транзисторов (IGBT/MOSFET) от перегрузки по току.',
+    recommendation: 'Отключите приборы с высокими пусковыми токами, перезапустите инвертор по питанию.',
+  },
+  52: {
+    title: 'Критически низкая шина DC',
+    description: 'Напряжение внутренней шины DC резко упало ниже порога генерации 230В.',
+    recommendation: 'Проверьте состояние батареи, клеммные соединения и наконечники силовых проводов.',
+  },
+  53: {
+    title: 'Сбой плавного пуска инвертора',
+    description: 'Не удалось сформировать плавную синусоиду 230В на выходе при включении.',
+    recommendation: 'Отключите все нагрузки перед включением кнопки питания инвертора.',
+  },
+  55: {
+    title: 'Постоянный ток на выходе AC',
+    description: 'Обнаружена опасная постоянная составляющая напряжения на выходе 230В.',
+    recommendation: 'Опасно для трансформаторов и моторов! Немедленно отключите нагрузку и обратитесь в сервис.',
+  },
+  56: {
+    title: 'Батарея не обнаружена',
+    description: 'Инвертор потерял контакт с аккумулятором во время работы.',
+    recommendation: 'Проверьте автомат АКБ, плавкий предохранитель и контакт на клеммах батареи.',
+  },
+  57: {
+    title: 'Отказ датчика тока',
+    description: 'Сбой калибровки нуля или потеря сигнала внутреннего датчика тока (датчик Холла).',
+    recommendation: 'Перезапустите инвертор. При повторении ошибки требуется диагностика платы управления.',
+  },
+  58: {
+    title: 'Просадка выходного напряжения',
+    description: 'Инвертор не может удержать 230В (напряжение просело ниже 190В) из-за тяжелой перегрузки.',
+    recommendation: 'Снизьте нагрузку на инвертор.',
+  },
+  59: {
+    title: 'Ошибка связи плат управления',
+    description: 'Потеряна внутренняя связь между микроконтроллером и силовой платой.',
+    recommendation: 'Перезагрузите инвертор. При сохранении ошибки проверьте внутренние шлейфы.',
+  },
+  60: {
+    title: 'Сбой синхронизации с сетью',
+    description: 'Обнаружен обратный переток мощности или сбой синхронизации фазы при переходе на байпас.',
+    recommendation: 'Проверьте правильность подключения фазы и нуля (L/N) на входе инвертора.',
+  },
+  71: {
+    title: 'Несовместимость прошивки / BMS',
+    description: 'Несовпадение версии прошивки или потеря связи по протоколу с BMS аккумулятора.',
+    recommendation: 'Проверьте кабель связи BMS и выбранный протокол обмена в настройках батареи.',
+  },
+  72: {
+    title: 'Критическая авария BMS',
+    description: 'Система управления батареей (BMS) послала сигнал аварийного отключения.',
+    recommendation: 'Проверьте состояние аккумулятора и журнал аварий в приложении BMS.',
+  },
+  80: {
+    title: 'Сбой шины CAN параллельного режима',
+    description: 'Потеряна связь по шине CAN между параллельно соединенными инверторами.',
+    recommendation: 'Проверьте кабели связи CAN и согласующие терминальные резисторы.',
+  },
+  81: {
+    title: 'Потеря ведущего инвертора (Master)',
+    description: 'Ведомый инвертор (Slave) потерял связь с ведущим блоком (Master).',
+    recommendation: 'Проверьте питание и состояние ведущего инвертора, а также кабели связи.',
+  },
+  82: {
+    title: 'Рассинхронизация фаз AC',
+    description: 'Параллельные инверторы не смогли синхронизировать фазы выходного напряжения.',
+    recommendation: 'Убедитесь, что все блоки подключены к одной фазе сетевого входа.',
+  },
+};
+
+export const WARNING_CODES_RU: Record<number, { title: string; description: string }> = {
+  0: { title: 'Нет предупреждений', description: 'Система работает штатно без предупреждений.' },
+  1: { title: 'Автономный режим (От батареи)', description: 'Инвертор питает дом от аккумулятора (сеть отключена).' },
+  2: { title: 'Искажение формы сети', description: 'Форма напряжения в городской сети искажена во время аварии или переключения.' },
+  4: { title: 'Низкий заряд батареи', description: 'Напряжение АКБ снизилось до порога предупреждения (рекомендуется заряд).' },
+  7: { title: 'Предупреждение: Высокая нагрузка', description: 'Потребление дома приближается к предельной мощности инвертора.' },
+  8: { title: 'Низкое напряжение сети / Авария', description: 'Напряжение в сети 0В или ниже нормы (отключение электричества).' },
+  10: { title: 'Ограничение мощности (Derating)', description: 'Инвертор снижает мощность для предотвращения перегрева.' },
+  14: { title: 'Вентилятор замедлен', description: 'Вентилятор охлаждения заблокирован или работает на пониженных оборотах.' },
+  15: { title: 'Слабая солнечная генерация', description: 'Напряжение панелей ниже рабочего диапазона MPPT (ночь или нет панелей).' },
+  16: { title: 'Высокая частота сети', description: 'Частота переменного тока в городской сети превысила норму.' },
+  19: { title: 'Сбой связи с литиевой BMS', description: 'Потеряна связь телеметрии RS485/CAN с BMS аккумулятора.' },
+  20: { title: 'Превышение тока разряда АКБ', description: 'Ток разряда аккумулятора превысил настроенный порог.' },
+  32: { title: 'Низкая частота сети', description: 'Частота переменного тока в городской сети упала ниже нормы.' },
+  64: { title: 'Низкое напряжение солнечных панелей', description: 'Напряжение панелей ниже порога запуска MPPT (пасмурно или ночь).' },
+  128: { title: 'Повышенная температура инвертора', description: 'Температура радиатора охлаждения повышена.' },
+  256: { title: 'Низкое напряжение батареи', description: 'Напряжение батареи упало до уровня предупреждения.' },
+  512: { title: 'Батарея не подключена', description: 'Цепь аккумулятора разомкнута или батарея не обнаружена.' },
+  1024: { title: 'Высокая нагрузка дома', description: 'Потребление дома превышает номинал инвертора.' },
+  2048: { title: 'Выравнивание батареи активно', description: 'Идет цикл выравнивающего заряда батареи.' },
+  4096: { title: 'Глубокий разряд аккумулятора', description: 'Батарея разряжена ниже порога автовосстановления.' },
+  8192: { title: 'Ограничение мощности по температуре', description: 'Инвертор временно ограничивает мощность из-за нагрева.' },
+  16384: { title: 'Вентилятор заблокирован', description: 'Вентилятор охлаждения остановлен или забит пылью.' },
+  32768: { title: 'Слабая энергия солнца', description: 'Мощность солнечных панелей недостаточна для преобразования.' },
+  524288: { title: 'Сбой связи с BMS', description: 'Потеряна связь RS485/CAN с контроллером батареи.' },
+  1048576: { title: 'Сверхток разряда АКБ', description: 'Ток разряда аккумулятора превысил безопасный предел.' },
+};
+
 /**
  * Resolves comprehensive fault details, utilizing HA details text when available.
  */
-export function getFaultDetail(code: number, detailsText?: string | null): FaultDetail {
+export function getFaultDetail(code: number, detailsText?: string | null, language?: string): FaultDetail {
   const direct = FAULT_CODES[code];
+  const directRu = language === 'ru' ? FAULT_CODES_RU[code] : undefined;
+
   if (direct) {
-    if (detailsText && detailsText !== direct.title && detailsText !== 'N/A' && detailsText !== '0') {
+    const title = directRu?.title || direct.title;
+    const desc = directRu?.description || direct.description;
+    const rec = directRu?.recommendation || direct.recommendation;
+
+    if (detailsText && detailsText !== direct.title && detailsText !== directRu?.title && detailsText !== 'N/A' && detailsText !== '0') {
       return {
         ...direct,
-        description: `${direct.description} (Inverter: ${detailsText})`,
+        title,
+        description: `${desc} (${language === 'ru' ? 'Инвертор' : 'Inverter'}: ${detailsText})`,
+        recommendation: rec,
       };
     }
-    return direct;
+    return {
+      ...direct,
+      title,
+      description: desc,
+      recommendation: rec,
+    };
   }
 
+  const isRu = language === 'ru';
   return {
     code,
-    title: detailsText || `Fault Code F${code}`,
+    title: detailsText || (isRu ? `Код аварии F${code}` : `Fault Code F${code}`),
     description: detailsText
-      ? `Inverter reports error: ${detailsText}`
-      : 'Hardware or firmware fault detected by inverter.',
-    recommendation: 'Check inverter LCD display messages and documentation.',
+      ? (isRu ? `Отчет инвертора об аварии: ${detailsText}` : `Inverter reports error: ${detailsText}`)
+      : (isRu ? 'Инвертор обнаружил аппаратный или программный сбой.' : 'Hardware or firmware fault detected by inverter.'),
+    recommendation: isRu
+      ? 'Проверьте сообщения на дисплее инвертора и документацию производителя.'
+      : 'Check inverter LCD display messages and documentation.',
     severity: 'critical',
   };
 }

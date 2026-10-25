@@ -40,10 +40,10 @@ export function renderAlertPanel(props: AlertPanelProps): TemplateResult {
   }
 
   const fCode = faultCode ?? 0;
-  const faultDetail: FaultDetail = getFaultDetail(fCode, faultDetailsText);
+  const faultDetail: FaultDetail = getFaultDetail(fCode, faultDetailsText, language);
 
   const wCode = warningCode ?? 0;
-  const warningDetail = getWarningDetail(wCode, warningDetailsText);
+  const warningDetail = getWarningDetail(wCode, warningDetailsText, language);
 
   return html`
     <div class="alert-section-wrapper">

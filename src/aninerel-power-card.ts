@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit';
+import { LitElement, html, PropertyValues } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { HomeAssistant, AninerelCardConfig, LovelaceCard } from './types';
 import { CARD_NAME, CARD_VERSION, DEFAULT_CONFIG, STUB_CONFIG } from './const';
@@ -13,6 +13,7 @@ import { renderAlertPanel } from './components/alert-panel';
 import { filterWarningCodeForNoSolar } from './utils/fault-codes';
 import { formatDurationHours } from './utils/format';
 import { getActiveLanguage } from './localize/localize';
+import { detectSystemVoltage, estimateSocFromVoltage } from './utils/system-profile';
 
 // Console banner on load
 console.info(
@@ -44,6 +45,9 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   @state() private _equalizationConfirmPending = false;
   private _equalizationConfirmTimer?: ReturnType<typeof setTimeout>;
 
+  // Cached set of monitored entity IDs for ultra-fast O(1) dirty checking
+  private _monitoredEntitiesSet: Set<string> = new Set();
+
   // Time-bucketed 24-hour history buffer for sparkline generation (32 buckets * 45 min = 24h)
   private _historyMap: Map<string, number[]> = new Map();
   private _lastBucketIndexMap: Map<string, number> = new Map();
@@ -52,7 +56,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   private _lastHistoryFetch = 0;
   private readonly _historyFetchInterval = 15 * 60 * 1000; // 15 minutes
 
-  static styles = [cardStyles];
+  static styles = cardStyles;
 
   // 1. Lifecycle: setConfig
   public setConfig(config: AninerelCardConfig): void {
@@ -76,9 +80,11 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       daily_energy: config.daily_energy ? { ...config.daily_energy } : undefined,
       colors: config.colors ? { ...config.colors } : undefined,
     } as AninerelCardConfig;
+
+    this._updateMonitoredEntities();
   }
 
-  // 2. Lifecycle: hass setter with dirty checking and history recording
+  // 2. Lifecycle: hass setter with dirty checking
   set hass(hass: HomeAssistant) {
     const oldHass = this._hass;
     this._hass = hass;
@@ -88,13 +94,17 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     }
 
     if (!oldHass || this._hasRelevantEntitiesChanged(oldHass, hass)) {
-      this._updateHistoryBuffers();
       this.requestUpdate();
     }
   }
 
   get hass(): HomeAssistant {
     return this._hass;
+  }
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    super.willUpdate(changedProperties);
+    this._updateHistoryBuffers();
   }
 
   protected firstUpdated(): void {
@@ -116,9 +126,62 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     };
   }
 
-  // 5. Default stub configuration when clicking "+ Add Card" in HA UI
-  public static getStubConfig(): Record<string, any> {
-    return STUB_CONFIG;
+  // 5. Default stub configuration when clicking "+ Add Card" in HA UI (Auto-discovers user's entities)
+  public static getStubConfig(hass?: HomeAssistant): Record<string, any> {
+    if (!hass || !hass.states) {
+      return STUB_CONFIG;
+    }
+
+    const keys = Object.keys(hass.states);
+    const findId = (domain: string, keywords: string[]): string | undefined => {
+      for (const kw of keywords) {
+        const match = keys.find((id) => id.startsWith(`${domain}.`) && id.toLowerCase().includes(kw));
+        if (match) return match;
+      }
+      return undefined;
+    };
+
+    const loadP = findId('sensor', ['load_power', 'consumption_power', 'home_load', 'house_power']) || 'sensor.load_power';
+    const batP = findId('sensor', ['battery_power', 'bat_power', 'battery_charge_power']);
+    const gridP = findId('sensor', ['grid_power', 'mains_power', 'grid_consumption']);
+    const solarP = findId('sensor', ['solar_power', 'pv_power', 'pv1_power', 'mppt_power']);
+
+    const batV = findId('sensor', ['battery_voltage', 'bat_voltage', 'total_voltage']);
+    const batI = findId('sensor', ['battery_current', 'bat_current']);
+    const gridV = findId('sensor', ['grid_voltage', 'mains_voltage', 'ac_voltage']);
+    const mode = findId('sensor', ['operating_mode', 'inverter_mode', 'work_mode']);
+    const temp = findId('sensor', ['inverter_temperature', 'inverter_temp', 'heatsink_temperature']);
+
+    const bmsSoc = findId('sensor', ['battery_state_of_charge', 'battery_soc', 'bms_soc']);
+    const chgSrc = findId('select', ['charge_source_priority', 'charge_priority']);
+    const outPri = findId('select', ['output_source_priority', 'output_priority']);
+    const maxChg = findId('number', ['max_ac_charge_current', 'max_charge_current']);
+
+    return {
+      type: 'custom:aninerel-power-card',
+      show_solar: Boolean(solarP),
+      entities: {
+        load_power: loadP,
+        ...(batP ? { battery_power: batP } : {}),
+        ...(gridP ? { grid_power: gridP } : {}),
+        ...(solarP ? { solar_power: solarP } : {}),
+      },
+      ...(batV ? { battery_voltage_entity: batV } : {}),
+      ...(batI ? { battery_current_entity: batI } : {}),
+      ...(gridV ? { grid_voltage_entity: gridV } : {}),
+      ...(mode ? { operating_mode_entity: mode } : {}),
+      ...(temp ? { inverter_temperature_entity: temp } : {}),
+      ...(bmsSoc ? { bms: { soc_entity: bmsSoc } } : {}),
+      ...(chgSrc || outPri || maxChg
+        ? {
+            controls: {
+              ...(chgSrc ? { charge_source_entity: chgSrc } : {}),
+              ...(outPri ? { output_priority_entity: outPri } : {}),
+              ...(maxChg ? { max_charge_current_entity: maxChg } : {}),
+            },
+          }
+        : {}),
+    };
   }
 
   // 6. Connect Visual GUI Configuration Editor
@@ -334,8 +397,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     if (oldHass.language !== newHass.language || oldHass.locale?.language !== newHass.locale?.language) {
       return true;
     }
-    const watched = this._getMonitoredEntityIds();
-    for (const id of watched) {
+    for (const id of this._monitoredEntitiesSet) {
       if (oldHass.states[id] !== newHass.states[id]) {
         return true;
       }
@@ -343,8 +405,9 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     return false;
   }
 
-  private _getMonitoredEntityIds(): string[] {
-    const ids: string[] = [
+  // Pre-computes Set of monitored entity IDs once per config update
+  private _updateMonitoredEntities(): void {
+    const ids = new Set<string>([
       DEFAULT_SELF_POWER_ENTITY,
       DEFAULT_SELF_DAILY_ENTITY,
       DEFAULT_SELF_MONTHLY_ENTITY,
@@ -353,69 +416,78 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       DEFAULT_BREAKER_VOLTAGE_ENTITY,
       DEFAULT_REMAINING_ENERGY_ENTITY,
       DEFAULT_LOAD_PERCENT_ENTITY,
-    ];
-    if (!this._config) return ids;
+    ]);
+    if (!this._config) {
+      this._monitoredEntitiesSet = ids;
+      return;
+    }
 
     const { entities, bms, controls, safety, daily_energy } = this._config;
 
     if (entities) {
-      if (entities.solar_power) ids.push(entities.solar_power);
-      if (entities.battery_power) ids.push(entities.battery_power);
-      if (entities.grid_power) ids.push(entities.grid_power);
-      if (entities.load_power) ids.push(entities.load_power);
+      if (entities.solar_power) ids.add(entities.solar_power);
+      if (entities.battery_power) ids.add(entities.battery_power);
+      if (entities.battery_charge_power) ids.add(entities.battery_charge_power);
+      if (entities.battery_discharge_power) ids.add(entities.battery_discharge_power);
+      if (entities.grid_power) ids.add(entities.grid_power);
+      if (entities.load_power) ids.add(entities.load_power);
     }
 
-    if (this._config.battery_voltage_entity) ids.push(this._config.battery_voltage_entity);
-    if (this._config.battery_current_entity) ids.push(this._config.battery_current_entity);
-    if (this._config.grid_voltage_entity) ids.push(this._config.grid_voltage_entity);
-    if (this._config.operating_mode_entity) ids.push(this._config.operating_mode_entity);
-    if (this._config.charging_active_entity) ids.push(this._config.charging_active_entity);
-    if (this._config.inverter_temperature_entity) ids.push(this._config.inverter_temperature_entity);
-    if (this._config.inverter_load_percent_entity) ids.push(this._config.inverter_load_percent_entity);
-    if (this._config.self_consumption_power_entity) ids.push(this._config.self_consumption_power_entity);
-    if (this._config.grid_breaker_switch_entity) ids.push(this._config.grid_breaker_switch_entity);
-    if (this._config.grid_breaker_power_entity) ids.push(this._config.grid_breaker_power_entity);
-    if (this._config.kpi_entity) ids.push(this._config.kpi_entity);
+    if (this._config.battery_voltage_entity) ids.add(this._config.battery_voltage_entity);
+    if (this._config.battery_current_entity) ids.add(this._config.battery_current_entity);
+    if (this._config.grid_voltage_entity) ids.add(this._config.grid_voltage_entity);
+    if (this._config.operating_mode_entity) ids.add(this._config.operating_mode_entity);
+    if (this._config.charging_active_entity) ids.add(this._config.charging_active_entity);
+    if (this._config.inverter_temperature_entity) ids.add(this._config.inverter_temperature_entity);
+    if (this._config.inverter_load_percent_entity) ids.add(this._config.inverter_load_percent_entity);
+    if (this._config.self_consumption_power_entity) ids.add(this._config.self_consumption_power_entity);
+    if (this._config.grid_breaker_switch_entity) ids.add(this._config.grid_breaker_switch_entity);
+    if (this._config.grid_breaker_power_entity) ids.add(this._config.grid_breaker_power_entity);
+    if (this._config.kpi_entity) ids.add(this._config.kpi_entity);
 
     if (bms) {
-      if (bms.soc_entity) ids.push(bms.soc_entity);
-      if (bms.voltage_entity) ids.push(bms.voltage_entity);
-      if (bms.current_entity) ids.push(bms.current_entity);
-      if (bms.temperature_entity) ids.push(bms.temperature_entity);
-      if (bms.temperature_2_entity) ids.push(bms.temperature_2_entity);
-      if (bms.cycle_count_entity) ids.push(bms.cycle_count_entity);
-      if (bms.cell_delta_entity) ids.push(bms.cell_delta_entity);
-      if (bms.remaining_capacity_entity) ids.push(bms.remaining_capacity_entity);
-      if (bms.full_capacity_entity) ids.push(bms.full_capacity_entity);
-      if (bms.remaining_energy_entity) ids.push(bms.remaining_energy_entity);
+      if (bms.soc_entity) ids.add(bms.soc_entity);
+      if (bms.soh_entity) ids.add(bms.soh_entity);
+      if (bms.voltage_entity) ids.add(bms.voltage_entity);
+      if (bms.current_entity) ids.add(bms.current_entity);
+      if (bms.temperature_entity) ids.add(bms.temperature_entity);
+      if (bms.temperature_2_entity) ids.add(bms.temperature_2_entity);
+      if (bms.cycle_count_entity) ids.add(bms.cycle_count_entity);
+      if (bms.cell_delta_entity) ids.add(bms.cell_delta_entity);
+      if (bms.remaining_capacity_entity) ids.add(bms.remaining_capacity_entity);
+      if (bms.full_capacity_entity) ids.add(bms.full_capacity_entity);
+      if (bms.remaining_energy_entity) ids.add(bms.remaining_energy_entity);
+      if (bms.active_balancer_entity) ids.add(bms.active_balancer_entity);
 
-      const pushCellCandidates = (pfx: string, cnt: number) => {
+      const addCellCandidates = (pfx: string, cnt: number) => {
         const clean = pfx.trim();
         for (let i = 1; i <= cnt; i++) {
-          ids.push(`${clean}${i}`);
-          ids.push(`${clean}${i}_voltage`);
+          ids.add(`${clean}${i}`);
+          ids.add(`${clean}${i}_voltage`);
         }
       };
 
       const count = bms.cell_count || 8;
       const prefix = bms.cell_voltage_prefix || 'sensor.redodo_battery_cell_voltage_';
-      pushCellCandidates(prefix, count);
+      addCellCandidates(prefix, count);
+      if (bms.cell_balancing_prefix) addCellCandidates(bms.cell_balancing_prefix, count);
+      if (bms.cell_resistance_prefix) addCellCandidates(bms.cell_resistance_prefix, count);
 
       // Battery 1..4 & packs[] (flat & nested)
       const count1 = bms.bat1_cell_count || bms.battery_1?.cell_count || 4;
-      if (bms.bat1_soc_entity) ids.push(bms.bat1_soc_entity);
-      if (bms.bat1_voltage_entity) ids.push(bms.bat1_voltage_entity);
-      if (bms.bat1_temperature_entity) ids.push(bms.bat1_temperature_entity);
+      if (bms.bat1_soc_entity) ids.add(bms.bat1_soc_entity);
+      if (bms.bat1_voltage_entity) ids.add(bms.bat1_voltage_entity);
+      if (bms.bat1_temperature_entity) ids.add(bms.bat1_temperature_entity);
       if (bms.bat1_cell_prefix) {
-        pushCellCandidates(bms.bat1_cell_prefix, count1);
+        addCellCandidates(bms.bat1_cell_prefix, count1);
       }
 
       const count2 = bms.bat2_cell_count || bms.battery_2?.cell_count || 4;
-      if (bms.bat2_soc_entity) ids.push(bms.bat2_soc_entity);
-      if (bms.bat2_voltage_entity) ids.push(bms.bat2_voltage_entity);
-      if (bms.bat2_temperature_entity) ids.push(bms.bat2_temperature_entity);
+      if (bms.bat2_soc_entity) ids.add(bms.bat2_soc_entity);
+      if (bms.bat2_voltage_entity) ids.add(bms.bat2_voltage_entity);
+      if (bms.bat2_temperature_entity) ids.add(bms.bat2_temperature_entity);
       if (bms.bat2_cell_prefix) {
-        pushCellCandidates(bms.bat2_cell_prefix, count2);
+        addCellCandidates(bms.bat2_cell_prefix, count2);
       }
 
       const nestedPacks = [
@@ -427,50 +499,69 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       ];
       for (const np of nestedPacks) {
         if (!np) continue;
-        if (np.soc_entity) ids.push(np.soc_entity);
-        if (np.voltage_entity) ids.push(np.voltage_entity);
-        if (np.current_entity) ids.push(np.current_entity);
-        if (np.temperature_entity) ids.push(np.temperature_entity);
+        if (np.soc_entity) ids.add(np.soc_entity);
+        if (np.voltage_entity) ids.add(np.voltage_entity);
+        if (np.current_entity) ids.add(np.current_entity);
+        if (np.temperature_entity) ids.add(np.temperature_entity);
+        if (np.soh_entity) ids.add(np.soh_entity);
         if (np.cell_voltage_prefix) {
-          pushCellCandidates(np.cell_voltage_prefix, np.cell_count || 4);
+          addCellCandidates(np.cell_voltage_prefix, np.cell_count || 4);
+        }
+        if (np.cell_balancing_prefix) {
+          addCellCandidates(np.cell_balancing_prefix, np.cell_count || 4);
+        }
+        if (np.cell_resistance_prefix) {
+          addCellCandidates(np.cell_resistance_prefix, np.cell_count || 4);
         }
       }
     }
 
     if (controls) {
-      if (controls.charge_source_entity) ids.push(controls.charge_source_entity);
-      if (controls.output_priority_entity) ids.push(controls.output_priority_entity);
-      if (controls.max_charge_current_entity) ids.push(controls.max_charge_current_entity);
-      if (controls.bulk_voltage_entity) ids.push(controls.bulk_voltage_entity);
-      if (controls.float_voltage_entity) ids.push(controls.float_voltage_entity);
-      if (controls.equalization_entity) ids.push(controls.equalization_entity);
+      if (controls.charge_source_entity) ids.add(controls.charge_source_entity);
+      if (controls.output_priority_entity) ids.add(controls.output_priority_entity);
+      if (controls.max_charge_current_entity) ids.add(controls.max_charge_current_entity);
+      if (controls.max_total_charge_current_entity) ids.add(controls.max_total_charge_current_entity);
+      if (controls.bulk_voltage_entity) ids.add(controls.bulk_voltage_entity);
+      if (controls.float_voltage_entity) ids.add(controls.float_voltage_entity);
+      if (controls.back_to_grid_voltage_entity) ids.add(controls.back_to_grid_voltage_entity);
+      if (controls.cutoff_voltage_entity) ids.add(controls.cutoff_voltage_entity);
+      if (controls.buzzer_entity) ids.add(controls.buzzer_entity);
+      if (controls.equalization_entity) ids.add(controls.equalization_entity);
+      if (Array.isArray(controls.extra_entities)) {
+        for (const item of controls.extra_entities) {
+          const id = typeof item === 'string' ? item : item?.entity;
+          if (id) ids.add(id);
+        }
+      }
     }
 
     if (safety) {
-      if (safety.fault_active_entity) ids.push(safety.fault_active_entity);
+      if (safety.fault_active_entity) ids.add(safety.fault_active_entity);
       if (safety.fault_code_entity) {
-        ids.push(safety.fault_code_entity);
-        ids.push(safety.fault_code_entity.replace(/_code$/, '_details'));
+        ids.add(safety.fault_code_entity);
+        ids.add(safety.fault_code_entity.replace(/_code$/, '_details'));
       }
-      if (safety.fault_details_entity) ids.push(safety.fault_details_entity);
-      if (safety.warnings_active_entity) ids.push(safety.warnings_active_entity);
+      if (safety.fault_details_entity) ids.add(safety.fault_details_entity);
+      if (safety.warnings_active_entity) ids.add(safety.warnings_active_entity);
       if (safety.warning_code_entity) {
-        ids.push(safety.warning_code_entity);
-        ids.push(safety.warning_code_entity.replace(/_code$/, '_details'));
+        ids.add(safety.warning_code_entity);
+        ids.add(safety.warning_code_entity.replace(/_code$/, '_details'));
       }
-      if (safety.warning_details_entity) ids.push(safety.warning_details_entity);
+      if (safety.warning_details_entity) ids.add(safety.warning_details_entity);
     }
 
     if (daily_energy) {
-      if (daily_energy.load_energy_entity) ids.push(daily_energy.load_energy_entity);
-      if (daily_energy.grid_import_entity) ids.push(daily_energy.grid_import_entity);
-      if (daily_energy.battery_charge_entity) ids.push(daily_energy.battery_charge_entity);
-      if (daily_energy.battery_discharge_entity) ids.push(daily_energy.battery_discharge_entity);
-      if (daily_energy.self_consumption_daily_entity) ids.push(daily_energy.self_consumption_daily_entity);
-      if (daily_energy.self_consumption_monthly_entity) ids.push(daily_energy.self_consumption_monthly_entity);
+      if (daily_energy.solar_energy_entity) ids.add(daily_energy.solar_energy_entity);
+      if (daily_energy.load_energy_entity) ids.add(daily_energy.load_energy_entity);
+      if (daily_energy.grid_import_entity) ids.add(daily_energy.grid_import_entity);
+      if (daily_energy.grid_export_entity) ids.add(daily_energy.grid_export_entity);
+      if (daily_energy.battery_charge_entity) ids.add(daily_energy.battery_charge_entity);
+      if (daily_energy.battery_discharge_entity) ids.add(daily_energy.battery_discharge_entity);
+      if (daily_energy.self_consumption_daily_entity) ids.add(daily_energy.self_consumption_daily_entity);
+      if (daily_energy.self_consumption_monthly_entity) ids.add(daily_energy.self_consumption_monthly_entity);
     }
 
-    return ids.filter(Boolean);
+    this._monitoredEntitiesSet = ids;
   }
 
   private _resolveCellEntityId(prefix: string, cellIndex: number): string {
@@ -494,6 +585,87 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       }
     }
     return candidates[0];
+  }
+
+  private _checkCellBalancing(
+    cellIdx: number,
+    cellEntityId?: string,
+    balancingPrefix?: string,
+    balancerEntity?: string
+  ): boolean {
+    if (!this._hass?.states) return false;
+
+    // 1. Direct cell balancing entity prefix (e.g. binary_sensor.jk_bms_cell_1_balancing)
+    if (balancingPrefix) {
+      const bEntity = this._resolveCellEntityId(balancingPrefix, cellIdx);
+      const stateObj = this._hass.states[bEntity];
+      if (stateObj) {
+        const s = String(stateObj.state).toLowerCase();
+        if (s === 'on' || s === 'true' || s === '1' || s === 'balancing' || s === 'active') {
+          return true;
+        }
+      }
+    }
+
+    // 2. Global active balancer entity (e.g. sensor containing "1, 3, 5" or [1, 3, 5])
+    if (balancerEntity) {
+      const gState = this._hass.states[balancerEntity];
+      if (gState) {
+        const s = String(gState.state).toLowerCase();
+        const regex = new RegExp(`\\b${cellIdx}\\b`);
+        if (regex.test(s) && s !== 'off' && s !== 'none' && s !== 'false' && s !== 'unavailable') {
+          return true;
+        }
+        const activeCells = gState.attributes?.active_cells || gState.attributes?.balancing_cells;
+        if (Array.isArray(activeCells) && activeCells.includes(cellIdx)) {
+          return true;
+        }
+      }
+    }
+
+    // 3. Entity attribute on the cell voltage entity itself (e.g. balancing: true)
+    if (cellEntityId && this._hass.states[cellEntityId]) {
+      const attrs = this._hass.states[cellEntityId].attributes;
+      if (attrs) {
+        if (attrs.balancing === true || attrs.is_balancing === true || attrs.balance === true) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private _checkCellResistance(
+    cellIdx: number,
+    cellEntityId?: string,
+    resistancePrefix?: string
+  ): number | null {
+    if (!this._hass?.states) return null;
+
+    // 1. Direct resistance sensor (e.g. sensor.jk_bms_cell_1_resistance)
+    if (resistancePrefix) {
+      const rEntity = this._resolveCellEntityId(resistancePrefix, cellIdx);
+      const val = this._getNullableNumber(rEntity);
+      if (val !== null && val >= 0) {
+        return val < 0.1 ? val * 1000 : val;
+      }
+    }
+
+    // 2. Attributes of the cell voltage entity (e.g. resistance: 0.35, internal_resistance: 0.35)
+    if (cellEntityId && this._hass.states[cellEntityId]) {
+      const attrs = this._hass.states[cellEntityId].attributes;
+      if (attrs) {
+        const r = attrs.resistance ?? attrs.internal_resistance ?? attrs.resistance_mohm ?? attrs.mohm;
+        if (typeof r === 'number' && !isNaN(r)) {
+          return r < 0.1 ? r * 1000 : r;
+        }
+        if (typeof r === 'string') {
+          const parsed = parseFloat(r);
+          if (!isNaN(parsed)) return parsed < 0.1 ? parsed * 1000 : parsed;
+        }
+      }
+    }
+    return null;
   }
 
   private _findMatchingEntity(baseEntityId?: string, targetSuffix?: string): string | undefined {
@@ -553,8 +725,9 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   // Service callers for inverter control commands
   private async _handleSelectOption(entityId: string, option: string): Promise<void> {
     if (!this._hass) return;
+    const domain = entityId.startsWith('input_select.') ? 'input_select' : 'select';
     try {
-      await this._hass.callService('select', 'select_option', {
+      await this._hass.callService(domain, 'select_option', {
         entity_id: entityId,
         option,
       });
@@ -565,13 +738,38 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
   private async _handleSetNumber(entityId: string, value: number): Promise<void> {
     if (!this._hass) return;
+    const domain = entityId.startsWith('input_number.') ? 'input_number' : 'number';
     try {
-      await this._hass.callService('number', 'set_value', {
+      await this._hass.callService(domain, 'set_value', {
         entity_id: entityId,
         value,
       });
     } catch (err: any) {
       console.error('Failed to set number value:', err);
+    }
+  }
+
+  private async _handleToggleSwitch(entityId: string, currentState: boolean): Promise<void> {
+    if (!this._hass) return;
+    const domain = entityId.startsWith('input_boolean.') ? 'input_boolean' : 'switch';
+    try {
+      await this._hass.callService(domain, currentState ? 'turn_off' : 'turn_on', {
+        entity_id: entityId,
+      });
+    } catch (err: any) {
+      console.error('Failed to toggle switch:', err);
+    }
+  }
+
+  private async _handlePressButton(entityId: string): Promise<void> {
+    if (!this._hass) return;
+    const domain = entityId.startsWith('input_button.') ? 'input_button' : 'button';
+    try {
+      await this._hass.callService(domain, 'press', {
+        entity_id: entityId,
+      });
+    } catch (err: any) {
+      console.error('Failed to press button:', err);
     }
   }
 
@@ -590,13 +788,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     this._equalizationConfirmPending = false;
     if (this._equalizationConfirmTimer) clearTimeout(this._equalizationConfirmTimer);
 
-    try {
-      await this._hass.callService('switch', currentState ? 'turn_off' : 'turn_on', {
-        entity_id: entityId,
-      });
-    } catch (err: any) {
-      console.error('Failed to toggle switch:', err);
-    }
+    await this._handleToggleSwitch(entityId, currentState);
   }
 
   protected render() {
@@ -605,11 +797,14 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     const activeLang = getActiveLanguage(this._hass, this._config.language);
     const maxPower = this._config.max_power || 4200;
 
-    const hasSolar = Boolean(
-      this._config.show_solar &&
-        this._config.entities.solar_power &&
-        this._config.entities.solar_power.trim() !== ''
+    // Auto-detect solar presence: if show_solar is explicitly set, respect it; otherwise enable if solar_power is configured
+    const hasSolarEntity = Boolean(
+      this._config.entities.solar_power && this._config.entities.solar_power.trim() !== ''
     );
+    const hasSolar =
+      this._config.show_solar !== undefined
+        ? Boolean(this._config.show_solar && hasSolarEntity)
+        : hasSolarEntity;
 
     // Detect if inverter datalogger collector is offline
     const loadUnavailable = this._isEntityUnavailable(this._config.entities.load_power);
@@ -618,13 +813,27 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       : loadUnavailable;
     const isOffline = Boolean(this._hass && loadUnavailable && modeUnavailable);
 
-    // Power values
+    // Power values (supports single signed battery_power OR split battery_charge_power / battery_discharge_power + polarity inversion)
     const solarWatts =
       hasSolar && this._config.entities.solar_power
         ? this._getNumber(this._config.entities.solar_power)
         : 0;
-    const batteryWatts = this._getNumber(this._config.entities.battery_power);
-    const rawGridWatts = this._getNumber(this._config.entities.grid_power);
+
+    let rawBatteryWatts = 0;
+    if (this._config.entities.battery_power) {
+      rawBatteryWatts = this._getNumber(this._config.entities.battery_power);
+    } else if (
+      this._config.entities.battery_charge_power ||
+      this._config.entities.battery_discharge_power
+    ) {
+      const chgW = this._getNumber(this._config.entities.battery_charge_power);
+      const disW = this._getNumber(this._config.entities.battery_discharge_power);
+      rawBatteryWatts = Math.max(0, chgW) - Math.max(0, disW);
+    }
+    const batteryWatts = this._config.invert_battery_power ? -rawBatteryWatts : rawBatteryWatts;
+
+    const rawGridSensorWatts = this._getNumber(this._config.entities.grid_power);
+    const rawGridWatts = this._config.invert_grid_power ? -rawGridSensorWatts : rawGridSensorWatts;
     const gridBreakerPowerEntity = this._resolveEntity(
       this._config.grid_breaker_power_entity,
       DEFAULT_BREAKER_POWER_ENTITY
@@ -641,9 +850,15 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     const batteryVoltage = this._getNullableNumber(
       this._config.battery_voltage_entity || this._config.bms?.voltage_entity
     );
-    const batteryCurrent = this._getNullableNumber(
+    const rawBatteryCurrent = this._getNullableNumber(
       this._config.battery_current_entity || this._config.bms?.current_entity
     );
+    const batteryCurrent =
+      rawBatteryCurrent !== null
+        ? this._config.invert_battery_power
+          ? -rawBatteryCurrent
+          : rawBatteryCurrent
+        : null;
     const gridVoltage =
       this._getNullableNumber(this._config.grid_voltage_entity) ??
       this._getNullableNumber(DEFAULT_BREAKER_VOLTAGE_ENTITY);
@@ -707,8 +922,14 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     }
 
     // Daily energy & self-consumption counters
+    const solarEnergyToday = this._getNullableNumber(
+      this._config.daily_energy?.solar_energy_entity
+    );
     const gridImportEnergyToday = this._getNullableNumber(
       this._config.daily_energy?.grid_import_entity
+    );
+    const gridExportEnergyToday = this._getNullableNumber(
+      this._config.daily_energy?.grid_export_entity
     );
     const loadEnergyToday = this._getNullableNumber(
       this._config.daily_energy?.load_energy_entity
@@ -791,20 +1012,43 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
           const pSoc = this._getNullableNumber(pc.soc_entity);
           const pTemp = this._getNullableNumber(pc.temperature_entity);
           const pCur = this._getNullableNumber(pc.current_entity);
-          const pCount = pc.cell_count || 4;
-          const pPrefix = pc.cell_voltage_prefix || `sensor.battery_${pIdx + 1}_cell_`;
+          const pCount = pc.cell_count !== undefined ? pc.cell_count : 4;
+          const pPrefix = pc.cell_voltage_prefix || '';
+          const firstCandidate = pPrefix ? this._resolveCellEntityId(pPrefix, 1) : '';
+          const shouldBuildPackCells =
+            pCount > 0 &&
+            Boolean(
+              pPrefix &&
+                (!pPrefix.startsWith('sensor.redodo_') ||
+                  Boolean(this._hass?.states?.[firstCandidate]))
+            );
 
           const pCells: CellData[] = [];
-          for (let i = 1; i <= pCount; i++) {
-            const cellEntity = this._resolveCellEntityId(pPrefix, i);
-            let val = this._getNullableNumber(cellEntity) ?? 0;
-            if (val > 100) val = val / 1000;
-            pCells.push({
-              index: globalCellIdx++,
-              packCellIndex: i,
-              voltage: val > 0 ? val : 0,
-              rawEntityId: cellEntity,
-            });
+          if (shouldBuildPackCells) {
+            for (let i = 1; i <= pCount; i++) {
+              const cellEntity = this._resolveCellEntityId(pPrefix, i);
+              let val = this._getNullableNumber(cellEntity) ?? 0;
+              if (val > 100) val = val / 1000;
+              const isBalancing = this._checkCellBalancing(
+                i,
+                cellEntity,
+                pc.cell_balancing_prefix || bms.cell_balancing_prefix,
+                bms.active_balancer_entity
+              );
+              const resistance = this._checkCellResistance(
+                i,
+                cellEntity,
+                pc.cell_resistance_prefix || bms.cell_resistance_prefix
+              );
+              pCells.push({
+                index: globalCellIdx++,
+                packCellIndex: i,
+                voltage: val > 0 ? val : 0,
+                rawEntityId: cellEntity,
+                isBalancing,
+                resistance,
+              });
+            }
           }
 
           bmsPacks.push({
@@ -840,37 +1084,68 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
           }
         }
       } else {
-        const cellCount = bms.cell_count || 8;
+        const cellCount = bms.cell_count !== undefined ? bms.cell_count : 8;
         const prefix = bms.cell_voltage_prefix || 'sensor.redodo_battery_cell_voltage_';
+        const firstCellCandidate = this._resolveCellEntityId(prefix, 1);
+        const hasCellSensors =
+          cellCount > 0 &&
+          Boolean(
+            bms.cell_voltage_prefix ||
+              this._hass?.states?.[firstCellCandidate]
+          );
 
-        for (let i = 1; i <= cellCount; i++) {
-          const entityId = this._resolveCellEntityId(prefix, i);
-          let rawVal = this._getNullableNumber(entityId) ?? 0;
-          if (rawVal > 100) {
-            rawVal = rawVal / 1000;
+        if (hasCellSensors) {
+          for (let i = 1; i <= cellCount; i++) {
+            const entityId = this._resolveCellEntityId(prefix, i);
+            let rawVal = this._getNullableNumber(entityId) ?? 0;
+            if (rawVal > 100) {
+              rawVal = rawVal / 1000;
+            }
+            const isBalancing = this._checkCellBalancing(
+              i,
+              entityId,
+              bms.cell_balancing_prefix,
+              bms.active_balancer_entity
+            );
+            const resistance = this._checkCellResistance(
+              i,
+              entityId,
+              bms.cell_resistance_prefix
+            );
+            bmsCells.push({
+              index: i,
+              packCellIndex: i,
+              voltage: rawVal > 0 ? rawVal : 0,
+              rawEntityId: entityId,
+              isBalancing,
+              resistance,
+            });
           }
-          bmsCells.push({
-            index: i,
-            packCellIndex: i,
-            voltage: rawVal > 0 ? rawVal : 0,
-            rawEntityId: entityId,
-          });
         }
       }
     }
 
-    // Fallback voltage-based SoC estimation ONLY when batteryVoltage is genuinely available (>= 20V)
-    if ((batterySoc === null || isNaN(batterySoc)) && batteryVoltage !== null && batteryVoltage >= 20) {
-      if (batteryVoltage >= 27.2) batterySoc = 100;
-      else if (batteryVoltage >= 26.8) batterySoc = Math.round(80 + ((batteryVoltage - 26.8) / 0.4) * 20);
-      else if (batteryVoltage >= 26.4) batterySoc = Math.round(50 + ((batteryVoltage - 26.4) / 0.4) * 30);
-      else if (batteryVoltage >= 26.0) batterySoc = Math.round(20 + ((batteryVoltage - 26.0) / 0.4) * 30);
-      else if (batteryVoltage >= 24.0) batterySoc = Math.max(5, Math.round(((batteryVoltage - 24.0) / 2.0) * 20));
-      else batterySoc = 5;
+    // Auto-detect nominal system DC bus voltage (12V, 24V, 36V, or 48V)
+    const systemVoltage = detectSystemVoltage(this._config, batteryVoltage, bmsPacks);
+
+    // Universal fallback voltage-based SoC estimation across 12V / 24V / 36V / 48V LiFePO4 systems
+    if (batterySoc === null || isNaN(batterySoc)) {
+      batterySoc = estimateSocFromVoltage(batteryVoltage, systemVoltage);
     }
 
     // Calculate Battery Runtime (Time-to-Empty on discharge / Time-to-Full on charge)
-    const nominalCapWh = bms?.nominal_capacity_wh || 2560;
+    const fullCapAh = bms?.full_capacity_entity
+      ? this._getNullableNumber(bms.full_capacity_entity)
+      : null;
+    const nominalCapWh =
+      bms?.nominal_capacity_wh ||
+      (fullCapAh !== null && fullCapAh > 0
+        ? Math.round(fullCapAh * (systemVoltage === 48 ? 51.2 : systemVoltage === 24 ? 25.6 : 12.8))
+        : systemVoltage === 48
+        ? 5120
+        : systemVoltage === 12
+        ? 1280
+        : 2560);
     const remEnergyEntity = this._resolveEntity(
       bms?.remaining_energy_entity,
       DEFAULT_REMAINING_ENERGY_ENTITY
@@ -940,6 +1215,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               hass: this._hass,
               config: this._config,
               hasSolar,
+              systemVoltage,
               isOffline,
               operatingMode,
               temperature,
@@ -980,6 +1256,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               hass: this._hass,
               config: this._config,
               hasSolar,
+              systemVoltage,
               isOffline,
               gridPosition: this._config.grid_position || 'bottom',
               solarWatts,
@@ -1006,6 +1283,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               hass: this._hass,
               config: this._config,
               hasSolar,
+              systemVoltage,
               batteryVoltage,
               batteryCurrent,
               gridVoltage,
@@ -1030,6 +1308,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               battery2: bat2Data,
               packs: bmsPacks.length > 0 ? bmsPacks : undefined,
               soc: batterySoc,
+              soh: this._getNullableNumber(bms.soh_entity),
               voltage: batteryVoltage,
               current: batteryCurrent,
               temperature: this._getNullableNumber(bms.temperature_entity),
@@ -1078,6 +1357,9 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               },
               onSetNumber: (id, val) => this._handleSetNumber(id, val),
               onToggleEqualization: (id, cur) => this._handleToggleEqualization(id, cur),
+              onToggleSwitch: (id, cur) => this._handleToggleSwitch(id, cur),
+              onPressButton: (id) => this._handlePressButton(id),
+              onEntityMoreInfo: (id) => this._handleEntityClick(id),
             })
           : ''}
 
@@ -1087,8 +1369,10 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               hass: this._hass,
               language: this._config.language,
               dailyConfig: dailyEnergy,
+              solarEnergy: solarEnergyToday,
               loadEnergy: loadEnergyToday,
               gridImportEnergy: gridImportEnergyToday,
+              gridExportEnergy: gridExportEnergyToday,
               batteryChargeEnergy: batChargeEnergyToday,
               batteryDischargeEnergy: batDischargeEnergyToday,
               selfConsumptionDailyEnergy,
@@ -1120,7 +1404,8 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: CARD_NAME,
   name: 'Aninerel Power Card',
-  description: 'Ultimate power card for Aninerel ANL 4200T inverter + Redodo BMS',
+  description:
+    'Universal power card for hybrid inverters (Aninerel, Anenji, Deye, Growatt, PowMr, EASun, Voltronic) & BMS battery banks (LiFePO4, JK, Daly, Redodo, Pylontech)',
   preview: true,
   documentationURL: 'https://github.com/ziffmafiya/aninerel-power-card',
 });

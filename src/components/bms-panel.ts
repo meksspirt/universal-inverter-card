@@ -7,11 +7,14 @@ export interface CellData {
   packCellIndex?: number;
   voltage: number;
   rawEntityId?: string;
+  isBalancing?: boolean;
+  resistance?: number | null; // internal resistance in mΩ
 }
 
 export interface DualBatteryData {
   name: string;
   soc: number | null;
+  soh?: number | null;
   voltage: number | null;
   current?: number | null;
   temperature: number | null;
@@ -28,6 +31,7 @@ export interface BmsPanelProps {
   language?: string;
   bmsConfig: BmsConfig;
   soc: number | null;
+  soh?: number | null;
   voltage?: number | null;
   current?: number | null;
   temperature: number | null;
@@ -93,6 +97,7 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
     language,
     bmsConfig,
     soc,
+    soh = null,
     voltage = null,
     current = null,
     temperature,
@@ -176,22 +181,28 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
   // Compute human-readable topology summary badge (e.g. "2× 12V → 24V (8S)" or "8S • 24V")
   const brandTitle = detectBrandTitle(bmsConfig, hass, language);
   const firstPackNomV = detectNominalPackVoltage(packs[0]);
-  const totalCellsCount = allCells.length;
+  const inferredSeriesCount =
+    allCells.length > 0
+      ? allCells.length
+      : Math.round(firstPackNomV / 3) * (isMultiPack && topology === 'series' ? packs.length : 1);
   let topologySubtitle = '';
   let topologyBadgeText = '';
 
   if (isMultiPack) {
     if (topology === 'series') {
       const totalNomV = packs.reduce((sum, p) => sum + detectNominalPackVoltage(p), 0);
-      topologySubtitle = `${packs.length}× ${firstPackNomV}V → ${totalNomV}V (${totalCellsCount}S)`;
+      topologySubtitle = `${packs.length}× ${firstPackNomV}V → ${totalNomV}V (${inferredSeriesCount}S)`;
       topologyBadgeText = `${packs.length}S • ${localize('bms.series_badge', hass, language)}`;
     } else {
-      topologySubtitle = `${packs.length}× ${firstPackNomV}V ∥ (${totalCellsCount} Cells)`;
+      topologySubtitle =
+        allCells.length > 0
+          ? `${packs.length}× ${firstPackNomV}V ∥ (${allCells.length} Cells)`
+          : `${packs.length}× ${firstPackNomV}V ∥`;
       topologyBadgeText = `${packs.length}P • ${localize('bms.parallel_badge', hass, language)}`;
     }
   } else {
-    topologySubtitle = `${firstPackNomV}V (${totalCellsCount}S)`;
-    topologyBadgeText = `${totalCellsCount}S • ${firstPackNomV}V`;
+    topologySubtitle = `${firstPackNomV}V (${inferredSeriesCount}S)`;
+    topologyBadgeText = `${inferredSeriesCount}S • ${firstPackNomV}V`;
   }
 
   // Pack-to-pack voltage delta (for multi-pack setups)
@@ -270,13 +281,28 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
               ? cell.packCellIndex
               : cell.index;
 
+          const tooltipParts = [
+            `Cell #${displayIdx}: ${hasV ? `${cell.voltage.toFixed(3)} V` : 'Offline'}${isMax ? ' (MAX)' : isMin ? ' (MIN)' : ''}`,
+          ];
+          if (cell.resistance !== null && cell.resistance !== undefined && cell.resistance > 0) {
+            tooltipParts.push(`IR: ${cell.resistance.toFixed(2)} mΩ`);
+          }
+          if (cell.isBalancing) {
+            tooltipParts.push(`⚡ ${localize('bms.balancing', hass, language) || 'Active Balancing'}`);
+          }
+
           return html`
             <div
-              class="cell-col ${stateClass}"
+              class="cell-col ${stateClass} ${cell.isBalancing ? 'is-balancing' : ''}"
               @click=${() => onBmsClick(cell.rawEntityId)}
-              title="Cell #${displayIdx}: ${hasV ? `${cell.voltage.toFixed(3)} V` : 'Offline'} ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
+              title="${tooltipParts.join(' • ')}"
             >
-              <div class="cell-cap"></div>
+              <div class="cell-top-indicator">
+                ${cell.isBalancing
+                  ? html`<span class="cell-balance-tag" title="Active Balancing">⚡</span>`
+                  : ''}
+              </div>
+              <div class="cell-cap ${cell.isBalancing ? 'cap-balancing' : ''}"></div>
               <div class="cell-bar-track">
                 <div class="cell-bar-fill" style="height: ${heightPct}%;"></div>
               </div>
@@ -284,6 +310,9 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
               <span class="cell-id">
                 #${displayIdx}${badgeTag ? html`<span class="cell-tag">${badgeTag}</span>` : ''}
               </span>
+              ${cell.resistance !== null && cell.resistance !== undefined && cell.resistance > 0
+                ? html`<span class="cell-ir-text">${cell.resistance < 10 ? cell.resistance.toFixed(1) : Math.round(cell.resistance)}mΩ</span>`
+                : ''}
             </div>
           `;
         })}
@@ -318,18 +347,22 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
               `
             : ''}
 
-          <span
-            class="bms-delta-pill cell-delta-pill"
-            style="--delta-color: ${cellDeltaColor}"
-            @click=${() => onBmsClick(bmsConfig.cell_delta_entity)}
-            title="${validVoltages.length > 0 ? `Min: ${minV.toFixed(3)}V • Max: ${maxV.toFixed(3)}V • Avg: ${avgV.toFixed(3)}V` : ''}"
-          >
-            <ha-icon icon="mdi:vector-difference"></ha-icon>
-            <span>
-              ${localize('bms.delta_cells', hass, language)}:
-              ${overallCellDelta !== null ? `${overallCellDelta} mV` : '—'}
-            </span>
-          </span>
+          ${allCells.length > 0 || overallCellDelta !== null
+            ? html`
+                <span
+                  class="bms-delta-pill cell-delta-pill"
+                  style="--delta-color: ${cellDeltaColor}"
+                  @click=${() => onBmsClick(bmsConfig.cell_delta_entity)}
+                  title="${validVoltages.length > 0 ? `Min: ${minV.toFixed(3)}V • Max: ${maxV.toFixed(3)}V • Avg: ${avgV.toFixed(3)}V` : ''}"
+                >
+                  <ha-icon icon="mdi:vector-difference"></ha-icon>
+                  <span>
+                    ${localize('bms.delta_cells', hass, language)}:
+                    ${overallCellDelta !== null ? `${overallCellDelta} mV` : '—'}
+                  </span>
+                </span>
+              `
+            : ''}
         </div>
       </div>
 
@@ -419,15 +452,15 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                 ></div>
               </div>
 
-              <!-- Prismatic Cell Equalizer Columns -->
-              ${renderCellColumns(pack.cells)}
+              <!-- Prismatic Cell Equalizer Columns (Rendered when per-cell sensors exist) -->
+              ${pack.cells.length > 0 ? renderCellColumns(pack.cells) : ''}
             </div>
           `;
         })}
       </div>
 
-      <!-- 4. Summary Footer (Min/Avg/Max Cell Voltages + Cycles & Remaining Capacity) -->
-      ${validVoltages.length > 0 || cycleCount !== null || remainingCapacity !== null
+      <!-- 4. Summary Footer (Min/Avg/Max Cell Voltages + Cycles & Remaining Capacity & SOH) -->
+      ${validVoltages.length > 0 || cycleCount !== null || remainingCapacity !== null || soh !== null
         ? html`
             <div class="bms-footer-stats">
               ${validVoltages.length > 1
@@ -447,6 +480,14 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                 : html`<div></div>`}
 
               <div class="bms-footer-right">
+                ${soh !== null && !isNaN(soh)
+                  ? html`
+                      <div class="bms-footer-item" @click=${() => onBmsClick(bmsConfig.soh_entity)}>
+                        <ha-icon icon="mdi:heart-pulse" style="color: #ec4899;"></ha-icon>
+                        <span>${localize('bms.soh', hass, language) || 'SOH'}: <strong>${Math.round(soh)}%</strong></span>
+                      </div>
+                    `
+                  : ''}
                 ${cycleCount !== null && !isNaN(cycleCount)
                   ? html`
                       <div class="bms-footer-item" @click=${() => onBmsClick(bmsConfig.cycle_count_entity)}>

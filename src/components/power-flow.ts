@@ -3,11 +3,13 @@ import { AninerelCardConfig, HomeAssistant } from '../types';
 import { getFlowLayout, calculateFlowPaths, calcFlowDuration, calcStrokeWidth } from '../utils/flow-math';
 import { formatPower } from '../utils/format';
 import { localize } from '../localize/localize';
+import { NominalSystemVoltage } from '../utils/system-profile';
 
 export interface PowerFlowRenderParams {
   hass: HomeAssistant;
   config: AninerelCardConfig;
   hasSolar?: boolean;
+  systemVoltage?: NominalSystemVoltage;
   isOffline?: boolean;
   gridPosition?: 'bottom' | 'top';
   solarWatts?: number;
@@ -38,6 +40,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
     hass,
     config,
     hasSolar = false,
+    systemVoltage = 24,
     isOffline = false,
     gridPosition = 'bottom',
     solarWatts = 0,
@@ -126,7 +129,7 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
 
   const inverterSubLabel = hasSelfPower
     ? `${localize('flow.self', hass, lang)}: ${Math.round(selfConsumptionWatts!)} W${selfSourceLabel}`
-    : `${(maxPower / 1000).toFixed(1)} kW • 24V`;
+    : `${(maxPower / 1000).toFixed(1)} kW • ${systemVoltage}V`;
 
   const rawModeClean =
     operatingMode && operatingMode !== 'N/A' && operatingMode !== 'unavailable'
@@ -205,11 +208,19 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           `
         )}
 
-        <!-- Active animated energy streams + moving glowing particles -->
+        <!-- Active animated energy streams + moving glowing particles with dynamic power intensity -->
         ${flowPaths.map((p) => {
           const duration = calcFlowDuration(p.watts, maxPower, minRate, maxRate, useLog);
           const strokeWidth = calcStrokeWidth(p.watts, maxPower);
           const directionalD = p.reversed ? reverseLinearPath(p.d) : p.d;
+
+          // Dynamic glow and particle intensity scaling based on active wattage
+          const intensityRatio = Math.min(1, Math.max(0.12, Math.abs(p.watts) / maxPower));
+          const glowOpacity = Number((0.18 + intensityRatio * 0.58).toFixed(2));
+          const glowBlur = Number((1.5 + intensityRatio * 3.5).toFixed(1));
+          const glowWidth = Number((strokeWidth + 2 + intensityRatio * 4.5).toFixed(1));
+          const orbHaloRadius = Number((strokeWidth + 1.5 + intensityRatio * 3.2).toFixed(1));
+          const orbCoreRadius = Number((2.0 + intensityRatio * 1.4).toFixed(1));
 
           return svg`
             <g class="active-flow-group" style="color: ${p.color};">
@@ -217,7 +228,8 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
                 class="flow-glow-line"
                 d="${directionalD}"
                 stroke="${p.color}"
-                stroke-width="${strokeWidth + 3}"
+                stroke-width="${glowWidth}"
+                style="opacity: ${glowOpacity}; filter: blur(${glowBlur}px);"
               />
               <path
                 id="${p.id}"
@@ -225,12 +237,22 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
                 d="${directionalD}"
                 stroke="${p.color}"
                 stroke-width="${strokeWidth}"
-                style="--flow-duration: ${duration}s;"
+                style="--flow-duration: ${duration}s; opacity: ${Number((0.78 + intensityRatio * 0.22).toFixed(2))};"
               />
-              <circle class="flow-orb-halo" r="${strokeWidth + 2}" fill="${p.color}">
+              <circle
+                class="flow-orb-halo"
+                r="${orbHaloRadius}"
+                fill="${p.color}"
+                style="opacity: ${Number((0.28 + intensityRatio * 0.42).toFixed(2))};"
+              >
                 <animateMotion dur="${duration}s" repeatCount="indefinite" path="${directionalD}" />
               </circle>
-              <circle class="flow-orb-core" r="2.6" fill="#ffffff">
+              <circle
+                class="flow-orb-core"
+                r="${orbCoreRadius}"
+                fill="#ffffff"
+                style="filter: drop-shadow(0 0 ${Number((3 + intensityRatio * 4).toFixed(1))}px currentColor);"
+              >
                 <animateMotion dur="${duration}s" repeatCount="indefinite" path="${directionalD}" />
               </circle>
             </g>

@@ -1,11 +1,17 @@
 import { html, TemplateResult } from 'lit';
 import { AninerelCardConfig, HomeAssistant } from '../types';
 import { localize } from '../localize/localize';
+import {
+  NominalSystemVoltage,
+  resolveCardTitle,
+  resolveDefaultSubtitle,
+} from '../utils/system-profile';
 
 export interface HeaderBarProps {
   hass?: HomeAssistant;
   config: AninerelCardConfig;
   hasSolar?: boolean;
+  systemVoltage?: NominalSystemVoltage;
   isOffline?: boolean;
   operatingMode: string;
   temperature: number | null;
@@ -26,6 +32,7 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
     hass,
     config,
     hasSolar = false,
+    systemVoltage = 24,
     isOffline = false,
     operatingMode,
     temperature,
@@ -43,18 +50,57 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
 
   const lang = config.language;
 
-  // Operating mode color mapping
+  // Universal operating mode color & icon mapping across Voltronic, Deye, Growatt, PowMr, Victron, etc.
   const modeNormalized = operatingMode ? operatingMode.toLowerCase() : '';
   let modeColor = '#10b981'; // default battery/green
   let modeIcon = 'mdi:battery-charging-60';
 
-  if (modeNormalized.includes('mains') || modeNormalized.includes('line') || modeNormalized.includes('grid')) {
-    modeColor = '#3b82f6';
-    modeIcon = 'mdi:transmission-tower';
+  if (
+    modeNormalized.includes('fault') ||
+    modeNormalized.includes('error') ||
+    modeNormalized.includes('alarm')
+  ) {
+    modeColor = '#ef4444';
+    modeIcon = 'mdi:alert-octagon';
   } else if (modeNormalized.includes('bypass')) {
     modeColor = '#ef4444';
     modeIcon = 'mdi:transit-connection-variant';
-  } else if (modeNormalized.includes('battery') || modeNormalized.includes('off-grid') || modeNormalized.includes('off_grid')) {
+  } else if (
+    modeNormalized.includes('solar') ||
+    modeNormalized.includes('pv') ||
+    modeNormalized.includes('hybrid') ||
+    modeNormalized === 'sbu' ||
+    modeNormalized === 'sub'
+  ) {
+    modeColor = '#f59e0b';
+    modeIcon = 'mdi:solar-power-variant';
+  } else if (
+    modeNormalized.includes('mains') ||
+    modeNormalized.includes('line') ||
+    modeNormalized.includes('grid') ||
+    modeNormalized.includes('utility') ||
+    modeNormalized === 'usb' ||
+    modeNormalized === 'uti'
+  ) {
+    modeColor = '#3b82f6';
+    modeIcon = 'mdi:transmission-tower';
+  } else if (
+    modeNormalized.includes('standby') ||
+    modeNormalized.includes('idle') ||
+    modeNormalized.includes('saving') ||
+    modeNormalized.includes('eco')
+  ) {
+    modeColor = '#94a3b8';
+    modeIcon = 'mdi:power-sleep';
+  } else if (
+    modeNormalized.includes('battery') ||
+    modeNormalized.includes('off-grid') ||
+    modeNormalized.includes('off_grid') ||
+    modeNormalized.includes('inverter') ||
+    modeNormalized.includes('discharg') ||
+    modeNormalized.includes('backup') ||
+    modeNormalized.includes('ups')
+  ) {
     modeColor = '#10b981';
     modeIcon = 'mdi:battery-outline';
   }
@@ -70,9 +116,8 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
   }
 
   const defaultIcon = hasSolar ? 'mdi:solar-power-variant-outline' : 'mdi:home-battery-outline';
-  const defaultSubtitle = hasSolar
-    ? localize('header.subtitle_solar', hass, lang)
-    : localize('header.subtitle_ups', hass, lang);
+  const resolvedTitle = resolveCardTitle(config, hass);
+  const resolvedSubtitle = resolveDefaultSubtitle(config, hasSolar, systemVoltage, hass);
 
   return html`
     <div class="header-bar">
@@ -82,8 +127,8 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
           <ha-icon icon="${config.icon || defaultIcon}"></ha-icon>
         </div>
         <div class="header-title-box">
-          <span class="header-title">${config.title || 'Aninerel ANL 4200T'}</span>
-          <span class="header-subtitle">${config.subtitle || defaultSubtitle}</span>
+          <span class="header-title">${resolvedTitle}</span>
+          <span class="header-subtitle">${resolvedSubtitle}</span>
         </div>
       </div>
 

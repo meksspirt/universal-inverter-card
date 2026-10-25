@@ -1,8 +1,8 @@
 {
   "name": "aninerel-power-card",
-  "version": "1.2.4",
+  "version": "1.3.0",
   "type": "module",
-  "description": "Ultimate Home Assistant custom card for Aninerel ANL 4200T inverter + Redodo BMS",
+  "description": "Universal Home Assistant custom card for hybrid inverters & BMS battery systems",
   "main": "dist/aninerel-power-card.js",
   "scripts": {
     "build": "rollup -c",
