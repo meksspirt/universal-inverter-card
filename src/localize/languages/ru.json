@@ -62,11 +62,16 @@
     "offline": "Нет связи"
   },
   "bms": {
-    "title": "BMS Redodo LiFePO4",
-    "title_dual": "BMS Redodo: 2× 12В Последовательно (24В)",
-    "series_badge": "24В Сборка",
+    "title": "BMS LiFePO4",
+    "title_dual": "BMS: 2× 12В Последовательно (24В)",
+    "series_badge": "Последовательно",
+    "parallel_badge": "Параллельно",
+    "single_badge": "Моноблок",
     "delta_packs": "Δ Батарей",
     "delta_cells": "Δ Ячеек",
+    "min_cell": "Мин",
+    "max_cell": "Макс",
+    "avg_cell": "Сред",
     "temp": "Темп.",
     "cycles": "Циклы",
     "capacity": "Емкость",
@@ -74,7 +79,7 @@
     "balanced": "Сбалансировано",
     "drift": "Легкий дрейф",
     "imbalance": "Разбаланс!",
-    "pack_drift_warn": "Разбаланс между 12В батареями: {delta} мВ ({v1}В против {v2}В). Рекомендуется активный балансир 24В.",
+    "pack_drift_warn": "Разбаланс между батареями: {delta} мВ ({v1}В против {v2}В). Рекомендуется активный балансир.",
     "offline": "Нет данных от BMS"
   },
   "controls": {

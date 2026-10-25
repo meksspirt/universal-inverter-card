@@ -67,13 +67,16 @@ export interface EntitiesConfig {
   load_power: string;     // sensor...load_power (W)
 }
 
+export type BatteryTopology = 'auto' | 'single' | 'series' | 'parallel';
+export type BatteryChemistry = 'auto' | 'lifepo4' | 'li_ion' | 'lto';
+
 export interface SingleBatteryConfig {
   name?: string;
   soc_entity?: string;
   voltage_entity?: string;
   current_entity?: string;
   temperature_entity?: string;
-  cell_count?: number; // default: 4
+  cell_count?: number; // default: 4 for 12V, 8 for 24V, 16 for 48V
   cell_voltage_prefix?: string;
   cycle_count_entity?: string;
   remaining_capacity_entity?: string;
@@ -81,7 +84,11 @@ export interface SingleBatteryConfig {
 }
 
 export interface BmsConfig {
-  soc_entity?: string;                 // sensor.battery_state_of_charge (%)
+  bank_name?: string;                 // Custom BMS / battery brand name (e.g. 'Redodo', 'JK BMS', 'LiFePO4')
+  topology?: BatteryTopology;         // 'auto' | 'single' | 'series' | 'parallel'
+  chemistry?: BatteryChemistry;       // 'auto' | 'lifepo4' | 'li_ion' | 'lto'
+  cell_numbering?: 'continuous' | 'per_pack'; // '#1..#8' across bank vs '#1..#4' per pack
+  soc_entity?: string;                // sensor.battery_state_of_charge (%)
   voltage_entity?: string;            // sensor.battery_total_voltage (V)
   current_entity?: string;            // sensor.battery_current (A)
   temperature_entity?: string;        // sensor.battery_temperature_probe_1 (°C)
@@ -95,23 +102,28 @@ export interface BmsConfig {
   nominal_capacity_wh?: number;       // default: 2560 (Wh for 24V 100Ah LiFePO4)
   cell_delta_entity?: string;         // sensor.battery_cell_delta (mV)
 
-  // Dual Battery Series (2x 12V LiFePO4 = 24V)
+  // Multi-Pack / Dual Battery Support (2x 12V Series, 2x 24V Parallel, 4x 12V Series, etc.)
   dual_battery?: boolean;
   bat1_name?: string;
   bat1_soc_entity?: string;
   bat1_voltage_entity?: string;
   bat1_temperature_entity?: string;
+  bat1_cell_count?: number;
   bat1_cell_prefix?: string;
 
   bat2_name?: string;
   bat2_soc_entity?: string;
   bat2_voltage_entity?: string;
   bat2_temperature_entity?: string;
+  bat2_cell_count?: number;
   bat2_cell_prefix?: string;
 
-  // Nested object support (YAML friendly)
+  // Nested object & array support (1 to N battery packs)
   battery_1?: SingleBatteryConfig;
   battery_2?: SingleBatteryConfig;
+  battery_3?: SingleBatteryConfig;
+  battery_4?: SingleBatteryConfig;
+  packs?: SingleBatteryConfig[];
 }
 
 export interface ControlsConfig {

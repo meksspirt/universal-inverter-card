@@ -4,6 +4,7 @@ import { localize } from '../localize/localize';
 
 export interface CellData {
   index: number;
+  packCellIndex?: number;
   voltage: number;
   rawEntityId?: string;
 }
@@ -12,7 +13,13 @@ export interface DualBatteryData {
   name: string;
   soc: number | null;
   voltage: number | null;
+  current?: number | null;
   temperature: number | null;
+  cycleCount?: number | null;
+  remainingCapacity?: number | null;
+  voltageEntity?: string;
+  socEntity?: string;
+  temperatureEntity?: string;
   cells: CellData[];
 }
 
@@ -32,10 +39,48 @@ export interface BmsPanelProps {
   cells: CellData[];
   onBmsClick: (entityId?: string) => void;
 
-  // Dual battery series setup (2x 12V LiFePO4 = 24V)
+  // Multi-pack / Dual battery setup (1 to N packs in Single, Series, or Parallel)
   isDual?: boolean;
   battery1?: DualBatteryData;
   battery2?: DualBatteryData;
+  packs?: DualBatteryData[];
+}
+
+function detectBrandTitle(bmsConfig: BmsConfig, hass?: HomeAssistant, language?: string): string {
+  if (bmsConfig.bank_name && bmsConfig.bank_name.trim() !== '') {
+    return bmsConfig.bank_name.trim();
+  }
+  const allEntityStrings = JSON.stringify(bmsConfig).toLowerCase();
+  if (allEntityStrings.includes('redodo')) return 'BMS Redodo';
+  if (allEntityStrings.includes('jikong') || allEntityStrings.includes('jk_bms')) return 'JK BMS';
+  if (allEntityStrings.includes('daly')) return 'Daly BMS';
+  if (allEntityStrings.includes('pylon')) return 'Pylontech BMS';
+  if (allEntityStrings.includes('seplos')) return 'Seplos BMS';
+  if (allEntityStrings.includes('pace')) return 'Pace BMS';
+  return localize('bms.title', hass, language);
+}
+
+function detectNominalPackVoltage(pack: DualBatteryData): number {
+  const v = pack.voltage ?? 0;
+  if (v >= 40) return 48;
+  if (v >= 30) return 36;
+  if (v >= 19) return 24;
+  if (v >= 8) return 12;
+  const n = pack.cells.length;
+  if (n >= 13) return 48;
+  if (n >= 10) return 36;
+  if (n >= 6) return 24;
+  return 12;
+}
+
+function formatCellVoltage(v: number): string {
+  if (v <= 0) return '—';
+  // Show 3 decimals if the sensor reports non-zero 3rd decimal digit, otherwise 2 decimals
+  const millivolts = Math.round(v * 1000);
+  if (millivolts % 10 !== 0) {
+    return `${v.toFixed(3)}V`;
+  }
+  return `${v.toFixed(2)}V`;
 }
 
 export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
@@ -44,6 +89,8 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
     language,
     bmsConfig,
     soc,
+    voltage = null,
+    current = null,
     temperature,
     cellDelta,
     cycleCount,
@@ -54,243 +101,348 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
     isDual = false,
     battery1,
     battery2,
+    packs: rawPacks,
   } = props;
 
-  const minRange = 3.0;
-  const maxRange = 3.65;
+  // Build normalized list of packs (supports 1, 2, 3, 4+ packs seamlessly)
+  let packs: DualBatteryData[] = [];
+  if (rawPacks && rawPacks.length > 0) {
+    packs = rawPacks;
+  } else if (isDual && battery1 && battery2) {
+    packs = [battery1, battery2];
+  } else {
+    packs = [
+      {
+        name: bmsConfig.bank_name || localize('bms.single_badge', hass, language),
+        soc,
+        voltage,
+        current,
+        temperature,
+        cycleCount,
+        remainingCapacity,
+        voltageEntity: bmsConfig.voltage_entity,
+        socEntity: bmsConfig.soc_entity,
+        temperatureEntity: bmsConfig.temperature_entity,
+        cells,
+      },
+    ];
+  }
+
+  const isMultiPack = packs.length > 1;
+  const allCells = packs.flatMap((p) => p.cells);
+  const validVoltages = allCells.map((c) => c.voltage).filter((v) => v > 0);
+  const minV = validVoltages.length > 0 ? Math.min(...validVoltages) : 0;
+  const maxV = validVoltages.length > 0 ? Math.max(...validVoltages) : 0;
+  const avgV =
+    validVoltages.length > 0
+      ? validVoltages.reduce((acc, v) => acc + v, 0) / validVoltages.length
+      : 0;
+
+  // Auto-detect chemistry voltage window (LiFePO4 vs Li-Ion/NMC vs LTO)
+  const chem = bmsConfig.chemistry || 'auto';
+  let minRange = 3.0;
+  let maxRange = 3.6;
+  if (chem === 'li_ion' || (chem === 'auto' && avgV > 3.68)) {
+    minRange = 3.1;
+    maxRange = 4.2;
+  } else if (chem === 'lto' || (chem === 'auto' && avgV > 0 && avgV < 2.85)) {
+    minRange = 1.9;
+    maxRange = 2.75;
+  }
   const range = maxRange - minRange;
 
-  // Render DUAL BATTERY SERIES MODE (2x 12V LiFePO4 in Series = 24V)
-  if (isDual && battery1 && battery2) {
-    const v1 = battery1.voltage ?? 0;
-    const v2 = battery2.voltage ?? 0;
-    const hasBothPacks = v1 > 0 && v2 > 0;
-    const packDeltaMv = hasBothPacks ? Math.round(Math.abs(v1 - v2) * 1000) : null;
-
-    let packBalanceColor = '#10b981';
-    let packBalanceText = localize('bms.balanced', hass, language);
-    if (packDeltaMv === null) {
-      packBalanceColor = '#64748b';
-      packBalanceText = localize('bms.offline', hass, language);
-    } else if (packDeltaMv > 200) {
-      packBalanceColor = '#ef4444';
-      packBalanceText = localize('bms.imbalance', hass, language);
-    } else if (packDeltaMv > 80) {
-      packBalanceColor = '#f59e0b';
-      packBalanceText = localize('bms.drift', hass, language);
+  // Detect topology: 'single' | 'series' | 'parallel'
+  let topology: 'single' | 'series' | 'parallel' = 'single';
+  if (isMultiPack) {
+    if (bmsConfig.topology && bmsConfig.topology !== 'auto') {
+      topology = bmsConfig.topology;
+    } else {
+      const validPackVoltages = packs.map((p) => p.voltage ?? 0).filter((v) => v > 0);
+      if (validPackVoltages.length >= 2 && voltage !== null && voltage > 0) {
+        const sumV = validPackVoltages.reduce((a, b) => a + b, 0);
+        const avgPackV = sumV / validPackVoltages.length;
+        topology = Math.abs(voltage - sumV) <= Math.abs(voltage - avgPackV) ? 'series' : 'parallel';
+      } else {
+        const nomV = detectNominalPackVoltage(packs[0]);
+        topology = nomV <= 12 ? 'series' : 'parallel';
+      }
     }
+  }
 
-    // All cells across both batteries for min/max calculation
-    const allCells = [...battery1.cells, ...battery2.cells];
-    const validVoltages = allCells.map((c) => c.voltage).filter((v) => v > 0);
-    const minV = validVoltages.length > 0 ? Math.min(...validVoltages) : 0;
-    const maxV = validVoltages.length > 0 ? Math.max(...validVoltages) : 0;
-    const overallCellDelta =
-      validVoltages.length > 1 ? Math.round((maxV - minV) * 1000) : null;
+  // Compute human-readable topology summary badge (e.g. "2× 12V → 24V (8S)" or "8S • 24V")
+  const brandTitle = detectBrandTitle(bmsConfig, hass, language);
+  const firstPackNomV = detectNominalPackVoltage(packs[0]);
+  const totalCellsCount = allCells.length;
+  let topologySubtitle = '';
+  let topologyBadgeText = '';
 
-    const driftWarnText =
-      packDeltaMv !== null && packDeltaMv > 150
-        ? localize('bms.pack_drift_warn', hass, language)
-            .replace('{delta}', String(packDeltaMv))
-            .replace('{v1}', v1.toFixed(2))
-            .replace('{v2}', v2.toFixed(2))
-        : '';
+  if (isMultiPack) {
+    if (topology === 'series') {
+      const totalNomV = packs.reduce((sum, p) => sum + detectNominalPackVoltage(p), 0);
+      topologySubtitle = `${packs.length}× ${firstPackNomV}V → ${totalNomV}V (${totalCellsCount}S)`;
+      topologyBadgeText = `${packs.length}S • ${localize('bms.series_badge', hass, language)}`;
+    } else {
+      topologySubtitle = `${packs.length}× ${firstPackNomV}V ∥ (${totalCellsCount} Cells)`;
+      topologyBadgeText = `${packs.length}P • ${localize('bms.parallel_badge', hass, language)}`;
+    }
+  } else {
+    topologySubtitle = `${firstPackNomV}V (${totalCellsCount}S)`;
+    topologyBadgeText = `${totalCellsCount}S • ${firstPackNomV}V`;
+  }
 
+  // Pack-to-pack voltage delta (for multi-pack setups)
+  const validPackVoltages = packs.map((p) => p.voltage ?? 0).filter((v) => v > 0);
+  const packDeltaMv =
+    validPackVoltages.length > 1
+      ? Math.round((Math.max(...validPackVoltages) - Math.min(...validPackVoltages)) * 1000)
+      : null;
+
+  let packBalanceColor = '#10b981';
+  let packBalanceText = localize('bms.balanced', hass, language);
+  if (packDeltaMv === null) {
+    packBalanceColor = '#64748b';
+    packBalanceText = localize('bms.offline', hass, language);
+  } else if (packDeltaMv > 200) {
+    packBalanceColor = '#ef4444';
+    packBalanceText = localize('bms.imbalance', hass, language);
+  } else if (packDeltaMv > 80) {
+    packBalanceColor = '#f59e0b';
+    packBalanceText = localize('bms.drift', hass, language);
+  }
+
+  // Cell-to-cell voltage delta
+  const overallCellDelta =
+    cellDelta !== null && !isNaN(cellDelta)
+      ? Math.round(cellDelta < 1 ? cellDelta * 1000 : cellDelta)
+      : validVoltages.length > 1
+      ? Math.round((maxV - minV) * 1000)
+      : null;
+
+  const cellDeltaColor =
+    overallCellDelta === null
+      ? '#64748b'
+      : overallCellDelta > 50
+      ? '#ef4444'
+      : overallCellDelta > 25
+      ? '#f59e0b'
+      : '#10b981';
+
+  const driftWarnText =
+    isMultiPack && packDeltaMv !== null && packDeltaMv > 150 && validPackVoltages.length >= 2
+      ? localize('bms.pack_drift_warn', hass, language)
+          .replace('{delta}', String(packDeltaMv))
+          .replace('{v1}', Math.min(...validPackVoltages).toFixed(2))
+          .replace('{v2}', Math.max(...validPackVoltages).toFixed(2))
+      : '';
+
+  const renderCellColumns = (packCells: CellData[]) => {
+    const cols = Math.min(Math.max(packCells.length, 4), 8);
     return html`
-      <div class="bms-card-section dual-bms-section">
-        <!-- Dual Battery Header -->
-        <div class="bms-header">
-          <div class="bms-header-title">
-            <ha-icon icon="mdi:battery-sync"></ha-icon>
-            <span>${localize('bms.title_dual', hass, language)}</span>
-          </div>
+      <div
+        class="cells-grid"
+        style="--cell-cols: ${cols};"
+        role="group"
+        aria-label="Battery Cell Voltages"
+      >
+        ${packCells.map((cell) => {
+          const hasV = cell.voltage > 0;
+          const isMin = hasV && cell.voltage === minV && validVoltages.length > 1 && minV !== maxV;
+          const isMax = hasV && cell.voltage === maxV && validVoltages.length > 1 && minV !== maxV;
 
-          <div class="bms-header-status">
-            <!-- Midpoint battery drift badge -->
-            <span
-              class="bms-delta-pill"
-              style="--delta-color: ${packBalanceColor}"
-              title="${packBalanceText}"
-            >
-              <ha-icon icon="mdi:scale-balance"></ha-icon>
-              <span>
-                ${localize('bms.delta_packs', hass, language)}:
-                ${packDeltaMv !== null ? `${packDeltaMv} mV` : '—'}
-              </span>
-            </span>
+          // Hybrid height calculation: combines absolute chemistry state + relative cell contrast
+          let heightPct = 8;
+          if (hasV) {
+            const absRatio = Math.max(0, Math.min(1, (cell.voltage - minRange) / range));
+            const spread = maxV - minV;
+            const relRatio = spread > 0.002 ? (cell.voltage - minV) / spread : 0.5;
+            const blended = absRatio * 0.72 + relRatio * 0.28;
+            heightPct = Math.max(18, Math.min(98, Math.round(blended * 100)));
+          }
 
-            <!-- Cell delta badge -->
-            <span
-              class="bms-delta-pill cell-delta-pill"
-              style="--delta-color: ${overallCellDelta === null ? '#64748b' : overallCellDelta > 40 ? '#f59e0b' : '#10b981'}"
-              title="Delta between highest and lowest cell"
+          const stateClass = !hasV ? 'cell-offline' : isMax ? 'cell-max' : isMin ? 'cell-min' : 'cell-nom';
+          const badgeTag = isMax ? '▲' : isMin ? '▼' : '';
+          const displayIdx =
+            bmsConfig.cell_numbering === 'per_pack' && cell.packCellIndex
+              ? cell.packCellIndex
+              : cell.index;
+
+          return html`
+            <div
+              class="cell-col ${stateClass}"
+              @click=${() => onBmsClick(cell.rawEntityId)}
+              title="Cell #${displayIdx}: ${hasV ? `${cell.voltage.toFixed(3)} V` : 'Offline'} ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
             >
-              <span>
-                ${localize('bms.delta_cells', hass, language)}:
-                ${overallCellDelta !== null ? `${overallCellDelta} mV` : '—'}
+              <div class="cell-cap"></div>
+              <div class="cell-bar-track">
+                <div class="cell-bar-fill" style="height: ${heightPct}%;"></div>
+              </div>
+              <span class="cell-voltage">${formatCellVoltage(cell.voltage)}</span>
+              <span class="cell-id">
+                #${displayIdx}${badgeTag ? html`<span class="cell-tag">${badgeTag}</span>` : ''}
               </span>
-            </span>
-          </div>
+            </div>
+          `;
+        })}
+      </div>
+    `;
+  };
+
+  return html`
+    <div class="bms-card-section universal-bms-section">
+      <!-- 1. Universal BMS Bank Header -->
+      <div class="bms-header">
+        <div class="bms-header-title">
+          <ha-icon icon="${isMultiPack ? 'mdi:battery-sync' : 'mdi:battery-heart-variant'}"></ha-icon>
+          <span class="bms-brand-text">${brandTitle}: ${topologySubtitle}</span>
+          <span class="bms-topology-badge">${topologyBadgeText}</span>
         </div>
 
-        <!-- Warning banner if series midpoint drift is significant -->
-        ${driftWarnText
-          ? html`
-              <div class="series-drift-alert">
-                <ha-icon icon="mdi:alert"></ha-icon>
-                <span>${driftWarnText}</span>
-              </div>
-            `
-          : ''}
-
-        <!-- Dual Battery Grid: Battery 1 and Battery 2 -->
-        <div class="dual-battery-container">
-          <!-- BATTERY 1 (12V Pack) -->
-          <div class="pack-column">
-            <div
-              class="pack-header"
-              @click=${() =>
-                onBmsClick(
-                  bmsConfig.bat1_voltage_entity ||
-                    bmsConfig.bat1_soc_entity ||
-                    bmsConfig.battery_1?.voltage_entity ||
-                    bmsConfig.battery_1?.soc_entity
-                )}
-              style="cursor: pointer;"
-              title="${battery1.name}"
-            >
-              <div class="pack-name-row">
-                <span class="pack-name">${battery1.name}</span>
-                ${battery1.soc !== null && !isNaN(battery1.soc)
-                  ? html`<span class="pack-soc-badge">${Math.round(battery1.soc)}%</span>`
-                  : ''}
-              </div>
-              <div class="pack-telemetry-row">
-                <span class="pack-voltage">
-                  ${battery1.voltage && battery1.voltage > 0 ? `${battery1.voltage.toFixed(2)}V` : '—'}
+        <div class="bms-header-status">
+          ${isMultiPack
+            ? html`
+                <span
+                  class="bms-delta-pill"
+                  style="--delta-color: ${packBalanceColor}"
+                  title="${packBalanceText}"
+                >
+                  <ha-icon icon="mdi:scale-balance"></ha-icon>
+                  <span>
+                    ${localize('bms.delta_packs', hass, language)}:
+                    ${packDeltaMv !== null ? `${packDeltaMv} mV` : '—'}
+                  </span>
                 </span>
-                ${battery1.temperature !== null && !isNaN(battery1.temperature)
-                  ? html`<span class="pack-temp">${Math.round(battery1.temperature)}°C</span>`
-                  : ''}
-              </div>
-            </div>
+              `
+            : ''}
 
-            <!-- Cells of Battery 1 -->
-            <div class="cells-grid pack-cells" role="group" aria-label="${battery1.name} Cells">
-              ${battery1.cells.map((cell) => {
-                const hasV = cell.voltage > 0;
-                const isMin = hasV && cell.voltage === minV && validVoltages.length > 1 && minV !== maxV;
-                const isMax = hasV && cell.voltage === maxV && validVoltages.length > 1 && minV !== maxV;
-                const heightPct = hasV
-                  ? Math.max(15, Math.min(100, Math.round(((cell.voltage - minRange) / range) * 100)))
-                  : 8;
-                const barFillColor = !hasV
-                  ? 'rgba(255,255,255,0.12)'
-                  : isMax
-                  ? '#10b981'
-                  : isMin
-                  ? '#3b82f6'
-                  : '#0ea5e9';
-
-                return html`
-                  <div
-                    class="cell-col"
-                    @click=${() => onBmsClick(cell.rawEntityId)}
-                    title="Cell #${cell.index}: ${hasV ? `${cell.voltage.toFixed(3)} V` : 'Offline'} ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
-                  >
-                    <div class="cell-bar-track">
-                      <div
-                        class="cell-bar-fill ${isMax ? 'cell-max' : ''} ${isMin ? 'cell-min' : ''}"
-                        style="height: ${heightPct}%; background-color: ${barFillColor};"
-                      ></div>
-                    </div>
-                    <span class="cell-voltage">${hasV ? `${cell.voltage.toFixed(2)}V` : '—'}</span>
-                    <span class="cell-id">#${cell.index}</span>
-                  </div>
-                `;
-              })}
-            </div>
-          </div>
-
-          <!-- Series Bridge Divider -->
-          <div class="series-bridge" title="24V Series Connection (+ to -)">
-            <span class="bridge-line"></span>
-            <span class="bridge-badge">${localize('bms.series_badge', hass, language)}</span>
-            <span class="bridge-line"></span>
-          </div>
-
-          <!-- BATTERY 2 (12V Pack) -->
-          <div class="pack-column">
-            <div
-              class="pack-header"
-              @click=${() =>
-                onBmsClick(
-                  bmsConfig.bat2_voltage_entity ||
-                    bmsConfig.bat2_soc_entity ||
-                    bmsConfig.battery_2?.voltage_entity ||
-                    bmsConfig.battery_2?.soc_entity
-                )}
-              style="cursor: pointer;"
-              title="${battery2.name}"
-            >
-              <div class="pack-name-row">
-                <span class="pack-name">${battery2.name}</span>
-                ${battery2.soc !== null && !isNaN(battery2.soc)
-                  ? html`<span class="pack-soc-badge">${Math.round(battery2.soc)}%</span>`
-                  : ''}
-              </div>
-              <div class="pack-telemetry-row">
-                <span class="pack-voltage">
-                  ${battery2.voltage && battery2.voltage > 0 ? `${battery2.voltage.toFixed(2)}V` : '—'}
-                </span>
-                ${battery2.temperature !== null && !isNaN(battery2.temperature)
-                  ? html`<span class="pack-temp">${Math.round(battery2.temperature)}°C</span>`
-                  : ''}
-              </div>
-            </div>
-
-            <!-- Cells of Battery 2 -->
-            <div class="cells-grid pack-cells" role="group" aria-label="${battery2.name} Cells">
-              ${battery2.cells.map((cell) => {
-                const hasV = cell.voltage > 0;
-                const isMin = hasV && cell.voltage === minV && validVoltages.length > 1 && minV !== maxV;
-                const isMax = hasV && cell.voltage === maxV && validVoltages.length > 1 && minV !== maxV;
-                const heightPct = hasV
-                  ? Math.max(15, Math.min(100, Math.round(((cell.voltage - minRange) / range) * 100)))
-                  : 8;
-                const barFillColor = !hasV
-                  ? 'rgba(255,255,255,0.12)'
-                  : isMax
-                  ? '#10b981'
-                  : isMin
-                  ? '#3b82f6'
-                  : '#0ea5e9';
-
-                return html`
-                  <div
-                    class="cell-col"
-                    @click=${() => onBmsClick(cell.rawEntityId)}
-                    title="Cell #${cell.index}: ${hasV ? `${cell.voltage.toFixed(3)} V` : 'Offline'} ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
-                  >
-                    <div class="cell-bar-track">
-                      <div
-                        class="cell-bar-fill ${isMax ? 'cell-max' : ''} ${isMin ? 'cell-min' : ''}"
-                        style="height: ${heightPct}%; background-color: ${barFillColor};"
-                      ></div>
-                    </div>
-                    <span class="cell-voltage">${hasV ? `${cell.voltage.toFixed(2)}V` : '—'}</span>
-                    <span class="cell-id">#${cell.index}</span>
-                  </div>
-                `;
-              })}
-            </div>
-          </div>
+          <span
+            class="bms-delta-pill cell-delta-pill"
+            style="--delta-color: ${cellDeltaColor}"
+            @click=${() => onBmsClick(bmsConfig.cell_delta_entity)}
+            title="${validVoltages.length > 0 ? `Min: ${minV.toFixed(3)}V • Max: ${maxV.toFixed(3)}V • Avg: ${avgV.toFixed(3)}V` : ''}"
+          >
+            <ha-icon icon="mdi:vector-difference"></ha-icon>
+            <span>
+              ${localize('bms.delta_cells', hass, language)}:
+              ${overallCellDelta !== null ? `${overallCellDelta} mV` : '—'}
+            </span>
+          </span>
         </div>
+      </div>
 
-        <!-- Optional summary footer if cycleCount or capacity is configured -->
-        ${cycleCount !== null || remainingCapacity !== null
-          ? html`
-              <div class="bms-footer-stats">
+      <!-- 2. Warning Banner if Pack Voltage Drift is High -->
+      ${driftWarnText
+        ? html`
+            <div class="series-drift-alert">
+              <ha-icon icon="mdi:alert"></ha-icon>
+              <span>${driftWarnText}</span>
+            </div>
+          `
+        : ''}
+
+      <!-- 3. Universal Responsive Packs Grid (1, 2, 3, 4+ Packs) -->
+      <div class="bms-packs-grid ${isMultiPack ? 'multi-pack' : 'single-pack'}">
+        ${packs.map((pack, idx) => {
+          const packSoc =
+            pack.soc !== null && !isNaN(pack.soc)
+              ? Math.max(0, Math.min(100, Math.round(pack.soc)))
+              : null;
+          const packSocColor =
+            packSoc === null
+              ? '#64748b'
+              : packSoc > 50
+              ? '#10b981'
+              : packSoc > 20
+              ? '#f59e0b'
+              : '#ef4444';
+
+          const clickEntity =
+            pack.voltageEntity ||
+            pack.socEntity ||
+            (idx === 0
+              ? bmsConfig.bat1_voltage_entity ||
+                bmsConfig.battery_1?.voltage_entity ||
+                bmsConfig.voltage_entity
+              : idx === 1
+              ? bmsConfig.bat2_voltage_entity || bmsConfig.battery_2?.voltage_entity
+              : undefined);
+
+          return html`
+            <div class="pack-column">
+              <!-- Pack Header: Single-line Name + SoC Badge on Left, Voltage + Temp on Right -->
+              <div
+                class="pack-header"
+                @click=${() => onBmsClick(clickEntity)}
+                title="${pack.name}"
+              >
+                <div class="pack-name-row">
+                  <span
+                    class="pack-dot"
+                    style="background: ${packSocColor}; box-shadow: 0 0 6px ${packSocColor};"
+                  ></span>
+                  <span class="pack-name">${pack.name}</span>
+                  ${packSoc !== null
+                    ? html`
+                        <span
+                          class="pack-soc-badge"
+                          style="color: ${packSocColor}; background: color-mix(in srgb, ${packSocColor} 15%, transparent); border-color: color-mix(in srgb, ${packSocColor} 32%, transparent);"
+                        >
+                          ${packSoc}%
+                        </span>
+                      `
+                    : ''}
+                </div>
+
+                <div class="pack-telemetry-row">
+                  <span class="pack-voltage">
+                    ${pack.voltage !== null && pack.voltage > 0 ? `${pack.voltage.toFixed(2)}V` : '—'}
+                  </span>
+                  ${pack.temperature !== null && !isNaN(pack.temperature)
+                    ? html`
+                        <span class="pack-temp">
+                          <ha-icon icon="mdi:thermometer"></ha-icon>
+                          ${Math.round(pack.temperature)}°C
+                        </span>
+                      `
+                    : ''}
+                </div>
+              </div>
+
+              <!-- Thin SoC Progress Bar under Header -->
+              <div class="pack-soc-bar-track">
+                <div
+                  class="pack-soc-bar-fill"
+                  style="width: ${packSoc ?? 0}%; background: linear-gradient(90deg, ${packSocColor} 0%, #38bdf8 100%);"
+                ></div>
+              </div>
+
+              <!-- Prismatic Cell Equalizer Columns -->
+              ${renderCellColumns(pack.cells)}
+            </div>
+          `;
+        })}
+      </div>
+
+      <!-- 4. Summary Footer (Min/Avg/Max Cell Voltages + Cycles & Remaining Capacity) -->
+      ${validVoltages.length > 0 || cycleCount !== null || remainingCapacity !== null
+        ? html`
+            <div class="bms-footer-stats">
+              ${validVoltages.length > 1
+                ? html`
+                    <div class="bms-footer-cells-summary">
+                      <span class="cell-stat-chip min-chip">
+                        ${localize('bms.min_cell', hass, language)}: <strong>${minV.toFixed(3)}V</strong>
+                      </span>
+                      <span class="cell-stat-chip avg-chip">
+                        ${localize('bms.avg_cell', hass, language)}: <strong>${avgV.toFixed(3)}V</strong>
+                      </span>
+                      <span class="cell-stat-chip max-chip">
+                        ${localize('bms.max_cell', hass, language)}: <strong>${maxV.toFixed(3)}V</strong>
+                      </span>
+                    </div>
+                  `
+                : html`<div></div>`}
+
+              <div class="bms-footer-right">
                 ${cycleCount !== null && !isNaN(cycleCount)
                   ? html`
                       <div class="bms-footer-item" @click=${() => onBmsClick(bmsConfig.cycle_count_entity)}>
@@ -305,159 +457,15 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                         <ha-icon icon="mdi:battery-charging-high"></ha-icon>
                         <span>
                           ${localize('bms.remaining', hass, language)}:
-                          <strong>${remainingCapacity.toFixed(1)} Ah</strong>
+                          <strong>${remainingCapacity.toFixed(1)}${fullCapacity ? `/${Math.round(fullCapacity)}` : ''} Ah</strong>
                         </span>
                       </div>
                     `
                   : ''}
               </div>
-            `
-          : ''}
-      </div>
-    `;
-  }
-
-  // Fallback: SINGLE 8-CELL BATTERY MODE
-  const validVoltages = cells.map((c) => c.voltage).filter((v) => v > 0);
-  const minV = validVoltages.length > 0 ? Math.min(...validVoltages) : 0;
-  const maxV = validVoltages.length > 0 ? Math.max(...validVoltages) : 0;
-
-  const deltaMv =
-    cellDelta !== null && !isNaN(cellDelta)
-      ? cellDelta
-      : validVoltages.length > 1
-      ? Math.round((maxV - minV) * 1000)
-      : null;
-
-  let deltaColor = '#10b981';
-  let balanceStatus = localize('bms.balanced', hass, language);
-  if (deltaMv === null) {
-    deltaColor = '#64748b';
-    balanceStatus = localize('bms.offline', hass, language);
-  } else if (deltaMv > 50) {
-    deltaColor = '#ef4444';
-    balanceStatus = localize('bms.imbalance', hass, language);
-  } else if (deltaMv > 20) {
-    deltaColor = '#f59e0b';
-    balanceStatus = localize('bms.drift', hass, language);
-  }
-
-  return html`
-    <div class="bms-card-section">
-      <!-- Section Header -->
-      <div class="bms-header">
-        <div class="bms-header-title">
-          <ha-icon icon="mdi:battery-heart-variant"></ha-icon>
-          <span>${localize('bms.title', hass, language)}</span>
-          ${soc !== null && !isNaN(soc)
-            ? html`<span class="bms-soc-badge">${Math.round(soc)}% SOC</span>`
-            : ''}
-        </div>
-
-        <div class="bms-header-status">
-          <span
-            class="bms-delta-pill"
-            style="--delta-color: ${deltaColor}"
-            @click=${() => onBmsClick(bmsConfig.cell_delta_entity)}
-            title="${balanceStatus}"
-          >
-            <ha-icon icon="mdi:scale-balance"></ha-icon>
-            <span>Δ ${deltaMv !== null ? `${deltaMv} mV` : '—'}</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- Main BMS Body: Cell Bars + Key Telemetry -->
-      <div class="bms-body">
-        <!-- Cell Bar Chart -->
-        <div class="cells-grid" role="group" aria-label="LiFePO4 Cell Voltages">
-          ${cells.map((cell) => {
-            const hasV = cell.voltage > 0;
-            const isMin = hasV && cell.voltage === minV && validVoltages.length > 1 && minV !== maxV;
-            const isMax = hasV && cell.voltage === maxV && validVoltages.length > 1 && minV !== maxV;
-            const heightPct = hasV
-              ? Math.max(15, Math.min(100, Math.round(((cell.voltage - minRange) / range) * 100)))
-              : 8;
-            const barFillColor = !hasV
-              ? 'rgba(255,255,255,0.12)'
-              : isMax
-              ? '#10b981'
-              : isMin
-              ? '#3b82f6'
-              : '#0ea5e9';
-
-            return html`
-              <div
-                class="cell-col"
-                @click=${() => onBmsClick(cell.rawEntityId)}
-                title="Cell #${cell.index}: ${hasV ? `${cell.voltage.toFixed(3)} V` : 'Offline'} ${isMax ? '(MAX)' : isMin ? '(MIN)' : ''}"
-              >
-                <div class="cell-bar-track">
-                  <div
-                    class="cell-bar-fill ${isMax ? 'cell-max' : ''} ${isMin ? 'cell-min' : ''}"
-                    style="height: ${heightPct}%; background-color: ${barFillColor};"
-                  ></div>
-                </div>
-                <span class="cell-voltage">${hasV ? `${cell.voltage.toFixed(2)}V` : '—'}</span>
-                <span class="cell-id">#${cell.index}</span>
-              </div>
-            `;
-          })}
-        </div>
-
-        <!-- Right Side: BMS Telemetry Columns -->
-        <div class="bms-telemetry-panel">
-          ${temperature !== null && !isNaN(temperature)
-            ? html`
-                <div
-                  class="bms-stat-item"
-                  @click=${() => onBmsClick(bmsConfig.temperature_entity)}
-                  title="${localize('bms.temp', hass, language)}"
-                >
-                  <ha-icon icon="mdi:thermometer"></ha-icon>
-                  <div class="bms-stat-text">
-                    <span class="bms-stat-val">${temperature.toFixed(1)}°C</span>
-                    <span class="bms-stat-lbl">${localize('bms.temp', hass, language)}</span>
-                  </div>
-                </div>
-              `
-            : ''}
-
-          ${cycleCount !== null && !isNaN(cycleCount)
-            ? html`
-                <div
-                  class="bms-stat-item"
-                  @click=${() => onBmsClick(bmsConfig.cycle_count_entity)}
-                  title="${localize('bms.cycles', hass, language)}"
-                >
-                  <ha-icon icon="mdi:refresh"></ha-icon>
-                  <div class="bms-stat-text">
-                    <span class="bms-stat-val">${cycleCount}</span>
-                    <span class="bms-stat-lbl">${localize('bms.cycles', hass, language)}</span>
-                  </div>
-                </div>
-              `
-            : ''}
-
-          ${remainingCapacity !== null && !isNaN(remainingCapacity)
-            ? html`
-                <div
-                  class="bms-stat-item"
-                  @click=${() => onBmsClick(bmsConfig.remaining_capacity_entity)}
-                  title="${localize('bms.capacity', hass, language)}"
-                >
-                  <ha-icon icon="mdi:battery-high"></ha-icon>
-                  <div class="bms-stat-text">
-                    <span class="bms-stat-val">
-                      ${Math.round(remainingCapacity)}${fullCapacity ? `/${Math.round(fullCapacity)}` : ''}Ah
-                    </span>
-                    <span class="bms-stat-lbl">${localize('bms.capacity', hass, language)}</span>
-                  </div>
-                </div>
-              `
-            : ''}
-        </div>
-      </div>
+            </div>
+          `
+        : ''}
     </div>
   `;
 }

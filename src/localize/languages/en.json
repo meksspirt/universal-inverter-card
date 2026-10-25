@@ -62,11 +62,16 @@
     "offline": "Offline"
   },
   "bms": {
-    "title": "BMS Redodo LiFePO4",
-    "title_dual": "BMS Redodo: 2× 12V Series (24V)",
-    "series_badge": "24V Series",
+    "title": "BMS LiFePO4",
+    "title_dual": "BMS: 2× 12V Series (24V)",
+    "series_badge": "Series",
+    "parallel_badge": "Parallel",
+    "single_badge": "Single Pack",
     "delta_packs": "Δ Packs",
     "delta_cells": "Δ Cells",
+    "min_cell": "Min",
+    "max_cell": "Max",
+    "avg_cell": "Avg",
     "temp": "Temp",
     "cycles": "Cycles",
     "capacity": "Capacity",
@@ -74,7 +79,7 @@
     "balanced": "Balanced",
     "drift": "Normal Drift",
     "imbalance": "Imbalance Alert",
-    "pack_drift_warn": "Pack voltage drift detected ({delta} mV: {v1}V vs {v2}V). A 24V active battery equalizer is recommended.",
+    "pack_drift_warn": "Pack voltage drift detected ({delta} mV: {v1}V vs {v2}V). An active battery equalizer is recommended.",
     "offline": "BMS telemetry unavailable"
   },
   "controls": {
