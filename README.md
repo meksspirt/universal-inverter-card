@@ -69,7 +69,7 @@ Built from the ground up with **Lit 3** and **TypeScript**, completely standalon
 2. Copy the file to `/config/www/universal-inverter-card.js`.
 3. In Home Assistant, navigate to **Settings** → **Dashboards** → three dots → **Resources**.
 4. Add resource:
-   - **URL**: `/local/universal-inverter-card.js?v=1.3.0`
+   - **URL**: `/local/universal-inverter-card.js?v=1.3.1`
    - **Resource Type**: `JavaScript Module`
 5. Hard-refresh your browser.
 
