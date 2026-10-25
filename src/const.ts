@@ -1,6 +1,6 @@
 import { AninerelCardConfig } from './types';
 
-export const CARD_VERSION = '1.4.1';
+export const CARD_VERSION = '1.4.2';
 export const CARD_NAME = 'universal-inverter-card';
 export const LEGACY_CARD_NAME = 'aninerel-power-card';
 
