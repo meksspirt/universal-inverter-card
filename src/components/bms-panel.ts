@@ -52,11 +52,15 @@ function detectBrandTitle(bmsConfig: BmsConfig, hass?: HomeAssistant, language?:
   }
   const allEntityStrings = JSON.stringify(bmsConfig).toLowerCase();
   if (allEntityStrings.includes('redodo')) return 'BMS Redodo';
+  if (allEntityStrings.includes('growatt')) return 'Growatt BMS';
   if (allEntityStrings.includes('jikong') || allEntityStrings.includes('jk_bms')) return 'JK BMS';
   if (allEntityStrings.includes('daly')) return 'Daly BMS';
   if (allEntityStrings.includes('pylon')) return 'Pylontech BMS';
   if (allEntityStrings.includes('seplos')) return 'Seplos BMS';
   if (allEntityStrings.includes('pace')) return 'Pace BMS';
+  if (allEntityStrings.includes('jbd')) return 'JBD BMS';
+  if (allEntityStrings.includes('deye')) return 'Deye BMS';
+  if (allEntityStrings.includes('felicity')) return 'Felicity BMS';
   return localize('bms.title', hass, language);
 }
 

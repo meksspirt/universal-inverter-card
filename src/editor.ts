@@ -520,7 +520,7 @@ export class AninerelPowerCardEditor extends LitElement {
           },
           {
             name: 'show_bms',
-            label: 'Show Redodo BMS section',
+            label: 'Show Battery Bank & BMS section',
             selector: { boolean: {} },
           },
           {

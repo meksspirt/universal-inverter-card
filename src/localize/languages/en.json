@@ -107,7 +107,7 @@
     "title": "Card Title",
     "entities_group": "⚡ Real-time Power Entities (Required)",
     "params_group": "📊 Electrical Parameters & Telemetry",
-    "bms_group": "🔋 BMS Redodo LiFePO4 Telemetry",
+    "bms_group": "🔋 Battery Bank & BMS Telemetry",
     "controls_group": "🎛️ Inverter Controls & Settings",
     "safety_group": "🛡️ Safety & Diagnostics",
     "energy_group": "📈 Daily Energy Counters",
