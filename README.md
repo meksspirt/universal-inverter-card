@@ -4,6 +4,7 @@
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square)](https://hacs.xyz)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg?style=flat-square)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+[![Open your Home Assistant and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=meksspirt&repository=universal-inverter-card&category=Dashboard)
 
 The ultimate Lovelace custom card for all hybrid solar & off-grid inverters (**Aninerel**, **Anenji**, **Voltronic Axpert**, **EASUN SMG**, **PowMr**, **Growatt**, **Deye**, **Sunsynk**, **MUST**, **Victron MultiPlus**, **SRNE**, **LuxPower**, **Huawei**, **Sofar**) and battery banks / BMS (**LiFePO4**, **Li-Ion**, **LTO**, **JK BMS**, **Daly**, **Redodo**, **JBD**, **Seplos**, **Pylontech**, **Growatt HOPE**, **Pace**, **Felicity**).
 
@@ -52,12 +53,16 @@ Built from the ground up with **Lit 3** and **TypeScript**, completely standalon
 ## 🚀 Installation
 
 ### Option 1: Via HACS (Recommended)
-1. Open **HACS** in your Home Assistant sidebar.
-2. Go to **Frontend** → Click the three dots in the top right corner → **Custom repositories**.
-3. Paste repository URL: `https://github.com/meksspirt/universal-inverter-card`
-4. Set category to **Dashboard** (or **Lovelace**).
-5. Click **Add**, find **Universal Inverter Card**, and click **Download**.
-6. Refresh your browser cache (Ctrl + F5 or Cmd + Shift + R).
+
+[![Open your Home Assistant and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=meksspirt&repository=universal-inverter-card&category=Dashboard)
+
+1. Click the **Open in Home Assistant** badge above to directly open the card installation dialog in HACS.
+2. Or add manually in Home Assistant:
+   - Go to **HACS** → click the three dots in the top right corner → **Custom repositories** (*Пользовательские репозитории*).
+   - Paste repository URL: `https://github.com/meksspirt/universal-inverter-card`
+   - Set category to **Dashboard** (or **Lovelace**).
+   - Click **Add**, find **Universal Inverter Card**, and click **Download**.
+3. Refresh your browser cache (Ctrl + F5 or Cmd + Shift + R).
 
 ### Option 2: Manual Installation
 1. Download `universal-inverter-card.js` from the [Latest Release](https://github.com/meksspirt/universal-inverter-card/releases/latest).
