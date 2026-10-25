@@ -1,9 +1,9 @@
 {
-  "name": "aninerel-power-card",
+  "name": "universal-inverter-card",
   "version": "1.3.0",
   "type": "module",
   "description": "Universal Home Assistant custom card for hybrid inverters & BMS battery systems",
-  "main": "dist/aninerel-power-card.js",
+  "main": "dist/universal-inverter-card.js",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c --watch",

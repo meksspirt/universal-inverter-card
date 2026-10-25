@@ -1,6 +1,6 @@
-# 🔋⚡ Aninerel Power Card for Home Assistant
+# 🔋⚡ Universal Inverter Card for Home Assistant
 
-[![GitHub Release](https://img.shields.io/github/v/release/meksspirt/aninerel-power-card?style=flat-square&color=orange)](https://github.com/meksspirt/aninerel-power-card/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/meksspirt/universal-inverter-card?style=flat-square&color=orange)](https://github.com/meksspirt/universal-inverter-card/releases)
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square)](https://hacs.xyz)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg?style=flat-square)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
@@ -8,6 +8,8 @@
 The ultimate Lovelace custom card for all hybrid solar & off-grid inverters (**Aninerel**, **Anenji**, **Voltronic Axpert**, **EASUN SMG**, **PowMr**, **Growatt**, **Deye**, **Sunsynk**, **MUST**, **Victron MultiPlus**, **SRNE**, **LuxPower**, **Huawei**, **Sofar**) and battery banks / BMS (**LiFePO4**, **Li-Ion**, **LTO**, **JK BMS**, **Daly**, **Redodo**, **JBD**, **Seplos**, **Pylontech**, **Growatt HOPE**, **Pace**, **Felicity**).
 
 Built from the ground up with **Lit 3** and **TypeScript**, completely standalone (100% local, no external CDN dependencies), GPU-accelerated, responsive for both desktop **Panel / Sections Mode** and mobile devices, and fully compatible with **HACS**.
+
+> 💡 **Backward Compatibility**: If you previously used `type: custom:aninerel-power-card`, it continues to work seamlessly as a built-in alias.
 
 ---
 
@@ -52,17 +54,17 @@ Built from the ground up with **Lit 3** and **TypeScript**, completely standalon
 ### Option 1: Via HACS (Recommended)
 1. Open **HACS** in your Home Assistant sidebar.
 2. Go to **Frontend** → Click the three dots in the top right corner → **Custom repositories**.
-3. Paste repository URL: `https://github.com/meksspirt/aninerel-power-card`
+3. Paste repository URL: `https://github.com/meksspirt/universal-inverter-card`
 4. Set category to **Dashboard** (or **Lovelace**).
-5. Click **Add**, find **Aninerel Power Card**, and click **Download**.
+5. Click **Add**, find **Universal Inverter Card**, and click **Download**.
 6. Refresh your browser cache (Ctrl + F5 or Cmd + Shift + R).
 
 ### Option 2: Manual Installation
-1. Download `aninerel-power-card.js` from the [Latest Release](https://github.com/meksspirt/aninerel-power-card/releases/latest).
-2. Copy the file to `/config/www/aninerel-power-card.js`.
+1. Download `universal-inverter-card.js` from the [Latest Release](https://github.com/meksspirt/universal-inverter-card/releases/latest).
+2. Copy the file to `/config/www/universal-inverter-card.js`.
 3. In Home Assistant, navigate to **Settings** → **Dashboards** → three dots → **Resources**.
 4. Add resource:
-   - **URL**: `/local/aninerel-power-card.js?v=1.3.0`
+   - **URL**: `/local/universal-inverter-card.js?v=1.3.0`
    - **Resource Type**: `JavaScript Module`
 5. Hard-refresh your browser.
 
@@ -73,7 +75,7 @@ Built from the ground up with **Lit 3** and **TypeScript**, completely standalon
 ### Example 1: UPS Backup Mode (No Solar, 2× 12V LiFePO4 in Series = 24V)
 
 ```yaml
-type: custom:aninerel-power-card
+type: custom:universal-inverter-card
 title: "Home UPS Power"
 show_solar: false
 grid_position: bottom
@@ -144,7 +146,7 @@ daily_energy:
 ### Example 2: Modern 48V / 51.2V Inverter (Anenji / Deye / Growatt) + Factory CAN Battery (Growatt HOPE / Pylontech)
 
 ```yaml
-type: custom:aninerel-power-card
+type: custom:universal-inverter-card
 title: "Anenji 6.2kW Hybrid"
 system_voltage: 48
 max_power: 6200
@@ -196,7 +198,7 @@ daily_energy:
 ### Example 3: JK BMS with Active Balancing & Cell Resistance (mΩ)
 
 ```yaml
-type: custom:aninerel-power-card
+type: custom:universal-inverter-card
 title: "Solar Power Station"
 
 entities:
@@ -226,7 +228,7 @@ bms:
 
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `type` | string | **Required** | Must be `custom:aninerel-power-card` |
+| `type` | string | **Required** | `custom:universal-inverter-card` (or legacy `custom:aninerel-power-card`) |
 | `title` | string | Auto | Card title (auto-detects inverter brand if omitted) |
 | `subtitle` | string | Auto | Card subtitle (auto-formats nominal voltage & kW rating) |
 | `icon` | string | Auto | MDI icon displayed in header box |
@@ -333,8 +335,8 @@ Built-in automated translation and decoding for all standard Voltronic / Axpert 
 
 ```bash
 # Clone the repository
-git clone https://github.com/meksspirt/aninerel-power-card.git
-cd aninerel-power-card
+git clone https://github.com/meksspirt/universal-inverter-card.git
+cd universal-inverter-card
 
 # Install dependencies
 npm install

@@ -1,6 +1,6 @@
 {
-  "name": "Aninerel Power Card",
+  "name": "Universal Inverter Card",
   "render_readme": true,
   "content_in_root": true,
-  "filename": "aninerel-power-card.js"
+  "filename": "universal-inverter-card.js"
 }

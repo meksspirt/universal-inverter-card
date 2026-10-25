@@ -1,7 +1,7 @@
 import { LitElement, html, PropertyValues } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { HomeAssistant, AninerelCardConfig, LovelaceCard } from './types';
-import { CARD_NAME, CARD_VERSION, DEFAULT_CONFIG, STUB_CONFIG } from './const';
+import { CARD_NAME, LEGACY_CARD_NAME, CARD_VERSION, DEFAULT_CONFIG, STUB_CONFIG } from './const';
 import { cardStyles } from './styles';
 import { renderHeaderBar } from './components/header-bar';
 import { renderPowerFlow } from './components/power-flow';
@@ -17,7 +17,7 @@ import { detectSystemVoltage, estimateSocFromVoltage } from './utils/system-prof
 
 // Console banner on load
 console.info(
-  `%c  ANINEREL-POWER-CARD  %c  Version ${CARD_VERSION}  `,
+  `%c  UNIVERSAL-INVERTER-CARD  %c  Version ${CARD_VERSION}  `,
   'color: #ffffff; background: #F59E0B; font-weight: bold; border-radius: 3px 0 0 3px;',
   'color: #000000; background: #10B981; font-weight: bold; border-radius: 0 3px 3px 0;'
 );
@@ -187,7 +187,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   // 6. Connect Visual GUI Configuration Editor
   public static async getConfigElement(): Promise<HTMLElement> {
     await import('./editor');
-    return document.createElement('aninerel-power-card-editor');
+    return document.createElement('universal-inverter-card-editor');
   }
 
   // Fetches real 24-hour historical records from Home Assistant via WebSocket/API
@@ -1403,9 +1403,21 @@ declare global {
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: CARD_NAME,
-  name: 'Aninerel Power Card',
+  name: 'Universal Inverter Card',
   description:
     'Universal power card for hybrid inverters (Aninerel, Anenji, Deye, Growatt, PowMr, EASun, Voltronic) & BMS battery banks (LiFePO4, JK, Daly, Redodo, Pylontech)',
   preview: true,
-  documentationURL: 'https://github.com/meksspirt/aninerel-power-card',
+  documentationURL: 'https://github.com/meksspirt/universal-inverter-card',
 });
+window.customCards.push({
+  type: LEGACY_CARD_NAME,
+  name: 'Aninerel Power Card (Legacy Alias)',
+  description: 'Backward-compatible alias for Universal Inverter Card',
+  preview: false,
+  documentationURL: 'https://github.com/meksspirt/universal-inverter-card',
+});
+
+// Register backward-compatible element alias so existing Lovelace dashboards never break
+if (typeof customElements !== 'undefined' && !customElements.get(LEGACY_CARD_NAME)) {
+  customElements.define(LEGACY_CARD_NAME, class extends AninerelPowerCard {});
+}

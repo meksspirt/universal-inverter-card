@@ -3,7 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, AninerelCardConfig } from './types';
 import { localize } from './localize/localize';
 
-@customElement('aninerel-power-card-editor')
+@customElement('universal-inverter-card-editor')
 export class AninerelPowerCardEditor extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: AninerelCardConfig;
@@ -657,4 +657,9 @@ export class AninerelPowerCardEditor extends LitElement {
       ></ha-form>
     `;
   }
+}
+
+// Backward compatibility alias for editor element
+if (typeof customElements !== 'undefined' && !customElements.get('aninerel-power-card-editor')) {
+  customElements.define('aninerel-power-card-editor', class extends AninerelPowerCardEditor {});
 }

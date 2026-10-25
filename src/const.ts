@@ -1,7 +1,8 @@
 import { AninerelCardConfig } from './types';
 
 export const CARD_VERSION = '1.3.0';
-export const CARD_NAME = 'aninerel-power-card';
+export const CARD_NAME = 'universal-inverter-card';
+export const LEGACY_CARD_NAME = 'aninerel-power-card';
 
 export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
   max_power: 4200,
@@ -35,7 +36,7 @@ export const DEFAULT_COLORS = {
 };
 
 export const STUB_CONFIG: Record<string, any> = {
-  type: 'custom:aninerel-power-card',
+  type: 'custom:universal-inverter-card',
   title: 'Aninerel ANL 4200T',
   show_solar: false,
   entities: {

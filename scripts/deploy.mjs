@@ -41,6 +41,7 @@ async function deploy() {
   console.log(`📦 Bundled file size: ${(jsContent.length / 1024).toFixed(1)} KB`);
 
   // Copy to repository root for release/HACS
+  fs.writeFileSync(path.join(ROOT_DIR, 'universal-inverter-card.js'), jsContent);
   fs.writeFileSync(path.join(ROOT_DIR, 'aninerel-power-card.js'), jsContent);
 
   // 1. Copy bundle and gzip to HA Samba share

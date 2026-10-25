@@ -7,12 +7,20 @@ const isProduction = !process.env.ROLLUP_WATCH;
 
 export default {
   input: 'src/aninerel-power-card.ts',
-  output: {
-    file: 'dist/aninerel-power-card.js',
-    format: 'es',
-    sourcemap: !isProduction,
-    inlineDynamicImports: true,
-  },
+  output: [
+    {
+      file: 'dist/universal-inverter-card.js',
+      format: 'es',
+      sourcemap: !isProduction,
+      inlineDynamicImports: true,
+    },
+    {
+      file: 'dist/aninerel-power-card.js',
+      format: 'es',
+      sourcemap: !isProduction,
+      inlineDynamicImports: true,
+    },
+  ],
   plugins: [
     resolve({ browser: true, preferBuiltins: false }),
     typescript({
