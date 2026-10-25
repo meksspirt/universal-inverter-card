@@ -1407,5 +1407,5 @@ window.customCards.push({
   description:
     'Universal power card for hybrid inverters (Aninerel, Anenji, Deye, Growatt, PowMr, EASun, Voltronic) & BMS battery banks (LiFePO4, JK, Daly, Redodo, Pylontech)',
   preview: true,
-  documentationURL: 'https://github.com/ziffmafiya/aninerel-power-card',
+  documentationURL: 'https://github.com/meksspirt/aninerel-power-card',
 });

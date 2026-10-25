@@ -1,6 +1,6 @@
 # 🔋⚡ Aninerel Power Card for Home Assistant
 
-[![GitHub Release](https://img.shields.io/github/v/release/ziffmafiya/aninerel-power-card?style=flat-square&color=orange)](https://github.com/ziffmafiya/aninerel-power-card/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/meksspirt/aninerel-power-card?style=flat-square&color=orange)](https://github.com/meksspirt/aninerel-power-card/releases)
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square)](https://hacs.xyz)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg?style=flat-square)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
@@ -52,17 +52,17 @@ Built from the ground up with **Lit 3** and **TypeScript**, completely standalon
 ### Option 1: Via HACS (Recommended)
 1. Open **HACS** in your Home Assistant sidebar.
 2. Go to **Frontend** → Click the three dots in the top right corner → **Custom repositories**.
-3. Paste repository URL: `https://github.com/ziffmafiya/aninerel-power-card`
+3. Paste repository URL: `https://github.com/meksspirt/aninerel-power-card`
 4. Set category to **Dashboard** (or **Lovelace**).
 5. Click **Add**, find **Aninerel Power Card**, and click **Download**.
 6. Refresh your browser cache (Ctrl + F5 or Cmd + Shift + R).
 
 ### Option 2: Manual Installation
-1. Download `aninerel-power-card.js` from the [Latest Release](https://github.com/ziffmafiya/aninerel-power-card/releases/latest).
+1. Download `aninerel-power-card.js` from the [Latest Release](https://github.com/meksspirt/aninerel-power-card/releases/latest).
 2. Copy the file to `/config/www/aninerel-power-card.js`.
 3. In Home Assistant, navigate to **Settings** → **Dashboards** → three dots → **Resources**.
 4. Add resource:
-   - **URL**: `/local/aninerel-power-card.js?v=1.2.4`
+   - **URL**: `/local/aninerel-power-card.js?v=1.3.0`
    - **Resource Type**: `JavaScript Module`
 5. Hard-refresh your browser.
 
@@ -333,7 +333,7 @@ Built-in automated translation and decoding for all standard Voltronic / Axpert 
 
 ```bash
 # Clone the repository
-git clone https://github.com/ziffmafiya/aninerel-power-card.git
+git clone https://github.com/meksspirt/aninerel-power-card.git
 cd aninerel-power-card
 
 # Install dependencies
