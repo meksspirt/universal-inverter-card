@@ -1,12 +1,16 @@
 import { LitElement, html, css, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, AninerelCardConfig } from './types';
-import { localize } from './localize/localize';
+import { localize, getActiveLanguage } from './localize/localize';
+import { discoverDevices, autoBindEntitiesFromDevices } from './utils/auto-discovery';
 
 @customElement('universal-inverter-card-editor')
 export class AninerelPowerCardEditor extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: AninerelCardConfig;
+  @state() private _selectedInverterPrefix = '';
+  @state() private _selectedBmsPrefix = '';
+  @state() private _autoBindMessage = '';
 
   public setConfig(config: AninerelCardConfig): void {
     const copy = JSON.parse(JSON.stringify(config || {}));
@@ -206,6 +210,7 @@ export class AninerelPowerCardEditor extends LitElement {
                   { value: 'battery_autonomy', label: 'Battery Autonomy % (Daily Load Powered by Battery)' },
                   { value: 'self_sufficiency', label: 'Solar Self-Sufficiency % (Autarky)' },
                   { value: 'inverter_load', label: 'Inverter Load %' },
+                  { value: 'conversion_efficiency', label: 'Real-Time Inverter Conversion Efficiency % (КПД)' },
                 ],
               },
             },
@@ -630,15 +635,115 @@ export class AninerelPowerCardEditor extends LitElement {
             label: 'Show diagnostic alerts & warnings',
             selector: { boolean: {} },
           },
+          {
+            name: 'show_blackbox',
+            label: 'Show Black-Box Event Logger & Peak Telemetry (Черный ящик)',
+            selector: { boolean: {} },
+          },
         ],
       },
     ];
+  }
+
+  private _handleAutoBind(): void {
+    if (!this.hass || !this._config) return;
+    const { inverters, bmsList } = discoverDevices(this.hass);
+    const invPrefix = this._selectedInverterPrefix || inverters[0]?.prefix;
+    const bmsPrefix = this._selectedBmsPrefix || bmsList[0]?.prefix;
+
+    const result = autoBindEntitiesFromDevices(this._config, this.hass, invPrefix, bmsPrefix);
+    this._config = result.updatedConfig;
+
+    const lang = getActiveLanguage(this.hass, this._config?.language);
+    this._autoBindMessage =
+      lang === 'ru'
+        ? `✅ Авто-привязано ${result.boundCount} сенсоров (Инвертор: ${result.inverterMatched}, BMS: ${result.bmsMatched}${result.detectedDualBms ? ' • 2× АКБ' : ''})`
+        : `✅ Auto-bound ${result.boundCount} entities (Inverter: ${result.inverterMatched}, BMS: ${result.bmsMatched}${result.detectedDualBms ? ' • Dual Pack' : ''})`;
+
+    const event = new CustomEvent('config-changed', {
+      detail: { config: result.updatedConfig },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   static styles = css`
     ha-form {
       display: block;
       padding: 12px 0;
+    }
+    .autobind-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.1));
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .autobind-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--primary-text-color);
+      margin-bottom: 6px;
+    }
+    .autobind-desc {
+      font-size: 12px;
+      color: var(--secondary-text-color);
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .autobind-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .autobind-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .autobind-field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--secondary-text-color);
+    }
+    .autobind-select {
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--divider-color, rgba(255, 255, 255, 0.2));
+      background: var(--card-background-color, #1e293b);
+      color: var(--primary-text-color, #fff);
+      font-size: 12px;
+    }
+    .autobind-btn {
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #f59e0b, #10b981);
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.15s ease;
+    }
+    .autobind-btn:hover {
+      opacity: 0.92;
+    }
+    .autobind-msg {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #10b981;
+      text-align: center;
     }
   `;
 
@@ -647,7 +752,65 @@ export class AninerelPowerCardEditor extends LitElement {
       return html``;
     }
 
+    const lang = getActiveLanguage(this.hass, this._config?.language);
+    const { inverters, bmsList } = discoverDevices(this.hass);
+    const curInv = this._selectedInverterPrefix || inverters[0]?.prefix || '';
+    const curBms = this._selectedBmsPrefix || bmsList[0]?.prefix || '';
+
     return html`
+      ${inverters.length > 0 || bmsList.length > 0
+        ? html`
+            <div class="autobind-card">
+              <div class="autobind-header">
+                <span>⚡ ${lang === 'ru' ? 'Авто-привязка устройств в 1 клик (Smart Auto-Bind)' : '1-Click Device Auto-Discovery'}</span>
+              </div>
+              <div class="autobind-desc">
+                ${lang === 'ru'
+                  ? 'Выберите обнаруженный инвертор и BMS — карточка автоматически заполнит все 30+ сенсоров мощности, напряжений, ячеек, настроек и ошибок за 1 секунду.'
+                  : 'Select your discovered Inverter and BMS prefix to automatically populate 30+ power, voltage, cell, control, and fault entities in 1 click.'}
+              </div>
+              <div class="autobind-row">
+                <div class="autobind-field">
+                  <label>${lang === 'ru' ? 'Инвертор' : 'Inverter Device'}</label>
+                  <select
+                    class="autobind-select"
+                    .value=${curInv}
+                    @change=${(e: Event) => {
+                      this._selectedInverterPrefix = (e.target as HTMLSelectElement).value;
+                    }}
+                  >
+                    <option value="">${lang === 'ru' ? '— Не менять —' : '— Keep current —'}</option>
+                    ${inverters.map(
+                      (inv) => html`<option value="${inv.prefix}" ?selected=${inv.prefix === curInv}>${inv.label}</option>`
+                    )}
+                  </select>
+                </div>
+                <div class="autobind-field">
+                  <label>${lang === 'ru' ? 'Аккумулятор / BMS' : 'Battery / BMS Device'}</label>
+                  <select
+                    class="autobind-select"
+                    .value=${curBms}
+                    @change=${(e: Event) => {
+                      this._selectedBmsPrefix = (e.target as HTMLSelectElement).value;
+                    }}
+                  >
+                    <option value="">${lang === 'ru' ? '— Не менять —' : '— Keep current —'}</option>
+                    ${bmsList.map(
+                      (b) => html`<option value="${b.prefix}" ?selected=${b.prefix === curBms}>${b.label}</option>`
+                    )}
+                  </select>
+                </div>
+              </div>
+              <button type="button" class="autobind-btn" @click=${() => this._handleAutoBind()}>
+                ✨ ${lang === 'ru' ? 'Авто-заполнить все 30+ полей' : 'Auto-Bind All 30+ Entities'}
+              </button>
+              ${this._autoBindMessage
+                ? html`<div class="autobind-msg">${this._autoBindMessage}</div>`
+                : ''}
+            </div>
+          `
+        : ''}
+
       <ha-form
         .hass=${this.hass}
         .data=${this._config}

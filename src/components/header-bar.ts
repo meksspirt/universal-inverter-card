@@ -17,6 +17,10 @@ export interface HeaderBarProps {
   temperature: number | null;
   selfConsumptionWatts?: number | null;
   selfConsumptionEntity?: string;
+  efficiencyPct?: number | null;
+  thermalLossWatts?: number | null;
+  isCompact?: boolean;
+  onToggleCompact?: () => void;
   gridBreakerState?: string | null;
   gridBreakerEntity?: string;
   isCharging: boolean;
@@ -38,6 +42,10 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
     temperature,
     selfConsumptionWatts,
     selfConsumptionEntity,
+    efficiencyPct = null,
+    thermalLossWatts = null,
+    isCompact = false,
+    onToggleCompact,
     gridBreakerState,
     gridBreakerEntity,
     isCharging,
@@ -166,8 +174,23 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
             `
           : ''}
 
-        <!-- Self-Consumption Power Chip -->
-        ${selfConsumptionWatts !== null && selfConsumptionWatts !== undefined && !isNaN(selfConsumptionWatts) && selfConsumptionWatts > 0
+        <!-- Real-Time Conversion Efficiency & Heat Loss Chip -->
+        ${efficiencyPct !== null && !isNaN(efficiencyPct) && !isOffline
+          ? html`
+              <button
+                type="button"
+                class="status-chip"
+                style="--chip-color: ${efficiencyPct >= 90 ? '#10b981' : efficiencyPct >= 80 ? '#f59e0b' : '#f97316'}"
+                @click=${() => onChipClick(selfConsumptionEntity || config.entities?.load_power)}
+                title="${localize('params.conversion_efficiency', hass, lang)}: ${efficiencyPct.toFixed(1)}%${thermalLossWatts ? ` (${localize('header.heat_loss', hass, lang)}: ${Math.round(thermalLossWatts)}W)` : ''}"
+              >
+                <ha-icon icon="mdi:fire-circle"></ha-icon>
+                <span>
+                  ${localize('header.efficiency', hass, lang)}: ${efficiencyPct.toFixed(1)}%${thermalLossWatts !== null && thermalLossWatts > 0 ? ` • ${Math.round(thermalLossWatts)}W` : ''}
+                </span>
+              </button>
+            `
+          : selfConsumptionWatts !== null && selfConsumptionWatts !== undefined && !isNaN(selfConsumptionWatts) && selfConsumptionWatts > 0
           ? html`
               <button
                 type="button"
@@ -269,6 +292,21 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
                 <ha-icon icon="mdi:check-circle"></ha-icon>
                 <span>${localize('common.ok', hass, lang)}</span>
               </div>
+            `
+          : ''}
+
+        <!-- Quick Compact / Full Mode Toggle Button -->
+        ${onToggleCompact
+          ? html`
+              <button
+                type="button"
+                class="status-chip compact-toggle-chip"
+                style="--chip-color: #38bdf8"
+                @click=${onToggleCompact}
+                title="${localize('header.compact_toggle', hass, lang)}"
+              >
+                <ha-icon icon="${isCompact ? 'mdi:arrow-expand-all' : 'mdi:arrow-collapse-all'}"></ha-icon>
+              </button>
             `
           : ''}
       </div>

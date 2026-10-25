@@ -10,10 +10,12 @@ import { renderBmsPanel, CellData, DualBatteryData } from './components/bms-pane
 import { renderControlsPanel } from './components/controls-panel';
 import { renderEnergyStats } from './components/energy-stats';
 import { renderAlertPanel } from './components/alert-panel';
+import { renderBlackBoxPanel } from './components/black-box-panel';
 import { filterWarningCodeForNoSolar } from './utils/fault-codes';
-import { formatDurationHours } from './utils/format';
 import { getActiveLanguage } from './localize/localize';
 import { detectSystemVoltage, estimateSocFromVoltage } from './utils/system-profile';
+import { calculateConversionEfficiency, calculateSmartRuntime } from './utils/smart-physics';
+import { recordBlackBoxSample, clearBlackBoxState } from './utils/black-box';
 
 // Console banner on load
 console.info(
@@ -41,6 +43,10 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   @state() private _config!: AninerelCardConfig;
   @state() private _hass!: HomeAssistant;
   @state() private _controlsExpanded = false;
+  @state() private _blackBoxExpanded = false;
+  @state() private _compactOverride: boolean | null = null;
+  @state() private _modalOpen = false;
+  @state() private _modalTab: 'bms' | 'telemetry' | 'controls' | 'blackbox' = 'bms';
   @state() private _chargeCurrentPreview: number | null = null;
   @state() private _equalizationConfirmPending = false;
   private _equalizationConfirmTimer?: ReturnType<typeof setTimeout>;
@@ -113,15 +119,19 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
   // 3. Lovelace Sizing for Masonry layout (1 unit = 50px)
   public getCardSize(): number {
-    return this._config?.compact_mode ? 10 : 14;
+    const isCompact =
+      this._compactOverride !== null ? this._compactOverride : Boolean(this._config?.compact_mode);
+    return isCompact ? 6 : 14;
   }
 
   // 4. Modern Sections View Grid Options (HA 2024.3+)
   public getLayoutOptions() {
+    const isCompact =
+      this._compactOverride !== null ? this._compactOverride : Boolean(this._config?.compact_mode);
     return {
-      grid_rows: this._config?.compact_mode ? 10 : 14,
-      grid_columns: 4,
-      grid_min_rows: 8,
+      grid_rows: isCompact ? 6 : 14,
+      grid_columns: isCompact ? 2 : 4,
+      grid_min_rows: isCompact ? 5 : 8,
       grid_min_columns: 2,
     };
   }
@@ -1162,21 +1172,57 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       remainingWh = (Math.max(0, batterySoc) / 100) * nominalCapWh;
     }
 
-    let batteryRuntimeText: string | null = null;
-    if (remainingWh !== null && Math.abs(batteryWatts) > 15) {
-      if (batteryWatts < -15) {
-        // Discharging: usable energy down to 10% SoC reserve
-        const reserveWh = nominalCapWh * 0.1;
-        const usableWh = Math.max(0, remainingWh - reserveWh);
-        const hoursLeft = usableWh / Math.abs(batteryWatts);
-        batteryRuntimeText = formatDurationHours(hoursLeft, activeLang);
-      } else if (batteryWatts > 15 && (batterySoc === null || batterySoc < 99.5)) {
-        // Charging: time until full
-        const neededWh = Math.max(0, nominalCapWh - remainingWh);
-        const hoursToFull = neededWh / batteryWatts;
-        batteryRuntimeText = formatDurationHours(hoursToFull, activeLang);
-      }
-    }
+    const cardKey = (this._config.entities.load_power || 'default').replace(/[^a-zA-Z0-9_]/g, '_');
+
+    // 1. Real-Time Conversion Efficiency & Thermal Loss (W)
+    const efficiencyResult = calculateConversionEfficiency({
+      solarWatts,
+      batteryWatts,
+      gridWatts,
+      loadWatts,
+      selfConsumptionWatts,
+      loadEnergyToday,
+      gridImportEnergyToday,
+      solarEnergyToday,
+      batChargeEnergyToday,
+      batDischargeEnergyToday,
+      selfConsumptionDailyEnergy,
+    });
+
+    // 2. Smart Runtime Predictor (Peukert's Law + EMA Smoothing + Cut-off Voltage Guard + Attribute Dependency)
+    const cutoffVoltageVal = this._getNullableNumber(this._config.controls?.cutoff_voltage_entity);
+    const smartRuntime = calculateSmartRuntime({
+      cardId: cardKey,
+      batteryWatts,
+      batteryVoltage,
+      batteryCurrent,
+      batterySoc,
+      remainingWh,
+      nominalCapWh,
+      systemVoltage,
+      chemistry: bms?.chemistry || 'lifepo4',
+      cutoffVoltage: cutoffVoltageVal,
+      lang: activeLang,
+    });
+    const batteryRuntimeText = smartRuntime.runtimeText;
+
+    // 3. Black-Box Event Logger & Extremes Tracker
+    const cellDeltaVal = this._getNullableNumber(bms?.cell_delta_entity);
+    const blackBoxState = recordBlackBoxSample({
+      cardKey,
+      systemVoltage,
+      maxPower,
+      loadWatts,
+      batteryVoltage,
+      batteryCurrent,
+      gridVoltage,
+      inverterTemp: temperature,
+      cellDeltaMv: cellDeltaVal,
+      isFault,
+      faultCode,
+      isWarning,
+      warningCode,
+    });
 
     // Inverter Load % (configured sensor, auto-discovered sensor, or mathematical fallback)
     const loadPctEntity = this._resolveEntity(
@@ -1207,9 +1253,119 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     const maxChargeCurrentStep =
       typeof chargeCurrentAttrs?.step === 'number' ? chargeCurrentAttrs.step : 1;
 
+    const isCompact =
+      this._compactOverride !== null ? this._compactOverride : Boolean(this._config.compact_mode);
+
+    const openCompactModal = (tab: 'bms' | 'telemetry' | 'controls' | 'blackbox') => {
+      this._modalTab = tab;
+      this._modalOpen = true;
+    };
+
+    const paramsSectionTpl = renderElectricalParams({
+      hass: this._hass,
+      config: this._config,
+      hasSolar,
+      systemVoltage,
+      batteryVoltage,
+      batteryCurrent,
+      gridVoltage,
+      batterySoc,
+      gridImportEnergyToday,
+      loadEnergyToday,
+      batteryDischargeEnergyToday: batDischargeEnergyToday,
+      inverterLoadPercent,
+      efficiencyPct: efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct,
+      thermalLossWatts: efficiencyResult.thermalLossWatts,
+      historyMap: this._historyMap,
+      onParamClick: (id) => this._handleEntityClick(id),
+    });
+
+    const bmsSectionTpl = bms
+      ? renderBmsPanel({
+          hass: this._hass,
+          language: this._config.language,
+          bmsConfig: bms,
+          isDual,
+          battery1: bat1Data,
+          battery2: bat2Data,
+          packs: bmsPacks.length > 0 ? bmsPacks : undefined,
+          soc: batterySoc,
+          soh: this._getNullableNumber(bms.soh_entity),
+          voltage: batteryVoltage,
+          current: batteryCurrent,
+          temperature: this._getNullableNumber(bms.temperature_entity),
+          temperature2: this._getNullableNumber(bms.temperature_2_entity),
+          cycleCount: this._getNullableNumber(bms.cycle_count_entity),
+          remainingCapacity: this._getNullableNumber(bms.remaining_capacity_entity),
+          fullCapacity: this._getNullableNumber(bms.full_capacity_entity),
+          cellDelta: cellDeltaVal,
+          cells: bmsCells,
+          onBmsClick: (id) => this._handleEntityClick(id),
+        })
+      : html``;
+
+    const controlsSectionTpl = controls
+      ? renderControlsPanel({
+          controlsConfig: controls,
+          hass: this._hass,
+          language: this._config.language,
+          expanded: isCompact ? true : this._controlsExpanded,
+          onToggleExpand: () => {
+            this._controlsExpanded = !this._controlsExpanded;
+          },
+          chargeSource: controls.charge_source_entity
+            ? this._getState(controls.charge_source_entity)
+            : undefined,
+          chargeSourceOptions: this._getOptions(controls.charge_source_entity),
+          outputPriority: controls.output_priority_entity
+            ? this._getState(controls.output_priority_entity)
+            : undefined,
+          outputPriorityOptions: this._getOptions(controls.output_priority_entity),
+          maxChargeCurrent: this._getNullableNumber(controls.max_charge_current_entity),
+          maxChargeCurrentPreview: this._chargeCurrentPreview,
+          maxChargeCurrentMin,
+          maxChargeCurrentMax,
+          maxChargeCurrentStep,
+          bulkVoltage: this._getNullableNumber(controls.bulk_voltage_entity),
+          floatVoltage: this._getNullableNumber(controls.float_voltage_entity),
+          isEqualization: controls.equalization_entity
+            ? this._getState(controls.equalization_entity) === 'on'
+            : false,
+          equalizationConfirmPending: this._equalizationConfirmPending,
+          onSelectOption: (id, opt) => this._handleSelectOption(id, opt),
+          onPreviewNumber: (val) => {
+            this._chargeCurrentPreview = val;
+          },
+          onSetNumber: (id, val) => this._handleSetNumber(id, val),
+          onToggleEqualization: (id, cur) => this._handleToggleEqualization(id, cur),
+          onToggleSwitch: (id, cur) => this._handleToggleSwitch(id, cur),
+          onPressButton: (id) => this._handlePressButton(id),
+          onEntityMoreInfo: (id) => this._handleEntityClick(id),
+        })
+      : html``;
+
+    const energySectionTpl = dailyEnergy
+      ? renderEnergyStats({
+          hass: this._hass,
+          language: this._config.language,
+          dailyConfig: dailyEnergy,
+          solarEnergy: solarEnergyToday,
+          loadEnergy: loadEnergyToday,
+          gridImportEnergy: gridImportEnergyToday,
+          gridExportEnergy: gridExportEnergyToday,
+          batteryChargeEnergy: batChargeEnergyToday,
+          batteryDischargeEnergy: batDischargeEnergyToday,
+          selfConsumptionDailyEnergy,
+          selfConsumptionDailyEntity: selfDailyEntity,
+          selfConsumptionMonthlyEnergy,
+          selfConsumptionMonthlyEntity: selfMonthlyEntity,
+          onEnergyClick: (id?: string) => this._handleEntityClick(id),
+        })
+      : html``;
+
     return html`
-      <ha-card class="${this._config.compact_mode ? 'compact' : ''}">
-        <!-- 1. Header Bar with live status chips -->
+      <ha-card class="${isCompact ? 'compact' : ''}">
+        <!-- 1. Header Bar with live status chips & Efficiency -->
         ${this._config.show_header !== false
           ? renderHeaderBar({
               hass: this._hass,
@@ -1221,6 +1377,12 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               temperature,
               selfConsumptionWatts,
               selfConsumptionEntity: selfPowerEntity,
+              efficiencyPct: efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct,
+              thermalLossWatts: efficiencyResult.thermalLossWatts,
+              isCompact,
+              onToggleCompact: () => {
+                this._compactOverride = !isCompact;
+              },
               gridBreakerState,
               gridBreakerEntity,
               isCharging,
@@ -1270,6 +1432,10 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               gridBreakerState,
               inverterLoadPercent,
               batteryRuntimeText,
+              isCriticalCountdown: smartRuntime.isCriticalCountdown,
+              sheddingHint: smartRuntime.sheddingHint,
+              efficiencyPct: efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct,
+              thermalLossWatts: efficiencyResult.thermalLossWatts,
               selfConsumptionWatts,
               operatingMode,
               isFault,
@@ -1277,111 +1443,181 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
             })
           : ''}
 
-        <!-- 4. Electrical Telemetry & Battery SoC / Self-Sufficiency KPI -->
-        ${this._config.show_params !== false
-          ? renderElectricalParams({
-              hass: this._hass,
-              config: this._config,
-              hasSolar,
-              systemVoltage,
-              batteryVoltage,
-              batteryCurrent,
-              gridVoltage,
-              batterySoc,
-              gridImportEnergyToday,
-              loadEnergyToday,
-              batteryDischargeEnergyToday: batDischargeEnergyToday,
-              inverterLoadPercent,
-              historyMap: this._historyMap,
-              onParamClick: (id) => this._handleEntityClick(id),
-            })
-          : ''}
+        ${isCompact
+          ? html`
+              <!-- COMPACT TILE MODE DOCK (Opens Full Details in Modal) -->
+              <div class="compact-dock">
+                <button
+                  type="button"
+                  class="compact-dock-btn"
+                  style="--dock-color: #10b981"
+                  @click=${() => openCompactModal('bms')}
+                >
+                  <ha-icon icon="mdi:battery-heart-variant"></ha-icon>
+                  <span>
+                    BMS${cellDeltaVal !== null ? ` • Δ${Math.round(cellDeltaVal)}mV` : ''}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="compact-dock-btn"
+                  style="--dock-color: #38bdf8"
+                  @click=${() => openCompactModal('telemetry')}
+                >
+                  <ha-icon icon="mdi:chart-line"></ha-icon>
+                  <span>
+                    ${activeLang === 'ru' ? 'КПД & Стат' : 'Telemetry'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="compact-dock-btn"
+                  style="--dock-color: #f59e0b"
+                  @click=${() => openCompactModal('controls')}
+                >
+                  <ha-icon icon="mdi:tune-variant"></ha-icon>
+                  <span>
+                    ${activeLang === 'ru' ? 'Управление' : 'Controls'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="compact-dock-btn"
+                  style="--dock-color: ${blackBoxState.events.length > 0 ? '#ef4444' : '#a855f7'}"
+                  @click=${() => openCompactModal('blackbox')}
+                >
+                  <ha-icon icon="mdi:database-clock-outline"></ha-icon>
+                  <span>
+                    ${activeLang === 'ru' ? 'Черный ящик' : 'Black-Box'}${blackBoxState.events.length > 0 ? ` (${blackBoxState.events.length})` : ''}
+                  </span>
+                </button>
+              </div>
 
-        <!-- 5. Universal BMS Battery Cell Telemetry & Balancing (Single, Series, or Parallel) -->
-        ${this._config.show_bms !== false && bms
-          ? renderBmsPanel({
-              hass: this._hass,
-              language: this._config.language,
-              bmsConfig: bms,
-              isDual,
-              battery1: bat1Data,
-              battery2: bat2Data,
-              packs: bmsPacks.length > 0 ? bmsPacks : undefined,
-              soc: batterySoc,
-              soh: this._getNullableNumber(bms.soh_entity),
-              voltage: batteryVoltage,
-              current: batteryCurrent,
-              temperature: this._getNullableNumber(bms.temperature_entity),
-              temperature2: this._getNullableNumber(bms.temperature_2_entity),
-              cycleCount: this._getNullableNumber(bms.cycle_count_entity),
-              remainingCapacity: this._getNullableNumber(bms.remaining_capacity_entity),
-              fullCapacity: this._getNullableNumber(bms.full_capacity_entity),
-              cellDelta: this._getNullableNumber(bms.cell_delta_entity),
-              cells: bmsCells,
-              onBmsClick: (id) => this._handleEntityClick(id),
-            })
-          : ''}
+              <!-- COMPACT MODE DETAILS MODAL OVERLAY -->
+              ${this._modalOpen
+                ? html`
+                    <div
+                      class="compact-modal-backdrop"
+                      @click=${() => {
+                        this._modalOpen = false;
+                      }}
+                    >
+                      <div
+                        class="compact-modal-dialog"
+                        @click=${(e: Event) => e.stopPropagation()}
+                      >
+                        <div class="compact-modal-header">
+                          <div class="compact-modal-tabs">
+                            <button
+                              type="button"
+                              class="compact-modal-tab ${this._modalTab === 'bms' ? 'active' : ''}"
+                              @click=${() => {
+                                this._modalTab = 'bms';
+                              }}
+                            >
+                              <ha-icon icon="mdi:battery-heart-variant"></ha-icon>
+                              <span>${activeLang === 'ru' ? 'АКБ и Ячейки' : 'BMS & Cells'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              class="compact-modal-tab ${this._modalTab === 'telemetry' ? 'active' : ''}"
+                              @click=${() => {
+                                this._modalTab = 'telemetry';
+                              }}
+                            >
+                              <ha-icon icon="mdi:chart-areaspline"></ha-icon>
+                              <span>${activeLang === 'ru' ? 'Телеметрия и Баланс' : 'Telemetry & Energy'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              class="compact-modal-tab ${this._modalTab === 'controls' ? 'active' : ''}"
+                              @click=${() => {
+                                this._modalTab = 'controls';
+                              }}
+                            >
+                              <ha-icon icon="mdi:tune-variant"></ha-icon>
+                              <span>${activeLang === 'ru' ? 'Управление' : 'Controls'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              class="compact-modal-tab ${this._modalTab === 'blackbox' ? 'active' : ''}"
+                              @click=${() => {
+                                this._modalTab = 'blackbox';
+                              }}
+                            >
+                              <ha-icon icon="mdi:database-clock-outline"></ha-icon>
+                              <span>
+                                ${activeLang === 'ru' ? 'Черный ящик' : 'Black-Box'}
+                                ${blackBoxState.events.length > 0 ? `(${blackBoxState.events.length})` : ''}
+                              </span>
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            class="compact-modal-close"
+                            @click=${() => {
+                              this._modalOpen = false;
+                            }}
+                          >
+                            <ha-icon icon="mdi:close"></ha-icon>
+                          </button>
+                        </div>
+                        <div class="compact-modal-content">
+                          ${this._modalTab === 'bms' ? bmsSectionTpl : ''}
+                          ${this._modalTab === 'telemetry'
+                            ? html`${paramsSectionTpl} ${energySectionTpl}`
+                            : ''}
+                          ${this._modalTab === 'controls' ? controlsSectionTpl : ''}
+                          ${this._modalTab === 'blackbox'
+                            ? renderBlackBoxPanel({
+                                hass: this._hass,
+                                language: this._config.language,
+                                state: blackBoxState,
+                                expanded: true,
+                                forceOpen: true,
+                                onToggleExpand: () => {},
+                                onClear: () => {
+                                  clearBlackBoxState(cardKey);
+                                  this.requestUpdate();
+                                },
+                              })
+                            : ''}
+                        </div>
+                      </div>
+                    </div>
+                  `
+                : ''}
+            `
+          : html`
+              <!-- 4. Electrical Telemetry & Battery SoC / Self-Sufficiency / Efficiency KPI -->
+              ${this._config.show_params !== false ? paramsSectionTpl : ''}
 
-        <!-- 6. Inverter Controls & Automations Panel -->
-        ${this._config.show_controls !== false && controls
-          ? renderControlsPanel({
-              controlsConfig: controls,
-              hass: this._hass,
-              language: this._config.language,
-              expanded: this._controlsExpanded,
-              onToggleExpand: () => {
-                this._controlsExpanded = !this._controlsExpanded;
-              },
-              chargeSource: controls.charge_source_entity
-                ? this._getState(controls.charge_source_entity)
-                : undefined,
-              chargeSourceOptions: this._getOptions(controls.charge_source_entity),
-              outputPriority: controls.output_priority_entity
-                ? this._getState(controls.output_priority_entity)
-                : undefined,
-              outputPriorityOptions: this._getOptions(controls.output_priority_entity),
-              maxChargeCurrent: this._getNullableNumber(controls.max_charge_current_entity),
-              maxChargeCurrentPreview: this._chargeCurrentPreview,
-              maxChargeCurrentMin,
-              maxChargeCurrentMax,
-              maxChargeCurrentStep,
-              bulkVoltage: this._getNullableNumber(controls.bulk_voltage_entity),
-              floatVoltage: this._getNullableNumber(controls.float_voltage_entity),
-              isEqualization: controls.equalization_entity
-                ? this._getState(controls.equalization_entity) === 'on'
-                : false,
-              equalizationConfirmPending: this._equalizationConfirmPending,
-              onSelectOption: (id, opt) => this._handleSelectOption(id, opt),
-              onPreviewNumber: (val) => {
-                this._chargeCurrentPreview = val;
-              },
-              onSetNumber: (id, val) => this._handleSetNumber(id, val),
-              onToggleEqualization: (id, cur) => this._handleToggleEqualization(id, cur),
-              onToggleSwitch: (id, cur) => this._handleToggleSwitch(id, cur),
-              onPressButton: (id) => this._handlePressButton(id),
-              onEntityMoreInfo: (id) => this._handleEntityClick(id),
-            })
-          : ''}
+              <!-- 5. Universal BMS Battery Cell Telemetry & Balancing (Single, Series, or Parallel) -->
+              ${this._config.show_bms !== false && bms ? bmsSectionTpl : ''}
 
-        <!-- 7. Daily Energy Statistics (Today's Production, Consumption & Self-Consumption) -->
-        ${this._config.show_energy !== false && dailyEnergy
-          ? renderEnergyStats({
-              hass: this._hass,
-              language: this._config.language,
-              dailyConfig: dailyEnergy,
-              solarEnergy: solarEnergyToday,
-              loadEnergy: loadEnergyToday,
-              gridImportEnergy: gridImportEnergyToday,
-              gridExportEnergy: gridExportEnergyToday,
-              batteryChargeEnergy: batChargeEnergyToday,
-              batteryDischargeEnergy: batDischargeEnergyToday,
-              selfConsumptionDailyEnergy,
-              selfConsumptionDailyEntity: selfDailyEntity,
-              selfConsumptionMonthlyEnergy,
-              selfConsumptionMonthlyEntity: selfMonthlyEntity,
-              onEnergyClick: (id?: string) => this._handleEntityClick(id),
-            })
-          : ''}
+              <!-- 6. Inverter Controls & Automations Panel -->
+              ${this._config.show_controls !== false && controls ? controlsSectionTpl : ''}
+
+              <!-- 7. Daily Energy Statistics (Today's Production, Consumption & Self-Consumption) -->
+              ${this._config.show_energy !== false && dailyEnergy ? energySectionTpl : ''}
+
+              <!-- 8. Black-Box Peak Loads & Transient Fault Logger -->
+              ${this._config.show_blackbox !== false
+                ? renderBlackBoxPanel({
+                    hass: this._hass,
+                    language: this._config.language,
+                    state: blackBoxState,
+                    expanded: this._blackBoxExpanded,
+                    onToggleExpand: () => {
+                      this._blackBoxExpanded = !this._blackBoxExpanded;
+                    },
+                    onClear: () => {
+                      clearBlackBoxState(cardKey);
+                      this.requestUpdate();
+                    },
+                  })
+                : ''}
+            `}
       </ha-card>
     `;
   }

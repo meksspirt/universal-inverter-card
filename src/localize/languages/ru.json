@@ -14,7 +14,10 @@
     "subtitle_solar": "Гибридный инвертор 24В 4.2 кВт",
     "subtitle_ups": "ИБП квартиры 24В 4.2 кВт",
     "self_power": "ХХ",
-    "input_breaker": "Вход"
+    "efficiency": "КПД",
+    "heat_loss": "Тепло",
+    "input_breaker": "Вход",
+    "compact_toggle": "Компактный / Полный вид"
   },
   "alerts": {
     "offline_title": "Потеряна связь с инвертором (Offline)",
@@ -54,6 +57,7 @@
     "battery_soc": "Заряд АКБ",
     "battery_autonomy": "Автономность АКБ",
     "inverter_load": "Нагрузка инвертора",
+    "conversion_efficiency": "КПД конверсии",
     "self_sufficiency": "Самообеспечение",
     "normal": "Норма",
     "deviated": "Отклонение",

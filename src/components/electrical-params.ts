@@ -20,6 +20,8 @@ export interface ElectricalParamsProps {
   loadEnergyToday: number | null;
   batteryDischargeEnergyToday?: number | null;
   inverterLoadPercent?: number | null;
+  efficiencyPct?: number | null;
+  thermalLossWatts?: number | null;
   historyMap: Map<string, number[]>;
   onParamClick: (entityId?: string) => void;
 }
@@ -144,6 +146,8 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
     loadEnergyToday,
     batteryDischargeEnergyToday,
     inverterLoadPercent,
+    efficiencyPct = null,
+    thermalLossWatts = null,
     historyMap,
     onParamClick,
   } = props;
@@ -227,6 +231,16 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
         ? Math.max(0, Math.min(100, Math.round(inverterLoadPercent)))
         : 0;
     kpiColor = kpiValue < 60 ? '#10b981' : kpiValue < 85 ? '#f59e0b' : '#ef4444';
+  } else if (effectiveKpiMode === 'conversion_efficiency') {
+    kpiTitle = localize('params.conversion_efficiency', hass, lang);
+    kpiTooltip = kpiTitle;
+    kpiIcon = 'mdi:fire-circle';
+    kpiClickEntity = config.kpi_entity || config.self_consumption_power_entity || config.entities?.load_power;
+    kpiValue =
+      efficiencyPct !== null && efficiencyPct !== undefined && !isNaN(efficiencyPct)
+        ? Math.max(0, Math.min(100, Math.round(efficiencyPct)))
+        : 0;
+    kpiColor = kpiValue >= 90 ? '#10b981' : kpiValue >= 80 ? '#f59e0b' : '#f97316';
   } else {
     // 'self_sufficiency'
     kpiTitle = localize('params.self_sufficiency', hass, lang);
@@ -302,7 +316,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
         </div>
       </div>
 
-      <!-- TILE 3: KPI (BATTERY SOC / SELF-SUFFICIENCY / AUTONOMY / LOAD) -->
+      <!-- TILE 3: KPI (BATTERY SOC / SELF-SUFFICIENCY / AUTONOMY / LOAD / EFFICIENCY) -->
       <div
         class="param-tile"
         @click=${() => onParamClick(kpiClickEntity)}
@@ -311,6 +325,23 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
         <div class="param-header">
           <ha-icon icon="${kpiIcon}"></ha-icon>
           <span class="param-title">${kpiTitle}</span>
+          ${efficiencyPct !== null && !isNaN(efficiencyPct) && effectiveKpiMode !== 'conversion_efficiency'
+            ? html`
+                <span
+                  class="param-badge"
+                  style="background: ${efficiencyPct >= 90 ? '#10b98122' : '#f59e0b22'}; color: ${efficiencyPct >= 90 ? '#10b981' : '#f59e0b'}"
+                  title="${localize('params.conversion_efficiency', hass, lang)}: ${efficiencyPct.toFixed(1)}%${thermalLossWatts ? ` (${thermalLossWatts}W)` : ''}"
+                >
+                  ${localize('header.efficiency', hass, lang)} ${Math.round(efficiencyPct)}%
+                </span>
+              `
+            : effectiveKpiMode === 'conversion_efficiency' && thermalLossWatts !== null && thermalLossWatts > 0
+            ? html`
+                <span class="param-badge" style="background: rgba(168, 85, 247, 0.16); color: #c084fc">
+                  🔥 ${Math.round(thermalLossWatts)}W
+                </span>
+              `
+            : ''}
         </div>
         <div class="param-kpi-container">
           <div class="param-main-value kpi-val" style="color: ${kpiColor}">

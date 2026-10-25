@@ -167,6 +167,29 @@ export const flowStyles = css`
     white-space: nowrap;
   }
 
+  .critical-countdown-label {
+    color: #fca5a5 !important;
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: 0.2px;
+  }
+
+  .node-shedding-hint {
+    font-size: 0.61rem;
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.32);
+    border-radius: 999px;
+    padding: 1px 6px;
+    margin-top: 2px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
   /* SOLAR NODE */
   .node-solar { --node-border: var(--solar-color); }
   .node-solar .node-badge {

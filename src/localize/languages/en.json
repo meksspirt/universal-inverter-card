@@ -14,7 +14,10 @@
     "subtitle_solar": "Hybrid 24V 4.2kW Inverter",
     "subtitle_ups": "24V 4.2kW UPS Inverter",
     "self_power": "Self",
-    "input_breaker": "Input"
+    "efficiency": "Eff",
+    "heat_loss": "Loss",
+    "input_breaker": "Input",
+    "compact_toggle": "Toggle Compact / Full View"
   },
   "alerts": {
     "offline_title": "Inverter Collector Offline",
@@ -54,6 +57,7 @@
     "battery_soc": "Battery SoC",
     "battery_autonomy": "Battery Autonomy",
     "inverter_load": "Inverter Load",
+    "conversion_efficiency": "Inverter Efficiency",
     "self_sufficiency": "Self-Sufficiency",
     "normal": "Normal",
     "deviated": "Deviated",

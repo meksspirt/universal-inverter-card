@@ -45,8 +45,19 @@ Built from the ground up with **Lit 3** and **TypeScript**, completely standalon
 * **Complete Knowledge Base**: Built-in bilingual (EN / RU) reference for **F01–F82** fault codes and **W01–W73** warning codes based on Voltronic / Axpert / SMG II / PowMr documentation.
 * **Modbus Bitmask Decoder**: Automatically decomposes multi-bit registers (105, 108, 109) into human-readable component warnings.
 
-### 6. 📈 Daily Energy Balance
-* Proportional color-coded bars for Daily Home Consumption, Solar PV Production, Grid Import, Grid Export, Battery Charge, Battery Discharge, and Inverter Self-Consumption.
+### 6. 📈 Daily Energy Balance & Real-Time Conversion Efficiency
+* **Real-Time Conversion Efficiency (`КПД %` & Thermal Loss `W`)**: Compares DC bus power against AC power and self-consumption in real time, displaying live inverter efficiency (e.g., `88.4%`) and heat dissipation (`115 W`).
+* **Proportional Energy Bars**: Color-coded bars for Daily Home Consumption, Solar PV Production, Grid Import, Grid Export, Battery Charge, Battery Discharge, and Inverter Self-Consumption.
+
+### 7. 🧠 Smart Runtime Predictor (Peukert's Law + Attribute Dependency)
+* **EMA Rolling Window**: Dampens brief appliance startup surges (fridges, pumps) so estimated backup time remains stable.
+* **Peukert's Law & Cut-off Voltage Guard**: Adjusts usable battery capacity based on actual discharge C-rate and inverter low-DC cut-off voltage headroom, preventing false optimism under heavy loads.
+* **Attribute Dependency Precision**: Displays calm hours when `> 5h` (`~6.5h`), hours + minutes between `1–5h` (`2h 15m`), and switches to a high-precision countdown in minutes with cut-off voltage target (`⚠️ 42m to 23.6V`) + **Load Shedding Advisor** (`💡 −200W load adds +25m`) when `< 1h`.
+
+### 8. 📦 Black-Box Event Logger & Compact Tile Mode
+* **Black-Box Telemetry Logger**: Captures transient 2-second night faults (`F01–F82`, `W01–W73`), peak load surges, deep battery voltage sags, and grid blackout/restoration events with timestamps.
+* **Compact Mini / Tile Mode (`compact_mode: true`)**: Collapses the card into a clean 2×2 dashboard widget (Power Flow + SOC + Runtime + Quick Action Dock) while opening full BMS cells, telemetry sparklines, controls, and Black-Box logs in a glassmorphic popup modal on click.
+* **1-Click Device Auto-Discovery**: Select your Inverter and BMS device prefixes in the Visual Editor to automatically bind 30+ entities in 1 second.
 
 ---
 

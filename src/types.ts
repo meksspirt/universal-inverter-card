@@ -214,7 +214,13 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
   grid_breaker_power_entity?: string;
 
   // 3rd Circular Gauge KPI Configuration
-  kpi_mode?: 'auto' | 'battery_soc' | 'battery_autonomy' | 'self_sufficiency' | 'inverter_load';
+  kpi_mode?:
+    | 'auto'
+    | 'battery_soc'
+    | 'battery_autonomy'
+    | 'self_sufficiency'
+    | 'inverter_load'
+    | 'conversion_efficiency';
   kpi_entity?: string;
 
   // Subsections
@@ -246,6 +252,7 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
   show_controls?: boolean;
   show_energy?: boolean;
   show_alerts?: boolean;
+  show_blackbox?: boolean;
 
   // View settings
   compact_mode?: boolean;

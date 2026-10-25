@@ -23,6 +23,10 @@ export interface PowerFlowRenderParams {
   gridBreakerState?: string | null;
   inverterLoadPercent?: number | null;
   batteryRuntimeText?: string | null;
+  isCriticalCountdown?: boolean;
+  sheddingHint?: string | null;
+  efficiencyPct?: number | null;
+  thermalLossWatts?: number | null;
   selfConsumptionWatts?: number | null;
   operatingMode: string;
   isFault: boolean;
@@ -54,6 +58,10 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
     gridBreakerState = null,
     inverterLoadPercent = 0,
     batteryRuntimeText,
+    isCriticalCountdown = false,
+    sheddingHint = null,
+    efficiencyPct = null,
+    thermalLossWatts = null,
     selfConsumptionWatts,
     operatingMode,
     isFault,
@@ -121,14 +129,26 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
     selfSourceLabel = ` ← ${localize('nodes.battery', hass, lang)}`;
   }
 
-  const hasSelfPower =
-    selfConsumptionWatts !== null &&
-    selfConsumptionWatts !== undefined &&
-    !isNaN(selfConsumptionWatts) &&
-    selfConsumptionWatts > 0;
+  const effectiveThermalWatts =
+    thermalLossWatts !== null && !isNaN(thermalLossWatts) && thermalLossWatts > 0
+      ? thermalLossWatts
+      : selfConsumptionWatts;
 
-  const inverterSubLabel = hasSelfPower
-    ? `${localize('flow.self', hass, lang)}: ${Math.round(selfConsumptionWatts!)} W${selfSourceLabel}`
+  const hasSelfPower =
+    effectiveThermalWatts !== null &&
+    effectiveThermalWatts !== undefined &&
+    !isNaN(effectiveThermalWatts) &&
+    effectiveThermalWatts > 0;
+
+  const hasEfficiency =
+    efficiencyPct !== null && efficiencyPct !== undefined && !isNaN(efficiencyPct);
+
+  const inverterSubLabel = hasEfficiency && hasSelfPower
+    ? `${localize('header.efficiency', hass, lang)} ${efficiencyPct!.toFixed(1)}% • ${Math.round(effectiveThermalWatts!)}W`
+    : hasEfficiency
+    ? `${localize('header.efficiency', hass, lang)}: ${efficiencyPct!.toFixed(1)}%`
+    : hasSelfPower
+    ? `${localize('flow.self', hass, lang)}: ${Math.round(effectiveThermalWatts!)} W${selfSourceLabel}`
     : `${(maxPower / 1000).toFixed(1)} kW • ${systemVoltage}V`;
 
   const rawModeClean =
@@ -330,10 +350,13 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
             <span class="node-value" style="color: ${socColor};">
               ${formatPower(Math.abs(batteryWatts))}
             </span>
-            <span class="node-label">
-              ${batteryRuntimeText ? `${batteryStatusText} • ${batteryRuntimeText}` : batteryStatusText}
+            <span class="node-label ${isCriticalCountdown ? 'critical-countdown-label' : ''}">
+              ${batteryRuntimeText
+                ? `${batteryStatusText} • ${isCriticalCountdown ? '⚠️ ' : ''}${batteryRuntimeText}`
+                : batteryStatusText}
             </span>
             ${batterySubText ? html`<span class="node-sub">${batterySubText}</span>` : ''}
+            ${sheddingHint ? html`<span class="node-shedding-hint">${sheddingHint}</span>` : ''}
           </div>
         </div>
 
