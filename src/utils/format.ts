@@ -30,13 +30,21 @@ export function formatTemperature(celsius: number | null | undefined, decimals =
   return `${celsius.toFixed(decimals)} °C`;
 }
 
-export function formatDurationHours(hours: number | null | undefined, lang: 'ru' | 'en' = 'ru'): string | null {
+export function formatDurationHours(
+  hours: number | null | undefined,
+  lang: 'ru' | 'en' | 'uk' = 'uk'
+): string | null {
   if (hours === null || hours === undefined || isNaN(hours) || !isFinite(hours) || hours <= 0) {
     return null;
   }
   const clamped = Math.min(99, hours);
   const h = Math.floor(clamped);
   const m = Math.round((clamped - h) * 60);
+  if (lang === 'uk') {
+    if (h <= 0) return `~${Math.max(1, m)} хв`;
+    if (m <= 0 || h >= 24) return `~${h} год`;
+    return `~${h}г ${m}хв`;
+  }
   if (lang === 'ru') {
     if (h <= 0) return `~${Math.max(1, m)} мин`;
     if (m <= 0 || h >= 24) return `~${h} ч`;

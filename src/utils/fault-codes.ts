@@ -371,11 +371,12 @@ export function getWarningDetail(
   detailsText?: string | null,
   language?: string
 ): { title: string; description: string; isBitmask: boolean; isPv: boolean } {
+  const isUk = language === 'uk';
   const isRu = language === 'ru';
   if (code === 0 || isNaN(code)) {
     return {
-      title: isRu ? 'Нет предупреждений' : 'No Warnings',
-      description: isRu ? 'Предупреждения отсутствуют.' : 'Warnings are absent.',
+      title: isUk ? 'Немає попереджень' : isRu ? 'Нет предупреждений' : 'No Warnings',
+      description: isUk ? 'Попередження відсутні.' : isRu ? 'Предупреждения отсутствуют.' : 'Warnings are absent.',
       isBitmask: false,
       isPv: false,
     };
@@ -630,7 +631,7 @@ export const WARNING_CODES_RU: Record<number, { title: string; description: stri
  */
 export function getFaultDetail(code: number, detailsText?: string | null, language?: string): FaultDetail {
   const direct = FAULT_CODES[code];
-  const directRu = language === 'ru' ? FAULT_CODES_RU[code] : undefined;
+  const directRu = (language === 'ru' || language === 'uk') ? FAULT_CODES_RU[code] : undefined;
 
   if (direct) {
     const title = directRu?.title || direct.title;
@@ -638,10 +639,11 @@ export function getFaultDetail(code: number, detailsText?: string | null, langua
     const rec = directRu?.recommendation || direct.recommendation;
 
     if (detailsText && detailsText !== direct.title && detailsText !== directRu?.title && detailsText !== 'N/A' && detailsText !== '0') {
+      const invLabel = language === 'uk' ? 'Інвертор' : language === 'ru' ? 'Инвертор' : 'Inverter';
       return {
         ...direct,
         title,
-        description: `${desc} (${language === 'ru' ? 'Инвертор' : 'Inverter'}: ${detailsText})`,
+        description: `${desc} (${invLabel}: ${detailsText})`,
         recommendation: rec,
       };
     }
@@ -653,14 +655,17 @@ export function getFaultDetail(code: number, detailsText?: string | null, langua
     };
   }
 
+  const isUk = language === 'uk';
   const isRu = language === 'ru';
   return {
     code,
-    title: detailsText || (isRu ? `Код аварии F${code}` : `Fault Code F${code}`),
+    title: detailsText || (isUk ? `Код аварії F${code}` : isRu ? `Код аварии F${code}` : `Fault Code F${code}`),
     description: detailsText
-      ? (isRu ? `Отчет инвертора об аварии: ${detailsText}` : `Inverter reports error: ${detailsText}`)
-      : (isRu ? 'Инвертор обнаружил аппаратный или программный сбой.' : 'Hardware or firmware fault detected by inverter.'),
-    recommendation: isRu
+      ? (isUk ? `Звіт інвертора про аварію: ${detailsText}` : isRu ? `Отчет инвертора об аварии: ${detailsText}` : `Inverter reports error: ${detailsText}`)
+      : (isUk ? 'Інвертор виявив апаратний або програмний збій.' : isRu ? 'Инвертор обнаружил аппаратный или программный сбой.' : 'Hardware or firmware fault detected by inverter.'),
+    recommendation: isUk
+      ? 'Перевірте повідомлення на дисплеї інвертора та документацію виробника.'
+      : isRu
       ? 'Проверьте сообщения на дисплее инвертора и документацию производителя.'
       : 'Check inverter LCD display messages and documentation.',
     severity: 'critical',

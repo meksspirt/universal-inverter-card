@@ -1466,7 +1466,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                 >
                   <ha-icon icon="mdi:chart-line"></ha-icon>
                   <span>
-                    ${activeLang === 'ru' ? 'КПД & Стат' : 'Telemetry'}
+                    ${activeLang === 'uk' ? 'ККД & Стат' : activeLang === 'ru' ? 'КПД & Стат' : 'Telemetry'}
                   </span>
                 </button>
                 <button
@@ -1477,7 +1477,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                 >
                   <ha-icon icon="mdi:tune-variant"></ha-icon>
                   <span>
-                    ${activeLang === 'ru' ? 'Управление' : 'Controls'}
+                    ${activeLang === 'uk' ? 'Керування' : activeLang === 'ru' ? 'Управление' : 'Controls'}
                   </span>
                 </button>
                 <button
@@ -1488,7 +1488,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                 >
                   <ha-icon icon="mdi:database-clock-outline"></ha-icon>
                   <span>
-                    ${activeLang === 'ru' ? 'Черный ящик' : 'Black-Box'}${blackBoxState.events.length > 0 ? ` (${blackBoxState.events.length})` : ''}
+                    ${activeLang === 'uk' ? 'Чорна скринька' : activeLang === 'ru' ? 'Черный ящик' : 'Black-Box'}${blackBoxState.events.length > 0 ? ` (${blackBoxState.events.length})` : ''}
                   </span>
                 </button>
               </div>
@@ -1516,7 +1516,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                               }}
                             >
                               <ha-icon icon="mdi:battery-heart-variant"></ha-icon>
-                              <span>${activeLang === 'ru' ? 'АКБ и Ячейки' : 'BMS & Cells'}</span>
+                              <span>${activeLang === 'uk' ? 'АКБ та Комірки' : activeLang === 'ru' ? 'АКБ и Ячейки' : 'BMS & Cells'}</span>
                             </button>
                             <button
                               type="button"
@@ -1526,7 +1526,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                               }}
                             >
                               <ha-icon icon="mdi:chart-areaspline"></ha-icon>
-                              <span>${activeLang === 'ru' ? 'Телеметрия и Баланс' : 'Telemetry & Energy'}</span>
+                              <span>${activeLang === 'uk' ? 'Телеметрія та Баланс' : activeLang === 'ru' ? 'Телеметрия и Баланс' : 'Telemetry & Energy'}</span>
                             </button>
                             <button
                               type="button"
@@ -1536,7 +1536,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                               }}
                             >
                               <ha-icon icon="mdi:tune-variant"></ha-icon>
-                              <span>${activeLang === 'ru' ? 'Управление' : 'Controls'}</span>
+                              <span>${activeLang === 'uk' ? 'Керування' : activeLang === 'ru' ? 'Управление' : 'Controls'}</span>
                             </button>
                             <button
                               type="button"
@@ -1547,7 +1547,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                             >
                               <ha-icon icon="mdi:database-clock-outline"></ha-icon>
                               <span>
-                                ${activeLang === 'ru' ? 'Черный ящик' : 'Black-Box'}
+                                ${activeLang === 'uk' ? 'Чорна скринька' : activeLang === 'ru' ? 'Черный ящик' : 'Black-Box'}
                                 ${blackBoxState.events.length > 0 ? `(${blackBoxState.events.length})` : ''}
                               </span>
                             </button>

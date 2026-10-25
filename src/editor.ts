@@ -68,11 +68,12 @@ export class AninerelPowerCardEditor extends LitElement {
       },
       {
         name: 'language',
-        label: 'Interface Language (Язык интерфейса)',
+        label: 'Interface Language (Мова інтерфейсу / Язык)',
         selector: {
           select: {
             options: [
               { value: 'auto', label: 'Auto (Home Assistant Default)' },
+              { value: 'uk', label: 'Українська (Ukrainian)' },
               { value: 'ru', label: 'Русский (Russian)' },
               { value: 'en', label: 'English' },
             ],
@@ -656,7 +657,9 @@ export class AninerelPowerCardEditor extends LitElement {
 
     const lang = getActiveLanguage(this.hass, this._config?.language);
     this._autoBindMessage =
-      lang === 'ru'
+      lang === 'uk'
+        ? `✅ Авто-прив'язано ${result.boundCount} сенсорів (Інвертор: ${result.inverterMatched}, BMS: ${result.bmsMatched}${result.detectedDualBms ? ' • 2× АКБ' : ''})`
+        : lang === 'ru'
         ? `✅ Авто-привязано ${result.boundCount} сенсоров (Инвертор: ${result.inverterMatched}, BMS: ${result.bmsMatched}${result.detectedDualBms ? ' • 2× АКБ' : ''})`
         : `✅ Auto-bound ${result.boundCount} entities (Inverter: ${result.inverterMatched}, BMS: ${result.bmsMatched}${result.detectedDualBms ? ' • Dual Pack' : ''})`;
 
@@ -762,16 +765,18 @@ export class AninerelPowerCardEditor extends LitElement {
         ? html`
             <div class="autobind-card">
               <div class="autobind-header">
-                <span>⚡ ${lang === 'ru' ? 'Авто-привязка устройств в 1 клик (Smart Auto-Bind)' : '1-Click Device Auto-Discovery'}</span>
+                <span>⚡ ${lang === 'uk' ? 'Авто-прив\'язка пристроїв в 1 клік (Smart Auto-Bind)' : lang === 'ru' ? 'Авто-привязка устройств в 1 клик (Smart Auto-Bind)' : '1-Click Device Auto-Discovery'}</span>
               </div>
               <div class="autobind-desc">
-                ${lang === 'ru'
+                ${lang === 'uk'
+                  ? 'Оберіть виявлений інвертор та BMS — картка автоматично заповнить усі 30+ сенсорів потужності, напруг, комірок, налаштувань та помилок за 1 секунду.'
+                  : lang === 'ru'
                   ? 'Выберите обнаруженный инвертор и BMS — карточка автоматически заполнит все 30+ сенсоров мощности, напряжений, ячеек, настроек и ошибок за 1 секунду.'
                   : 'Select your discovered Inverter and BMS prefix to automatically populate 30+ power, voltage, cell, control, and fault entities in 1 click.'}
               </div>
               <div class="autobind-row">
                 <div class="autobind-field">
-                  <label>${lang === 'ru' ? 'Инвертор' : 'Inverter Device'}</label>
+                  <label>${lang === 'uk' ? 'Інвертор' : lang === 'ru' ? 'Инвертор' : 'Inverter Device'}</label>
                   <select
                     class="autobind-select"
                     .value=${curInv}
@@ -779,14 +784,14 @@ export class AninerelPowerCardEditor extends LitElement {
                       this._selectedInverterPrefix = (e.target as HTMLSelectElement).value;
                     }}
                   >
-                    <option value="">${lang === 'ru' ? '— Не менять —' : '— Keep current —'}</option>
+                    <option value="">${lang === 'uk' ? '— Не змінювати —' : lang === 'ru' ? '— Не менять —' : '— Keep current —'}</option>
                     ${inverters.map(
                       (inv) => html`<option value="${inv.prefix}" ?selected=${inv.prefix === curInv}>${inv.label}</option>`
                     )}
                   </select>
                 </div>
                 <div class="autobind-field">
-                  <label>${lang === 'ru' ? 'Аккумулятор / BMS' : 'Battery / BMS Device'}</label>
+                  <label>${lang === 'uk' ? 'Акумулятор / BMS' : lang === 'ru' ? 'Аккумулятор / BMS' : 'Battery / BMS Device'}</label>
                   <select
                     class="autobind-select"
                     .value=${curBms}
@@ -794,7 +799,7 @@ export class AninerelPowerCardEditor extends LitElement {
                       this._selectedBmsPrefix = (e.target as HTMLSelectElement).value;
                     }}
                   >
-                    <option value="">${lang === 'ru' ? '— Не менять —' : '— Keep current —'}</option>
+                    <option value="">${lang === 'uk' ? '— Не змінювати —' : lang === 'ru' ? '— Не менять —' : '— Keep current —'}</option>
                     ${bmsList.map(
                       (b) => html`<option value="${b.prefix}" ?selected=${b.prefix === curBms}>${b.label}</option>`
                     )}
@@ -802,7 +807,7 @@ export class AninerelPowerCardEditor extends LitElement {
                 </div>
               </div>
               <button type="button" class="autobind-btn" @click=${() => this._handleAutoBind()}>
-                ✨ ${lang === 'ru' ? 'Авто-заполнить все 30+ полей' : 'Auto-Bind All 30+ Entities'}
+                ✨ ${lang === 'uk' ? 'Авто-заповнити всі 30+ полів' : lang === 'ru' ? 'Авто-заполнить все 30+ полей' : 'Auto-Bind All 30+ Entities'}
               </button>
               ${this._autoBindMessage
                 ? html`<div class="autobind-msg">${this._autoBindMessage}</div>`

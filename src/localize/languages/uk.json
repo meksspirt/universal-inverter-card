@@ -1,0 +1,129 @@
+{
+  "common": {
+    "version": "Версія",
+    "name": "Universal Inverter Card",
+    "description": "Універсальна картка для гібридних інверторів та батарей BMS",
+    "offline": "НЕМАЄ ЗВ'ЯЗКУ",
+    "ok": "ОК",
+    "chg": "ЗАРЯД",
+    "fault": "АВАРІЯ",
+    "warn": "УВАГА",
+    "na": "Н/Д"
+  },
+  "header": {
+    "subtitle_solar": "Гібридний інвертор",
+    "subtitle_ups": "ДБЖ оселі",
+    "self_power": "ВХ",
+    "efficiency": "ККД",
+    "heat_loss": "Тепло",
+    "input_breaker": "Вхід",
+    "compact_toggle": "Компактний / Повний вигляд"
+  },
+  "alerts": {
+    "offline_title": "Втрачено зв'язок з інвертором (Offline)",
+    "offline_desc": "Основні сенсори телеметрії недоступні (unavailable). Перевірте живлення та Wi-Fi/RS485 даталогер."
+  },
+  "mode": {
+    "battery": "Батарея",
+    "mains": "Мережа",
+    "bypass": "Байпас",
+    "line": "Мережа",
+    "grid": "Мережа",
+    "off_grid": "Автономно"
+  },
+  "nodes": {
+    "solar": "Сонце",
+    "battery": "АКБ",
+    "inverter": "Інвертор",
+    "home": "Оселя",
+    "grid": "Мережа"
+  },
+  "flow": {
+    "charge": "Заряд",
+    "discharge": "Розряд",
+    "standby": "Очікування",
+    "import": "Імпорт",
+    "export": "Експорт",
+    "self": "ВХ",
+    "offline": "Вимк",
+    "input_on": "Вхід УВІМК",
+    "input_off": "Вхід ВИМК",
+    "output_off": "Вихід вимк",
+    "load": "Навантаження"
+  },
+  "params": {
+    "battery": "Батарея DC",
+    "grid": "Мережа AC",
+    "battery_soc": "Заряд АКБ",
+    "battery_autonomy": "Автономність АКБ",
+    "inverter_load": "Навантаження інвертора",
+    "conversion_efficiency": "ККД перетворення",
+    "self_sufficiency": "Самозабезпечення",
+    "normal": "Норма",
+    "deviated": "Відхилення",
+    "sag": "Просідання (0В)",
+    "surge": "Перенапруга",
+    "offline": "Немає зв'язку"
+  },
+  "bms": {
+    "title": "BMS LiFePO4",
+    "title_dual": "BMS: 2× 12В Послідовно (24В)",
+    "series_badge": "Послідовно",
+    "parallel_badge": "Паралельно",
+    "single_badge": "Моноблок",
+    "delta_packs": "Δ Батарей",
+    "delta_cells": "Δ Комірок",
+    "min_cell": "Мін",
+    "max_cell": "Макс",
+    "avg_cell": "Сер",
+    "temp": "Темп.",
+    "cycles": "Цикли",
+    "soh": "Здоров'я",
+    "balancing": "Балансування",
+    "capacity": "Ємність",
+    "remaining": "Залишок",
+    "balanced": "Збалансовано",
+    "drift": "Легкий дрейф",
+    "imbalance": "Розбаланс!",
+    "pack_drift_warn": "Розбаланс між батареями: {delta} мВ ({v1}В проти {v2}В). Рекомендується активний балансир.",
+    "offline": "Немає даних від BMS"
+  },
+  "controls": {
+    "title": "Інвертор: Керування та налаштування",
+    "charge_source": "Пріоритет джерела заряду",
+    "output_priority": "Пріоритет живлення оселі",
+    "max_charge_current": "Макс. струм мережевого заряду AC",
+    "max_total_charge_current": "Загальний струм заряду (PV + AC)",
+    "bulk_voltage": "Напруга Bulk (Заряд)",
+    "float_voltage": "Напруга Float (Підтримка)",
+    "back_to_grid_voltage": "Перехід на мережу (Back to Grid)",
+    "cutoff_voltage": "Відсічка за розрядом (Cut-off)",
+    "buzzer": "Звуковий сигнал (Buzzer)",
+    "equalization": "Вирівнювання (Equalization)",
+    "equalization_warning": "⚠️ Для LiFePO4 має бути ЗАВЖДИ ВИМКНЕНО щоб уникнути перезаряду комірок!",
+    "confirm_on": "Точно УВІМК?",
+    "press": "Виконати"
+  },
+  "energy": {
+    "title": "Добовий баланс енергії",
+    "total": "Оселя",
+    "solar_production": "Генерація СЕС (PV)",
+    "load": "Споживання оселі",
+    "grid_import": "Імпорт із мережі",
+    "grid_export": "Експорт у мережу",
+    "bat_charge": "Заряд АКБ",
+    "bat_discharge": "Віддано з АКБ",
+    "self_consumption": "Власні потреби інвертора (ВХ)",
+    "month_short": "Міс"
+  },
+  "editor": {
+    "title": "Заголовок картки",
+    "entities_group": "⚡ Потужності реального часу (Обов'язково)",
+    "params_group": "📊 Електричні параметри та телеметрія",
+    "bms_group": "🔋 Телеметрія BMS та блоку акумуляторів",
+    "controls_group": "🎛️ Керування інвертором та налаштування",
+    "safety_group": "🛡️ Безпека та діагностика сбоїв",
+    "energy_group": "📈 Добові лічильники електроенергії",
+    "display_group": "🎨 Налаштування відображення та видимості секцій"
+  }
+}

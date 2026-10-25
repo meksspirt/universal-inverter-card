@@ -18,6 +18,7 @@ export interface BlackBoxEvent {
   type: BlackBoxEventType;
   severity: BlackBoxSeverity;
   code?: string;
+  titleUk?: string;
   titleRu: string;
   titleEn: string;
   metricsText: string;
@@ -243,6 +244,7 @@ export function recordBlackBoxSample(sample: BlackBoxSample): BlackBoxState {
         type: 'fault',
         severity: 'critical',
         code: codeNum > 0 ? `F${String(codeNum).padStart(2, '0')}` : 'FAULT',
+        titleUk: codeNum > 0 ? getFaultDetail(codeNum, null, 'ru').title : 'Аварійний збій інвертора',
         titleRu: descRu,
         titleEn: descEn,
         metricsText: buildSnapshot(),
@@ -263,6 +265,7 @@ export function recordBlackBoxSample(sample: BlackBoxSample): BlackBoxState {
         type: 'warning',
         severity: 'warning',
         code: `W${String(warningCode).padStart(2, '0')}`,
+        titleUk: descRu,
         titleRu: descRu,
         titleEn: descEn,
         metricsText: buildSnapshot(),
@@ -288,6 +291,7 @@ export function recordBlackBoxSample(sample: BlackBoxSample): BlackBoxState {
         type: 'peak_surge',
         severity: loadWatts >= maxPower * 0.95 ? 'critical' : 'warning',
         code: `${pct}%`,
+        titleUk: `Пікове навантаження ${Math.round(loadWatts)} Вт${vSagStr}`,
         titleRu: `Пиковая нагрузка ${Math.round(loadWatts)} Вт${vSagStr}`,
         titleEn: `Peak load surge ${Math.round(loadWatts)} W${vSagStrEn}`,
         metricsText: buildSnapshot(),
@@ -309,6 +313,7 @@ export function recordBlackBoxSample(sample: BlackBoxSample): BlackBoxState {
         type: 'voltage_sag',
         severity: batteryVoltage <= 11.5 * mult ? 'critical' : 'warning',
         code: `${vRounded}V`,
+        titleUk: `Просідання напруги АКБ до ${vRounded} В`,
         titleRu: `Просадка напряжения АКБ до ${vRounded} В`,
         titleEn: `Battery voltage sag to ${vRounded} V`,
         metricsText: buildSnapshot(),
@@ -330,6 +335,7 @@ export function recordBlackBoxSample(sample: BlackBoxSample): BlackBoxState {
         type: 'grid_outage',
         severity: 'warning',
         code: '0V AC',
+        titleUk: 'Вимкнення зовнішньої мережі (Перехід на АКБ)',
         titleRu: 'Отключение внешней сети (Переход на АКБ)',
         titleEn: 'Grid outage detected (Switched to Battery)',
         metricsText: buildSnapshot(),
@@ -343,6 +349,7 @@ export function recordBlackBoxSample(sample: BlackBoxSample): BlackBoxState {
         type: 'grid_restored',
         severity: 'success',
         code: `${Math.round(gridVoltage)}V`,
+        titleUk: `Мережу відновлено (${Math.round(gridVoltage)} В)`,
         titleRu: `Сеть восстановлена (${Math.round(gridVoltage)} В)`,
         titleEn: `Grid power restored (${Math.round(gridVoltage)} V)`,
         metricsText: buildSnapshot(),
@@ -365,6 +372,7 @@ export function recordBlackBoxSample(sample: BlackBoxSample): BlackBoxState {
         type: 'cell_imbalance',
         severity: deltaMv >= 180 ? 'critical' : 'warning',
         code: `Δ${deltaMv}mV`,
+        titleUk: `Розбаланс комірок BMS: ${deltaMv} мВ`,
         titleRu: `Разбаланс ячеек BMS: ${deltaMv} мВ`,
         titleEn: `BMS cell imbalance: ${deltaMv} mV`,
         metricsText: buildSnapshot(),
@@ -380,7 +388,7 @@ export function recordBlackBoxSample(sample: BlackBoxSample): BlackBoxState {
   return state;
 }
 
-export function formatEventTimestamp(ts: number | null, lang: 'ru' | 'en' = 'ru'): string {
+export function formatEventTimestamp(ts: number | null, lang: 'ru' | 'en' | 'uk' = 'uk'): string {
   if (!ts) return '—';
   const d = new Date(ts);
   const now = new Date();
@@ -398,5 +406,5 @@ export function formatEventTimestamp(ts: number | null, lang: 'ru' | 'en' = 'ru'
   }
   const day = String(d.getDate()).padStart(2, '0');
   const mon = String(d.getMonth() + 1).padStart(2, '0');
-  return lang === 'ru' ? `${day}.${mon} ${hh}:${mm}` : `${mon}/${day} ${hh}:${mm}`;
+  return lang === 'en' ? `${mon}/${day} ${hh}:${mm}` : `${day}.${mon} ${hh}:${mm}`;
 }

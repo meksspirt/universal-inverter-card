@@ -29,7 +29,7 @@ export interface SmartRuntimeInput {
   systemVoltage: NominalSystemVoltage;
   chemistry?: BatteryChemistry;
   cutoffVoltage?: number | null;
-  lang?: 'ru' | 'en';
+  lang?: 'ru' | 'en' | 'uk';
 }
 
 export interface SmartRuntimeResult {
@@ -350,21 +350,29 @@ export function calculateSmartRuntime(input: SmartRuntimeInput): SmartRuntimeRes
     if (gainedMinutes >= 10) {
       const gainStr =
         gainedMinutes >= 60
-          ? lang === 'ru'
+          ? lang === 'uk'
+            ? `+${Math.floor(gainedMinutes / 60)}г ${gainedMinutes % 60}хв`
+            : lang === 'ru'
             ? `+${Math.floor(gainedMinutes / 60)}ч ${gainedMinutes % 60}м`
             : `+${Math.floor(gainedMinutes / 60)}h ${gainedMinutes % 60}m`
+          : lang === 'uk'
+          ? `+${gainedMinutes} хв`
           : lang === 'ru'
           ? `+${gainedMinutes} мин`
           : `+${gainedMinutes}m`;
       sheddingHint =
-        lang === 'ru'
+        lang === 'uk'
+          ? `💡 −${stepW} Вт навантаження додасть ${gainStr}`
+          : lang === 'ru'
           ? `💡 −${stepW} Вт нагрузки даст ${gainStr}`
           : `💡 −${stepW}W load adds ${gainStr}`;
     }
   }
 
   const detailText = isCutoffVoltageRisk
-    ? lang === 'ru'
+    ? lang === 'uk'
+      ? `⚠️ Близько до відсічки ${effectiveCutoffVoltage.toFixed(1)}В`
+      : lang === 'ru'
       ? `⚠️ Близко к отсечке ${effectiveCutoffVoltage.toFixed(1)}В`
       : `⚠️ Near ${effectiveCutoffVoltage.toFixed(1)}V cut-off`
     : null;
@@ -389,7 +397,7 @@ export function calculateSmartRuntime(input: SmartRuntimeInput): SmartRuntimeRes
  */
 function formatAdaptiveDuration(
   hours: number,
-  lang: 'ru' | 'en',
+  lang: 'ru' | 'en' | 'uk',
   isCritical: boolean,
   cutoffV: number
 ): string | null {
@@ -399,7 +407,11 @@ function formatAdaptiveDuration(
   // Attribute Dependency Level 1: Long horizon (> 5 hours) -> Calm fractional hours
   if (clamped >= 5 && !isCritical) {
     const roundedHalf = Math.round(clamped * 2) / 2;
-    return lang === 'ru' ? `~${roundedHalf} ч` : `~${roundedHalf}h`;
+    return lang === 'uk'
+      ? `~${roundedHalf} год`
+      : lang === 'ru'
+      ? `~${roundedHalf} ч`
+      : `~${roundedHalf}h`;
   }
 
   // Attribute Dependency Level 2: Medium horizon (1 to 5 hours) -> Hours + Minutes
@@ -407,18 +419,25 @@ function formatAdaptiveDuration(
     const h = Math.floor(clamped);
     const m = Math.round((clamped - h) * 60);
     if (m === 60) {
-      return lang === 'ru' ? `~${h + 1} ч` : `~${h + 1}h`;
+      return lang === 'uk' ? `~${h + 1} год` : lang === 'ru' ? `~${h + 1} ч` : `~${h + 1}h`;
     }
     if (m === 0) {
-      return lang === 'ru' ? `~${h} ч` : `~${h}h`;
+      return lang === 'uk' ? `~${h} год` : lang === 'ru' ? `~${h} ч` : `~${h}h`;
     }
-    return lang === 'ru' ? `${h}ч ${m}м` : `${h}h ${m}m`;
+    return lang === 'uk'
+      ? `${h}г ${m}хв`
+      : lang === 'ru'
+      ? `${h}ч ${m}м`
+      : `${h}h ${m}m`;
   }
 
   // Attribute Dependency Level 3: Critical horizon (< 1 hour or Voltage Sag Risk)
   // High-precision countdown in minutes with cutoff voltage target
   const totalMinutes = Math.max(1, Math.round(clamped * 60));
   const cutoffStr = cutoffV.toFixed(1);
+  if (lang === 'uk') {
+    return `${totalMinutes} хв (до ${cutoffStr}В)`;
+  }
   if (lang === 'ru') {
     return `${totalMinutes} мин (до ${cutoffStr}В)`;
   }

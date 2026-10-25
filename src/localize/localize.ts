@@ -1,26 +1,28 @@
 import { HomeAssistant } from '../types';
 import en from './languages/en.json';
 import ru from './languages/ru.json';
+import uk from './languages/uk.json';
 
 const languages: Record<string, any> = {
   en,
   ru,
+  uk,
 };
 
-export function getActiveLanguage(hass?: HomeAssistant, configLang?: string): 'ru' | 'en' {
+export function getActiveLanguage(hass?: HomeAssistant, configLang?: string): 'ru' | 'en' | 'uk' {
   if (configLang && configLang !== 'auto' && languages[configLang.toLowerCase()]) {
-    return configLang.toLowerCase() as 'ru' | 'en';
+    return configLang.toLowerCase() as 'ru' | 'en' | 'uk';
   }
   const userLang = (
     hass?.locale?.language ||
     hass?.language ||
     (typeof navigator !== 'undefined' ? navigator.language : '') ||
-    'ru'
+    'uk'
   )
     .toLowerCase()
     .split('-')[0];
 
-  return languages[userLang] ? (userLang as 'ru' | 'en') : 'ru';
+  return languages[userLang] ? (userLang as 'ru' | 'en' | 'uk') : 'uk';
 }
 
 export function localize(

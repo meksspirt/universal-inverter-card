@@ -71,18 +71,22 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
                   style="color: ${badgeColor}; --mdc-icon-size: 19px;"
                 ></ha-icon>
                 <span class="blackbox-title">
-                  ${lang === 'ru' ? 'Черный ящик: Пики и События' : 'Black-Box: Peaks & Events'}
+                  ${lang === 'uk'
+                    ? 'Чорна скринька: Піки та Події'
+                    : lang === 'ru'
+                    ? 'Черный ящик: Пики и События'
+                    : 'Black-Box: Peaks & Events'}
                 </span>
                 ${extremes.peakLoadWatts !== null
                   ? html`
-                      <span class="blackbox-quick-pill" title="${lang === 'ru' ? 'Пиковая нагрузка' : 'Peak Load'}">
+                      <span class="blackbox-quick-pill" title="${lang === 'uk' ? 'Пікове навантаження' : lang === 'ru' ? 'Пиковая нагрузка' : 'Peak Load'}">
                         ⚡ ${extremes.peakLoadWatts}W
                       </span>
                     `
                   : ''}
                 ${extremes.minBatteryVoltage !== null
                   ? html`
-                      <span class="blackbox-quick-pill" title="${lang === 'ru' ? 'Мин. напряжение АКБ' : 'Min Battery Voltage'}">
+                      <span class="blackbox-quick-pill" title="${lang === 'uk' ? 'Мін. напруга АКБ' : lang === 'ru' ? 'Мин. напряжение АКБ' : 'Min Battery Voltage'}">
                         📉 ${extremes.minBatteryVoltage.toFixed(1)}V
                       </span>
                     `
@@ -114,7 +118,7 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
                 <div class="bb-extreme-tile">
                   <span class="bb-ext-label">
                     <ha-icon icon="mdi:flash-triangle-outline"></ha-icon>
-                    ${lang === 'ru' ? 'Макс. пик нагрузки' : 'Peak Load'}
+                    ${lang === 'uk' ? 'Макс. пік навантаження' : lang === 'ru' ? 'Макс. пик нагрузки' : 'Peak Load'}
                   </span>
                   <span class="bb-ext-val" style="color: #f59e0b">
                     ${extremes.peakLoadWatts !== null ? `${extremes.peakLoadWatts} W` : '—'}
@@ -127,7 +131,7 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
                 <div class="bb-extreme-tile">
                   <span class="bb-ext-label">
                     <ha-icon icon="mdi:battery-low"></ha-icon>
-                    ${lang === 'ru' ? 'Мин. просадка АКБ' : 'Min Voltage Sag'}
+                    ${lang === 'uk' ? 'Мін. просідання АКБ' : lang === 'ru' ? 'Мин. просадка АКБ' : 'Min Voltage Sag'}
                   </span>
                   <span class="bb-ext-val" style="color: #38bdf8">
                     ${extremes.minBatteryVoltage !== null
@@ -147,7 +151,7 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
                 <div class="bb-extreme-tile">
                   <span class="bb-ext-label">
                     <ha-icon icon="mdi:current-dc"></ha-icon>
-                    ${lang === 'ru' ? 'Макс. ток АКБ' : 'Max DC Current'}
+                    ${lang === 'uk' ? 'Макс. струм АКБ' : lang === 'ru' ? 'Макс. ток АКБ' : 'Max DC Current'}
                   </span>
                   <span class="bb-ext-val" style="color: #10b981">
                     ${extremes.maxBatteryCurrent !== null
@@ -162,7 +166,7 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
                 <div class="bb-extreme-tile">
                   <span class="bb-ext-label">
                     <ha-icon icon="mdi:thermometer-high"></ha-icon>
-                    ${lang === 'ru' ? 'Пик темп. инвертора' : 'Max Inverter Temp'}
+                    ${lang === 'uk' ? 'Пік темп. інвертора' : lang === 'ru' ? 'Пик темп. инвертора' : 'Max Inverter Temp'}
                   </span>
                   <span class="bb-ext-val" style="color: #a855f7">
                     ${extremes.maxInverterTemp !== null ? `${extremes.maxInverterTemp} °C` : '—'}
@@ -176,7 +180,9 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
               <!-- 2. Event Timeline -->
               <div class="blackbox-log-header">
                 <span>
-                  ${lang === 'ru'
+                  ${lang === 'uk'
+                    ? `Журнал зафіксованих сплесків та збоїв (${eventCount})`
+                    : lang === 'ru'
                     ? `Журнал зафиксированных всплесков и сбоев (${eventCount})`
                     : `Captured Surges & Fault Events (${eventCount})`}
                 </span>
@@ -191,7 +197,7 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
                         }}
                       >
                         <ha-icon icon="mdi:trash-can-outline"></ha-icon>
-                        <span>${lang === 'ru' ? 'Сброс' : 'Reset'}</span>
+                        <span>${lang === 'uk' ? 'Скидання' : lang === 'ru' ? 'Сброс' : 'Reset'}</span>
                       </button>
                     `
                   : ''}
@@ -202,7 +208,9 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
                     <div class="blackbox-empty">
                       <ha-icon icon="mdi:shield-check-outline"></ha-icon>
                       <span>
-                        ${lang === 'ru'
+                        ${lang === 'uk'
+                          ? 'Аномалій, глибоких просідань та нічних збоїв не зафіксовано'
+                          : lang === 'ru'
                           ? 'Аномалий, глубоких просадок и ночных сбоев не зафиксировано'
                           : 'No surges, deep voltage sags, or transient faults recorded'}
                       </span>
@@ -220,13 +228,13 @@ export function renderBlackBoxPanel(props: BlackBoxPanelProps): TemplateResult {
                             <div class="bb-event-content">
                               <div class="bb-event-top">
                                 <span class="bb-event-time">
-                                  ${formatEventTimestamp(ev.timestamp, lang)}
+                                   ${formatEventTimestamp(ev.timestamp, lang)}
                                 </span>
                                 ${ev.code
                                   ? html`<span class="bb-event-code">${ev.code}</span>`
                                   : ''}
                                 <span class="bb-event-title">
-                                  ${lang === 'ru' ? ev.titleRu : ev.titleEn}
+                                  ${lang === 'uk' ? (ev.titleUk || ev.titleRu || ev.titleEn) : lang === 'ru' ? ev.titleRu : ev.titleEn}
                                 </span>
                               </div>
                               ${ev.metricsText

@@ -1,5 +1,7 @@
 # 🔋⚡ Universal Inverter Card for Home Assistant
 
+**[🇬🇧 English](README.md)** | **[🇺🇦 Українська версія](README.uk.md)**
+
 [![GitHub Release](https://img.shields.io/github/v/release/meksspirt/universal-inverter-card?style=flat-square&color=orange)](https://github.com/meksspirt/universal-inverter-card/releases)
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square)](https://hacs.xyz)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg?style=flat-square)](https://www.home-assistant.io/)

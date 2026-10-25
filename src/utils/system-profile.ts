@@ -242,8 +242,10 @@ export function resolveCardTitle(config: AninerelCardConfig, hass?: HomeAssistan
     return 'Voltronic Axpert';
   }
 
-  const isRu = getActiveLanguage(hass, config.language) === 'ru';
-  return isRu ? 'Гибридный инвертор' : 'Hybrid Power Inverter';
+  const lang = getActiveLanguage(hass, config.language);
+  if (lang === 'uk') return 'Гібридний інвертор';
+  if (lang === 'ru') return 'Гибридный инвертор';
+  return 'Hybrid Power Inverter';
 }
 
 /**
@@ -263,9 +265,14 @@ export function resolveDefaultSubtitle(
   const maxPower = config.max_power || config.inverter_capacity || 4200;
   const kwNum = maxPower / 1000;
   const kwStr = kwNum % 1 === 0 ? kwNum.toFixed(0) : kwNum.toFixed(1);
-  const isRu = getActiveLanguage(hass, config.language) === 'ru';
+  const lang = getActiveLanguage(hass, config.language);
 
-  if (isRu) {
+  if (lang === 'uk') {
+    return hasSolar
+      ? `Гібридний інвертор ${systemVoltage}В ${kwStr} кВт`
+      : `ДБЖ ${systemVoltage}В ${kwStr} кВт`;
+  }
+  if (lang === 'ru') {
     return hasSolar
       ? `Гибридный инвертор ${systemVoltage}В ${kwStr} кВт`
       : `ИБП ${systemVoltage}В ${kwStr} кВт`;
