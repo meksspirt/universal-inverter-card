@@ -41,7 +41,12 @@
     "standby": "Standby",
     "import": "Import",
     "export": "Export",
-    "self": "Self"
+    "self": "Self",
+    "offline": "Offline",
+    "input_on": "Input ON",
+    "input_off": "Input OFF",
+    "output_off": "Output Off",
+    "load": "Load"
   },
   "params": {
     "battery": "Battery DC",

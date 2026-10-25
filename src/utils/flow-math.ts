@@ -16,10 +16,20 @@ export const NODE_POSITIONS = {
   grid: { x: 250, y: 308, radius: 34 },
 };
 
+export interface ConduitTrack {
+  id: string;
+  d: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 export interface FlowLayout {
   viewBoxHeight: number;
   aspectRatio: string;
   tracks: string[];
+  conduits: ConduitTrack[];
   nodes: {
     solar?: NodePosition;
     inverter: NodePosition;
@@ -30,65 +40,72 @@ export interface FlowLayout {
 }
 
 /**
- * Computes node coordinates, track lines, and viewBox dimensions based on whether
- * solar generation is enabled and the desired grid position.
+ * Computes node coordinates, conduit lines with port endpoints, and viewBox dimensions
+ * based on whether solar generation is enabled and the desired grid position.
+ * Every node's (x, y) is the exact geometric center of its badge/hub.
  */
 export function getFlowLayout(
   hasSolar = false,
   gridPosition: 'bottom' | 'top' = 'bottom'
 ): FlowLayout {
   if (hasSolar) {
+    const conduits: ConduitTrack[] = [
+      { id: 'solar', d: 'M 250 116 L 250 134', x1: 250, y1: 116, x2: 250, y2: 134 },
+      { id: 'battery', d: 'M 115 182 L 187 182', x1: 115, y1: 182, x2: 187, y2: 182 },
+      { id: 'home', d: 'M 313 182 L 388 182', x1: 313, y1: 182, x2: 388, y2: 182 },
+      { id: 'grid', d: 'M 250 230 L 250 267', x1: 250, y1: 230, x2: 250, y2: 267 },
+    ];
     return {
-      viewBoxHeight: 360,
-      aspectRatio: '500 / 360',
-      tracks: [
-        'M 250 82 L 250 140',   // Solar -> Inverter
-        'M 116 175 L 216 175', // Battery <-> Inverter
-        'M 284 175 L 388 175', // Inverter -> Home
-        'M 250 210 L 250 274', // Grid <-> Inverter
-      ],
+      viewBoxHeight: 375,
+      aspectRatio: '500 / 375',
+      tracks: conduits.map((c) => c.d),
+      conduits,
       nodes: {
         solar: { x: 250, y: 44, radius: 34 },
-        inverter: { x: 250, y: 175, radius: 32 },
-        battery: { x: 74, y: 175, radius: 40 },
-        home: { x: 426, y: 175, radius: 36 },
-        grid: { x: 250, y: 308, radius: 34 },
+        inverter: { x: 250, y: 182, radius: 46 },
+        battery: { x: 74, y: 182, radius: 39 },
+        home: { x: 426, y: 182, radius: 36 },
+        grid: { x: 250, y: 304, radius: 35 },
       },
     };
   }
 
   if (gridPosition === 'top') {
+    const conduits: ConduitTrack[] = [
+      { id: 'grid', d: 'M 250 128 L 250 156', x1: 250, y1: 128, x2: 250, y2: 156 },
+      { id: 'battery', d: 'M 115 204 L 187 204', x1: 115, y1: 204, x2: 187, y2: 204 },
+      { id: 'home', d: 'M 313 204 L 388 204', x1: 313, y1: 204, x2: 388, y2: 204 },
+    ];
     return {
-      viewBoxHeight: 290,
-      aspectRatio: '500 / 290',
-      tracks: [
-        'M 250 115 L 250 163', // Grid <-> Inverter
-        'M 116 195 L 216 195', // Battery <-> Inverter
-        'M 284 195 L 388 195', // Inverter -> Home
-      ],
+      viewBoxHeight: 300,
+      aspectRatio: '500 / 300',
+      tracks: conduits.map((c) => c.d),
+      conduits,
       nodes: {
-        grid: { x: 250, y: 65, radius: 34 },
-        inverter: { x: 250, y: 195, radius: 32 },
-        battery: { x: 74, y: 195, radius: 40 },
-        home: { x: 426, y: 195, radius: 36 },
+        grid: { x: 250, y: 48, radius: 35 },
+        inverter: { x: 250, y: 204, radius: 46 },
+        battery: { x: 74, y: 204, radius: 39 },
+        home: { x: 426, y: 204, radius: 36 },
       },
     };
   }
 
-  // Default when no solar: Grid is at bottom, compact balanced layout
+  // Default when no solar: Grid is at bottom, zero text-wire overlap
+  const conduits: ConduitTrack[] = [
+    { id: 'battery', d: 'M 115 84 L 187 84', x1: 115, y1: 84, x2: 187, y2: 84 },
+    { id: 'home', d: 'M 313 84 L 388 84', x1: 313, y1: 84, x2: 388, y2: 84 },
+    { id: 'grid', d: 'M 250 131 L 250 179', x1: 250, y1: 131, x2: 250, y2: 179 },
+  ];
   return {
-    viewBoxHeight: 290,
-    aspectRatio: '500 / 290',
-    tracks: [
-      'M 116 90 L 216 90',   // Battery <-> Inverter
-      'M 284 90 L 388 90',   // Inverter -> Home
-      'M 250 145 L 250 191', // Grid <-> Inverter
-    ],
+    viewBoxHeight: 305,
+    aspectRatio: '500 / 305',
+    tracks: conduits.map((c) => c.d),
+    conduits,
     nodes: {
-      battery: { x: 74, y: 90, radius: 40 },
-      inverter: { x: 250, y: 90, radius: 32 },
-      home: { x: 426, y: 90, radius: 36 },
-      grid: { x: 250, y: 225, radius: 34 },
+      battery: { x: 74, y: 84, radius: 39 },
+      inverter: { x: 250, y: 84, radius: 46 },
+      home: { x: 426, y: 84, radius: 36 },
+      grid: { x: 250, y: 216, radius: 35 },
     },
   };
 }
@@ -158,7 +175,7 @@ export function calculateFlowPaths(
     if (solarP >= activeThreshold) {
       paths.push({
         id: 'flow-solar-inverter',
-        d: 'M 250 82 L 250 140',
+        d: 'M 250 116 L 250 134',
         watts: solarP,
         color: solarColor,
         reversed: false,
@@ -167,23 +184,23 @@ export function calculateFlowPaths(
   }
 
   // Determine line coordinates based on layout
-  let batD = 'M 116 175 L 216 175';
-  let homeD = 'M 284 175 L 388 175';
-  let gridD = 'M 250 210 L 250 274';
+  let batD = 'M 115 182 L 187 182';
+  let homeD = 'M 313 182 L 388 182';
+  let gridD = 'M 250 230 L 250 267';
   let gridImportReversed = true;
 
   if (!hasSolar) {
     if (gridPosition === 'top') {
-      batD = 'M 116 195 L 216 195';
-      homeD = 'M 284 195 L 388 195';
-      gridD = 'M 250 115 L 250 163';
+      batD = 'M 115 204 L 187 204';
+      homeD = 'M 313 204 L 388 204';
+      gridD = 'M 250 128 L 250 156';
       // From Grid (top) down to Inverter: normal direction is import, reversed is export
       gridImportReversed = false;
     } else {
       // Bottom grid
-      batD = 'M 116 90 L 216 90';
-      homeD = 'M 284 90 L 388 90';
-      gridD = 'M 250 145 L 250 191';
+      batD = 'M 115 84 L 187 84';
+      homeD = 'M 313 84 L 388 84';
+      gridD = 'M 250 131 L 250 179';
       // From Grid (bottom) up to Inverter: reversed direction is import, normal is export
       gridImportReversed = true;
     }

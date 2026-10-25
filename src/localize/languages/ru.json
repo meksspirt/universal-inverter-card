@@ -41,7 +41,12 @@
     "standby": "Ожидание",
     "import": "Импорт",
     "export": "Экспорт",
-    "self": "ХХ"
+    "self": "ХХ",
+    "offline": "Выкл",
+    "input_on": "Вход ВКЛ",
+    "input_off": "Вход ВЫКЛ",
+    "output_off": "Выход откл",
+    "load": "Нагрузка"
   },
   "params": {
     "battery": "Батарея DC",

@@ -29,6 +29,7 @@ const DEFAULT_SELF_MONTHLY_ENTITY =
   'sensor.aninerel_anl_4200t_24l_w_pro_invertor_sobstvennoe_potreblenie_za_mesiats';
 const DEFAULT_BREAKER_ENTITY = 'switch.invertor_vkhod';
 const DEFAULT_BREAKER_POWER_ENTITY = 'sensor.invertor_vkhod_power';
+const DEFAULT_BREAKER_VOLTAGE_ENTITY = 'sensor.invertor_vkhod_voltage';
 const DEFAULT_REMAINING_ENERGY_ENTITY =
   'sensor.kukhnia_redodo_24v_bms_to_inverter_rs485_bridge_redodo_24v_remaining_energy';
 const DEFAULT_LOAD_PERCENT_ENTITY =
@@ -349,6 +350,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       DEFAULT_SELF_MONTHLY_ENTITY,
       DEFAULT_BREAKER_ENTITY,
       DEFAULT_BREAKER_POWER_ENTITY,
+      DEFAULT_BREAKER_VOLTAGE_ENTITY,
       DEFAULT_REMAINING_ENERGY_ENTITY,
       DEFAULT_LOAD_PERCENT_ENTITY,
     ];
@@ -643,7 +645,9 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     const batteryCurrent = this._getNullableNumber(
       this._config.battery_current_entity || this._config.bms?.current_entity
     );
-    const gridVoltage = this._getNullableNumber(this._config.grid_voltage_entity);
+    const gridVoltage =
+      this._getNullableNumber(this._config.grid_voltage_entity) ??
+      this._getNullableNumber(DEFAULT_BREAKER_VOLTAGE_ENTITY);
 
     // Self-consumption & Grid Input Breaker (configured or auto-discovered)
     const selfPowerEntity = this._resolveEntity(
@@ -963,9 +967,14 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               gridWatts,
               loadWatts,
               batterySoc,
+              batteryVoltage,
+              batteryCurrent,
+              gridVoltage,
+              gridBreakerState,
+              inverterLoadPercent,
               batteryRuntimeText,
               selfConsumptionWatts,
-              operatingMode: operatingMode !== 'N/A' ? operatingMode : 'Inverter',
+              operatingMode,
               isFault,
               onNodeClick: (id) => this._handleEntityClick(id),
             })
