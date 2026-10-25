@@ -672,6 +672,11 @@ export class AninerelPowerCardEditor extends LitElement {
   }
 
   static styles = css`
+    :host {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
     ha-form {
       display: block;
       padding: 12px 0;
@@ -682,6 +687,11 @@ export class AninerelPowerCardEditor extends LitElement {
       border-radius: 12px;
       padding: 12px 14px;
       margin-bottom: 12px;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+      container-type: inline-size;
     }
     .autobind-header {
       display: flex;
@@ -691,39 +701,74 @@ export class AninerelPowerCardEditor extends LitElement {
       font-size: 14px;
       color: var(--primary-text-color);
       margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .autobind-desc {
       font-size: 12px;
       color: var(--secondary-text-color);
       margin-bottom: 10px;
       line-height: 1.4;
+      word-break: break-word;
     }
     .autobind-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 10px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    @container (max-width: 440px) {
+      .autobind-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    @media (max-width: 480px) {
+      .autobind-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
     .autobind-field {
       display: flex;
       flex-direction: column;
       gap: 4px;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
     .autobind-field label {
       font-size: 11px;
       font-weight: 600;
       color: var(--secondary-text-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .autobind-select {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       padding: 7px 10px;
       border-radius: 8px;
       border: 1px solid var(--divider-color, rgba(255, 255, 255, 0.2));
       background: var(--card-background-color, #1e293b);
       color: var(--primary-text-color, #fff);
       font-size: 12px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .autobind-select option {
+      background: var(--card-background-color, #1e293b);
+      color: var(--primary-text-color, #fff);
     }
     .autobind-btn {
       width: 100%;
+      box-sizing: border-box;
       padding: 9px 14px;
       border-radius: 8px;
       border: none;
@@ -737,6 +782,9 @@ export class AninerelPowerCardEditor extends LitElement {
       justify-content: center;
       gap: 6px;
       transition: opacity 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .autobind-btn:hover {
       opacity: 0.92;
@@ -747,6 +795,7 @@ export class AninerelPowerCardEditor extends LitElement {
       font-weight: 600;
       color: #10b981;
       text-align: center;
+      word-break: break-word;
     }
   `;
 
@@ -776,32 +825,34 @@ export class AninerelPowerCardEditor extends LitElement {
               </div>
               <div class="autobind-row">
                 <div class="autobind-field">
-                  <label>${lang === 'uk' ? 'Інвертор' : lang === 'ru' ? 'Инвертор' : 'Inverter Device'}</label>
+                  <label title="${lang === 'uk' ? 'Інвертор' : lang === 'ru' ? 'Инвертор' : 'Inverter Device'}">${lang === 'uk' ? 'Інвертор' : lang === 'ru' ? 'Инвертор' : 'Inverter Device'}</label>
                   <select
                     class="autobind-select"
                     .value=${curInv}
+                    title="${curInv ? (inverters.find(i => i.prefix === curInv)?.label || curInv) : ''}"
                     @change=${(e: Event) => {
                       this._selectedInverterPrefix = (e.target as HTMLSelectElement).value;
                     }}
                   >
                     <option value="">${lang === 'uk' ? '— Не змінювати —' : lang === 'ru' ? '— Не менять —' : '— Keep current —'}</option>
                     ${inverters.map(
-                      (inv) => html`<option value="${inv.prefix}" ?selected=${inv.prefix === curInv}>${inv.label}</option>`
+                      (inv) => html`<option value="${inv.prefix}" title="${inv.label}" ?selected=${inv.prefix === curInv}>${inv.label}</option>`
                     )}
                   </select>
                 </div>
                 <div class="autobind-field">
-                  <label>${lang === 'uk' ? 'Акумулятор / BMS' : lang === 'ru' ? 'Аккумулятор / BMS' : 'Battery / BMS Device'}</label>
+                  <label title="${lang === 'uk' ? 'Акумулятор / BMS' : lang === 'ru' ? 'Аккумулятор / BMS' : 'Battery / BMS Device'}">${lang === 'uk' ? 'Акумулятор / BMS' : lang === 'ru' ? 'Аккумулятор / BMS' : 'Battery / BMS Device'}</label>
                   <select
                     class="autobind-select"
                     .value=${curBms}
+                    title="${curBms ? (bmsList.find(b => b.prefix === curBms)?.label || curBms) : ''}"
                     @change=${(e: Event) => {
                       this._selectedBmsPrefix = (e.target as HTMLSelectElement).value;
                     }}
                   >
                     <option value="">${lang === 'uk' ? '— Не змінювати —' : lang === 'ru' ? '— Не менять —' : '— Keep current —'}</option>
                     ${bmsList.map(
-                      (b) => html`<option value="${b.prefix}" ?selected=${b.prefix === curBms}>${b.label}</option>`
+                      (b) => html`<option value="${b.prefix}" title="${b.label}" ?selected=${b.prefix === curBms}>${b.label}</option>`
                     )}
                   </select>
                 </div>
