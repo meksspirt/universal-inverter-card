@@ -1,6 +1,5 @@
 {
   "name": "Universal Inverter Card",
   "render_readme": true,
-  "content_in_root": true,
   "filename": "universal-inverter-card.js"
 }
