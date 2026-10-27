@@ -1,12 +1,28 @@
-# 🔋⚡ Universal Inverter Card for Home Assistant
+<p align="center">
+  <img src="icon.png" alt="Universal Inverter Card Logo" width="128" height="128">
+</p>
 
-**[🇬🇧 English](README.md)** | **[🇺🇦 Українська версія](README.uk.md)**
+<h1 align="center">⚡ Universal Inverter Card for Home Assistant</h1>
 
-[![GitHub Release](https://img.shields.io/github/v/release/meksspirt/universal-inverter-card?style=flat-square&color=orange)](https://github.com/meksspirt/universal-inverter-card/releases)
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square)](https://hacs.xyz)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg?style=flat-square)](https://www.home-assistant.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
-[![Open your Home Assistant and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=meksspirt&repository=universal-inverter-card&category=Dashboard)
+<p align="center">
+  <b>The ultimate Lovelace custom card for hybrid solar & off-grid inverters, battery storage, and smart BMS systems</b>
+</p>
+
+<p align="center">
+  <a href="README.md"><b>🇬🇧 English</b></a> | <a href="README.uk.md"><b>🇺🇦 Українська версія</b></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/meksspirt/universal-inverter-card/releases"><img src="https://img.shields.io/github/v/release/meksspirt/universal-inverter-card?style=flat-square&color=orange" alt="GitHub Release"></a>
+  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg?style=flat-square" alt="HACS Custom"></a>
+  <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg?style=flat-square" alt="Home Assistant"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License: MIT"></a>
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=meksspirt&repository=universal-inverter-card&category=Dashboard"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open in HACS"></a>
+</p>
+
+<p align="center">
+  <img src="preview.png" alt="Universal Inverter Card Live Dashboard Preview" width="440">
+</p>
 
 The ultimate Lovelace custom card for all hybrid solar & off-grid inverters (**Aninerel**, **Anenji**, **Voltronic Axpert**, **EASUN SMG**, **PowMr**, **Growatt**, **Deye**, **Sunsynk**, **MUST**, **Victron MultiPlus**, **SRNE**, **LuxPower**, **Huawei**, **Sofar**) and battery banks / BMS (**LiFePO4**, **Li-Ion**, **LTO**, **JK BMS**, **Daly**, **Redodo**, **JBD**, **Seplos**, **Pylontech**, **Growatt HOPE**, **Pace**, **Felicity**).
 
