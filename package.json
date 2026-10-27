@@ -1,6 +1,6 @@
 {
   "name": "universal-inverter-card",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "type": "module",
   "description": "Universal Home Assistant custom card for hybrid inverters & BMS battery systems",
   "main": "dist/universal-inverter-card.js",

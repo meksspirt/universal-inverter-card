@@ -54,10 +54,33 @@ export interface SmartRuntimeResult {
 // Per-card EMA power smoothing state
 const emaPowerState = new Map<string, { value: number; timestamp: number }>();
 
+interface EfficiencyPowerSample {
+  ts: number;
+  solarWatts: number;
+  batteryWatts: number;
+  gridWatts: number;
+  loadWatts: number;
+  selfWatts: number | null;
+}
+
+// 5-second rolling sample buffer per card instance to eliminate async sensor polling latency
+const efficiencyRollingBuffer = new Map<string, EfficiencyPowerSample[]>();
+
+export function clearEfficiencyBuffer(cardId?: string): void {
+  if (cardId) {
+    efficiencyRollingBuffer.delete(cardId);
+  } else {
+    efficiencyRollingBuffer.clear();
+  }
+}
+
 /**
- * Computes real-time DC <-> AC conversion efficiency (%) and thermal loss (W).
+ * Computes real-time DC <-> AC conversion efficiency (%) and thermal loss (W)
+ * using a 5-second rolling moving average to compensate for asynchronous sensor polling
+ * (e.g. Inverter Modbus vs Bluetooth BMS delay).
  */
 export function calculateConversionEfficiency(params: {
+  cardId?: string;
   solarWatts: number;
   batteryWatts: number; // +Charge / -Discharge
   gridWatts: number; // +Import / -Export
@@ -69,8 +92,10 @@ export function calculateConversionEfficiency(params: {
   batChargeEnergyToday?: number | null;
   batDischargeEnergyToday?: number | null;
   selfConsumptionDailyEnergy?: number | null;
+  smoothingSeconds?: number;
 }): ConversionEfficiencyResult {
   const {
+    cardId = 'default',
     solarWatts = 0,
     batteryWatts = 0,
     gridWatts = 0,
@@ -82,15 +107,63 @@ export function calculateConversionEfficiency(params: {
     batChargeEnergyToday = null,
     batDischargeEnergyToday = null,
     selfConsumptionDailyEnergy = null,
+    smoothingSeconds = 5,
   } = params;
 
-  const pvIn = Math.max(0, solarWatts);
-  const gridIn = Math.max(0, gridWatts);
-  const batDischargeIn = Math.max(0, -batteryWatts);
+  // 1. Maintain 5-second sliding window buffer to smooth out async sensor polling latency
+  const now = Date.now();
+  const windowMs = Math.max(1, smoothingSeconds) * 1000;
+  let samples = efficiencyRollingBuffer.get(cardId) || [];
 
-  const loadOut = Math.max(0, loadWatts);
-  const batChargeOut = Math.max(0, batteryWatts);
-  const gridExportOut = Math.max(0, -gridWatts);
+  // Reset rolling window immediately upon major regime change (e.g. grid failure or battery flipping charge/discharge)
+  if (samples.length > 0) {
+    const latest = samples[samples.length - 1];
+    const batFlipped =
+      (latest.batteryWatts > 15 && batteryWatts < -15) ||
+      (latest.batteryWatts < -15 && batteryWatts > 15);
+    const gridCut = latest.gridWatts > 30 && gridWatts <= 2;
+    const gridRestored = latest.gridWatts <= 2 && gridWatts > 30;
+
+    if (batFlipped || gridCut || gridRestored) {
+      samples = [];
+    }
+  }
+
+  // Record current instantaneous sample
+  samples.push({
+    ts: now,
+    solarWatts,
+    batteryWatts,
+    gridWatts,
+    loadWatts,
+    selfWatts: selfConsumptionWatts,
+  });
+
+  // Filter samples within the rolling time window (default: 5 seconds)
+  samples = samples.filter((s) => now - s.ts <= windowMs);
+  if (samples.length > 60) samples = samples.slice(-60);
+  efficiencyRollingBuffer.set(cardId, samples);
+
+  // Compute 5-second moving averages over the window
+  const count = samples.length;
+  const avgSolar = samples.reduce((acc, s) => acc + s.solarWatts, 0) / count;
+  const avgBat = samples.reduce((acc, s) => acc + s.batteryWatts, 0) / count;
+  const avgGrid = samples.reduce((acc, s) => acc + s.gridWatts, 0) / count;
+  const avgLoad = samples.reduce((acc, s) => acc + s.loadWatts, 0) / count;
+
+  const validSelf = samples.filter((s) => s.selfWatts !== null && !isNaN(s.selfWatts!));
+  const avgSelf =
+    validSelf.length > 0
+      ? validSelf.reduce((acc, s) => acc + s.selfWatts!, 0) / validSelf.length
+      : null;
+
+  const pvIn = Math.max(0, avgSolar);
+  const gridIn = Math.max(0, avgGrid);
+  const batDischargeIn = Math.max(0, -avgBat);
+
+  const loadOut = Math.max(0, avgLoad);
+  const batChargeOut = Math.max(0, avgBat);
+  const gridExportOut = Math.max(0, -avgGrid);
 
   let totalInputWatts = pvIn + gridIn + batDischargeIn;
   const totalOutputWatts = loadOut + batChargeOut + gridExportOut;
@@ -113,20 +186,20 @@ export function calculateConversionEfficiency(params: {
   let efficiencyPct: number | null = null;
 
   const hasExplicitSelf =
-    selfConsumptionWatts !== null &&
-    !isNaN(selfConsumptionWatts) &&
-    selfConsumptionWatts > 0;
+    avgSelf !== null &&
+    !isNaN(avgSelf) &&
+    avgSelf > 0;
 
   const rawPowerDelta = totalInputWatts - totalOutputWatts;
 
   if (hasExplicitSelf) {
-    thermalLossWatts = Math.round(selfConsumptionWatts!);
+    thermalLossWatts = Math.round(avgSelf!);
     // Many inverters report grid_power = load_power mathematically without adding self-consumption.
     // If raw delta is smaller than explicit self-consumption, effective input includes self-consumption.
     const effectiveInput =
-      rawPowerDelta >= selfConsumptionWatts! * 0.5
+      rawPowerDelta >= avgSelf! * 0.5
         ? totalInputWatts
-        : totalOutputWatts + selfConsumptionWatts!;
+        : totalOutputWatts + avgSelf!;
     totalInputWatts = effectiveInput;
 
     if (totalOutputWatts >= 25 && effectiveInput > 0) {
@@ -136,7 +209,7 @@ export function calculateConversionEfficiency(params: {
   } else if (totalOutputWatts >= 35 && totalInputWatts > totalOutputWatts) {
     const diff = totalInputWatts - totalOutputWatts;
     const rawEff = (totalOutputWatts / totalInputWatts) * 100;
-    if (rawEff >= 55 && rawEff <= 99.5) {
+    if (rawEff >= 50 && rawEff <= 99.5) {
       thermalLossWatts = Math.round(diff);
       efficiencyPct = Number(rawEff.toFixed(1));
     }

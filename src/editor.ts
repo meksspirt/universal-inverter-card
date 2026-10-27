@@ -585,6 +585,11 @@ export class AninerelPowerCardEditor extends LitElement {
             selector: { boolean: {} },
           },
           {
+            name: 'efficiency_smoothing_seconds',
+            label: 'Efficiency & Loss Smoothing Window (seconds, default: 5s)',
+            selector: { number: { min: 1, max: 30, step: 1, mode: 'box' } },
+          },
+          {
             name: 'compact_mode',
             label: 'Compact layout mode (smaller padding & spacing)',
             selector: { boolean: {} },

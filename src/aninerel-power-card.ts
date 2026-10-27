@@ -1183,8 +1183,9 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
     const cardKey = (this._config.entities.load_power || 'default').replace(/[^a-zA-Z0-9_]/g, '_');
 
-    // 1. Real-Time Conversion Efficiency & Thermal Loss (W)
+    // 1. Real-Time Conversion Efficiency & Thermal Loss (W) with 5-second rolling moving average
     const efficiencyResult = calculateConversionEfficiency({
+      cardId: cardKey,
       solarWatts,
       batteryWatts,
       gridWatts,
@@ -1196,6 +1197,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       batChargeEnergyToday,
       batDischargeEnergyToday,
       selfConsumptionDailyEnergy,
+      smoothingSeconds: this._config.efficiency_smoothing_seconds ?? 5,
     });
 
     // 2. Smart Runtime Predictor (Peukert's Law + EMA Smoothing + Cut-off Voltage Guard + Attribute Dependency)

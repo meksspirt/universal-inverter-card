@@ -242,6 +242,7 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
   min_flow_rate?: number;      // default: 0.75
   max_flow_rate?: number;      // default: 6.0
   use_log_flow_model?: boolean;// default: true
+  efficiency_smoothing_seconds?: number; // default: 5 (rolling power average to eliminate async sensor polling jitter)
 
   // Section visibility toggles
   show_header?: boolean;

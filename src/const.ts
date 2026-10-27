@@ -1,6 +1,6 @@
 import { AninerelCardConfig } from './types';
 
-export const CARD_VERSION = '1.4.5';
+export const CARD_VERSION = '1.4.6';
 export const CARD_NAME = 'universal-inverter-card';
 export const LEGACY_CARD_NAME = 'aninerel-power-card';
 
@@ -10,6 +10,7 @@ export const DEFAULT_CONFIG: Partial<AninerelCardConfig> = {
   min_flow_rate: 0.75,
   max_flow_rate: 6.0,
   use_log_flow_model: true,
+  efficiency_smoothing_seconds: 5,
   show_header: true,
   show_flow: true,
   grid_position: 'bottom',
