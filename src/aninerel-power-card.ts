@@ -838,33 +838,6 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         ? this._getNumber(this._config.entities.solar_power)
         : 0;
 
-    let rawBatteryWatts = 0;
-    if (this._config.entities.battery_power) {
-      rawBatteryWatts = this._getNumber(this._config.entities.battery_power);
-    } else if (
-      this._config.entities.battery_charge_power ||
-      this._config.entities.battery_discharge_power
-    ) {
-      const chgW = this._getNumber(this._config.entities.battery_charge_power);
-      const disW = this._getNumber(this._config.entities.battery_discharge_power);
-      rawBatteryWatts = Math.max(0, chgW) - Math.max(0, disW);
-    }
-    const batteryWatts = this._config.invert_battery_power ? -rawBatteryWatts : rawBatteryWatts;
-
-    const rawGridSensorWatts = this._getNumber(this._config.entities.grid_power);
-    const rawGridWatts = this._config.invert_grid_power ? -rawGridSensorWatts : rawGridSensorWatts;
-    const gridBreakerPowerEntity = this._resolveEntity(
-      this._config.grid_breaker_power_entity,
-      DEFAULT_BREAKER_POWER_ENTITY
-    );
-    const gridBreakerWatts = gridBreakerPowerEntity
-      ? this._getNullableNumber(gridBreakerPowerEntity)
-      : null;
-    // Internal inverter grid_power ignores ~20W AC standby draw; prefer external input meter when higher
-    const gridWatts =
-      gridBreakerWatts !== null && gridBreakerWatts > rawGridWatts ? gridBreakerWatts : rawGridWatts;
-    const loadWatts = this._getNumber(this._config.entities.load_power);
-
     // Electrical telemetry (honest null when sensor is unavailable)
     const batteryVoltage = this._getNullableNumber(
       this._config.battery_voltage_entity || this._config.bms?.voltage_entity
@@ -881,6 +854,35 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     const gridVoltage =
       this._getNullableNumber(this._config.grid_voltage_entity) ??
       this._getNullableNumber(DEFAULT_BREAKER_VOLTAGE_ENTITY);
+
+    let rawBatteryWatts = 0;
+    if (this._config.entities.battery_power) {
+      rawBatteryWatts = this._getNumber(this._config.entities.battery_power);
+    } else if (
+      this._config.entities.battery_charge_power ||
+      this._config.entities.battery_discharge_power
+    ) {
+      const chgW = this._getNumber(this._config.entities.battery_charge_power);
+      const disW = this._getNumber(this._config.entities.battery_discharge_power);
+      rawBatteryWatts = Math.max(0, chgW) - Math.max(0, disW);
+    } else if (batteryVoltage !== null && batteryCurrent !== null) {
+      rawBatteryWatts = batteryVoltage * batteryCurrent;
+    }
+    const batteryWatts = this._config.invert_battery_power ? -rawBatteryWatts : rawBatteryWatts;
+
+    const rawGridSensorWatts = this._getNumber(this._config.entities.grid_power);
+    const rawGridWatts = this._config.invert_grid_power ? -rawGridSensorWatts : rawGridSensorWatts;
+    const gridBreakerPowerEntity = this._resolveEntity(
+      this._config.grid_breaker_power_entity,
+      DEFAULT_BREAKER_POWER_ENTITY
+    );
+    const gridBreakerWatts = gridBreakerPowerEntity
+      ? this._getNullableNumber(gridBreakerPowerEntity)
+      : null;
+    // Internal inverter grid_power ignores ~20W AC standby draw; prefer external input meter when higher
+    const gridWatts =
+      gridBreakerWatts !== null && gridBreakerWatts > rawGridWatts ? gridBreakerWatts : rawGridWatts;
+    const loadWatts = this._getNumber(this._config.entities.load_power);
 
     // Self-consumption & Grid Input Breaker (configured or auto-discovered)
     const selfPowerEntity = this._resolveEntity(
@@ -1286,7 +1288,10 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       batteryDischargeEnergyToday: batDischargeEnergyToday,
       inverterLoadPercent,
       loadWatts,
-      efficiencyPct: efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct,
+      efficiencyPct:
+        this._config.kpi_mode === 'conversion_efficiency'
+          ? (efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct)
+          : efficiencyResult.efficiencyPct,
       thermalLossWatts: efficiencyResult.thermalLossWatts,
       historyMap: this._historyMap,
       onParamClick: (id) => this._handleEntityClick(id),
@@ -1389,7 +1394,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               temperature,
               selfConsumptionWatts,
               selfConsumptionEntity: selfPowerEntity,
-              efficiencyPct: efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct,
+              efficiencyPct: efficiencyResult.efficiencyPct,
               thermalLossWatts: efficiencyResult.thermalLossWatts,
               isCompact,
               onToggleCompact: () => {
@@ -1450,7 +1455,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               batteryRuntimeText,
               isCriticalCountdown: smartRuntime.isCriticalCountdown,
               sheddingHint: smartRuntime.sheddingHint,
-              efficiencyPct: efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct,
+              efficiencyPct: efficiencyResult.efficiencyPct,
               thermalLossWatts: efficiencyResult.thermalLossWatts,
               selfConsumptionWatts,
               operatingMode,

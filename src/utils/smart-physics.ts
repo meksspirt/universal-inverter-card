@@ -190,49 +190,89 @@ export function calculateConversionEfficiency(params: {
     !isNaN(avgSelf) &&
     avgSelf > 0;
 
-  const rawPowerDelta = totalInputWatts - totalOutputWatts;
-
-  if (hasExplicitSelf) {
-    thermalLossWatts = Math.round(avgSelf!);
-    // Many inverters report grid_power = load_power mathematically without adding self-consumption.
-    // If raw delta is smaller than explicit self-consumption, effective input includes self-consumption.
-    const effectiveInput =
-      rawPowerDelta >= avgSelf! * 0.5
-        ? totalInputWatts
-        : totalOutputWatts + avgSelf!;
-    totalInputWatts = effectiveInput;
-
-    if (totalOutputWatts >= 25 && effectiveInput > 0) {
-      const rawEff = (totalOutputWatts / effectiveInput) * 100;
-      efficiencyPct = Math.max(50, Math.min(99.4, Number(rawEff.toFixed(1))));
+  if (regime === 'idle') {
+    // Under 20W total throughput: inverter is near-idle or offline.
+    // Conversion efficiency is not physically meaningful in standby.
+    if (hasExplicitSelf) {
+      thermalLossWatts = Math.round(avgSelf!);
+    } else if (totalInputWatts > totalOutputWatts) {
+      thermalLossWatts = Math.round(totalInputWatts - totalOutputWatts);
     }
-  } else if (totalOutputWatts >= 35 && totalInputWatts > totalOutputWatts) {
-    const diff = totalInputWatts - totalOutputWatts;
-    const rawEff = (totalOutputWatts / totalInputWatts) * 100;
-    if (rawEff >= 50 && rawEff <= 99.5) {
-      thermalLossWatts = Math.round(diff);
-      efficiencyPct = Number(rawEff.toFixed(1));
+    efficiencyPct = null;
+  } else if (regime === 'bypass') {
+    // Grid bypass mode: Grid supplies the load directly through the bypass relay.
+    // In many hybrid inverters (e.g. Voltronic/PowMr), the inverter's grid sensor
+    // mathematically mirrors the load sensor without measuring internal board consumption (~15-30W).
+    if (hasExplicitSelf) {
+      thermalLossWatts = Math.round(avgSelf!);
+      const effectiveInput =
+        totalInputWatts >= totalOutputWatts + avgSelf! * 0.5
+          ? totalInputWatts
+          : totalOutputWatts + avgSelf!;
+      totalInputWatts = effectiveInput;
+
+      if (totalOutputWatts >= 25 && effectiveInput > 0) {
+        const rawEff = (totalOutputWatts / effectiveInput) * 100;
+        if (rawEff >= 50 && rawEff <= 99.4) {
+          efficiencyPct = Number(rawEff.toFixed(1));
+        }
+      }
+    } else if (totalInputWatts > totalOutputWatts && totalOutputWatts >= 25) {
+      const diff = totalInputWatts - totalOutputWatts;
+      const rawEff = (totalOutputWatts / totalInputWatts) * 100;
+      if (rawEff >= 50 && rawEff <= 99.5) {
+        thermalLossWatts = Math.round(diff);
+        efficiencyPct = Number(rawEff.toFixed(1));
+      }
+    }
+  } else {
+    // Active DC/AC conversion regimes: 'inverting', 'hybrid', 'charging'.
+    // LAW OF CONSERVATION OF ENERGY:
+    // Total real input power (battery discharge + solar PV) MUST supply total load + conversion losses.
+    // If totalOutputWatts > totalInputWatts:
+    // This is physically impossible for a converter (>100% efficiency). It indicates sensor asynchrony
+    // (BMS polling lag behind inverter load) or unmetered parallel battery packs.
+    // We MUST NOT invent input power or calculate a fake 97% efficiency.
+    if (hasExplicitSelf) {
+      thermalLossWatts = Math.round(avgSelf!);
+    }
+
+    if (totalInputWatts >= totalOutputWatts && totalOutputWatts >= 25) {
+      const diff = totalInputWatts - totalOutputWatts;
+      const rawEff = (totalOutputWatts / totalInputWatts) * 100;
+      // Realistic physical conversion efficiency bounds for inverters: 50% to 97.5%
+      if (rawEff >= 50 && rawEff <= 97.5) {
+        efficiencyPct = Number(rawEff.toFixed(1));
+        thermalLossWatts = Math.round(Math.max(avgSelf ?? 0, diff));
+      }
+    } else {
+      // Input is less than output: sensor lag / transient mismatch.
+      efficiencyPct = null;
     }
   }
 
   // Daily Round-Trip / System Efficiency calculation
   let dailyEfficiencyPct: number | null = null;
-  if (loadEnergyToday !== null && loadEnergyToday > 0.2) {
-    if (selfConsumptionDailyEnergy !== null && selfConsumptionDailyEnergy > 0) {
-      const totalDailyUsed = loadEnergyToday + selfConsumptionDailyEnergy;
+  const dailyIn =
+    (gridImportEnergyToday ?? 0) +
+    (solarEnergyToday ?? 0) +
+    (batDischargeEnergyToday ?? 0);
+  const dailyOut = (loadEnergyToday ?? 0) + (batChargeEnergyToday ?? 0);
+
+  if (dailyIn > 0.2 && dailyOut > 0.2 && dailyIn >= dailyOut) {
+    const eff = (dailyOut / dailyIn) * 100;
+    if (eff >= 50 && eff <= 98.5) {
+      dailyEfficiencyPct = Number(eff.toFixed(1));
+    }
+  } else if (
+    loadEnergyToday !== null &&
+    loadEnergyToday > 0.2 &&
+    selfConsumptionDailyEnergy !== null &&
+    selfConsumptionDailyEnergy > 0
+  ) {
+    const totalDailyUsed = loadEnergyToday + selfConsumptionDailyEnergy;
+    if (totalDailyUsed > 0) {
       dailyEfficiencyPct = Number(((loadEnergyToday / totalDailyUsed) * 100).toFixed(1));
-    } else {
-      const dailyIn =
-        (gridImportEnergyToday ?? 0) +
-        (solarEnergyToday ?? 0) +
-        (batDischargeEnergyToday ?? 0);
-      const dailyOut = loadEnergyToday + (batChargeEnergyToday ?? 0);
-      if (dailyIn > dailyOut && dailyOut > 0.2) {
-        const eff = (dailyOut / dailyIn) * 100;
-        if (eff >= 60 && eff <= 99.5) {
-          dailyEfficiencyPct = Number(eff.toFixed(1));
-        }
-      }
     }
   }
 
