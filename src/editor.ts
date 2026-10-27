@@ -570,6 +570,11 @@ export class AninerelPowerCardEditor extends LitElement {
         title: localize('editor.display_group', this.hass, lang) || '🎨 Layout & Visualization Toggles',
         schema: [
           {
+            name: 'inverter_icon',
+            label: 'Inverter Hub Icon (MDI icon, e.g. mdi:solar-power or blank for default hardware vector)',
+            selector: { icon: {} },
+          },
+          {
             name: 'max_power',
             label: 'Scale Max Power Rating (W)',
             selector: { number: { min: 1000, max: 20000, step: 200, mode: 'box' } },

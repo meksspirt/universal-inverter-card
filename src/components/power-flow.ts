@@ -144,12 +144,12 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
     efficiencyPct !== null && efficiencyPct !== undefined && !isNaN(efficiencyPct);
 
   const inverterSubLabel = hasEfficiency && hasSelfPower
-    ? `${localize('header.efficiency', hass, lang)} ${efficiencyPct!.toFixed(1)}% • ${Math.round(effectiveThermalWatts!)}W`
+    ? `${efficiencyPct!.toFixed(0)}% • ${Math.round(effectiveThermalWatts!)}W`
     : hasEfficiency
-    ? `${localize('header.efficiency', hass, lang)}: ${efficiencyPct!.toFixed(1)}%`
+    ? `${localize('header.efficiency', hass, lang)} ${efficiencyPct!.toFixed(0)}%`
     : hasSelfPower
-    ? `${localize('flow.self', hass, lang)}: ${Math.round(effectiveThermalWatts!)} W${selfSourceLabel}`
-    : `${(maxPower / 1000).toFixed(1)} kW • ${systemVoltage}V`;
+    ? `${Math.round(effectiveThermalWatts!)} W`
+    : `${(maxPower / 1000).toFixed(1)} kW`;
 
   const rawModeClean =
     operatingMode && operatingMode !== 'N/A' && operatingMode !== 'unavailable'
@@ -368,38 +368,74 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
           title="${localize('nodes.inverter', hass, lang)}"
         >
           <div class="node-badge inverter-hub-badge">
+            <span
+              class="inverter-status-dot"
+              style="background: ${hubDotColor}; box-shadow: 0 0 8px ${hubDotColor};"
+            ></span>
             <div class="hub-top-row">
-              <!-- Custom Inline SVG DC/AC Hybrid Inverter Icon (Never missing!) -->
-              <svg class="inverter-core-svg" viewBox="0 0 36 26" aria-hidden="true">
-                <rect
-                  x="1.5"
-                  y="1.5"
-                  width="33"
-                  height="23"
-                  rx="5.5"
-                  fill="rgba(59, 130, 246, 0.14)"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                />
-                <!-- DC symbol (top-left) -->
-                <line x1="6.5" y1="7.5" x2="14.5" y2="7.5" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" />
-                <line x1="6.5" y1="10.5" x2="9" y2="10.5" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" />
-                <line x1="12" y1="10.5" x2="14.5" y2="10.5" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" />
-                <!-- Diagonal converter slash -->
-                <line x1="14" y1="20" x2="22" y2="6" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round" />
-                <!-- AC sine wave (bottom-right) -->
-                <path
-                  d="M 19.5 16.5 Q 22 12, 24.5 16.5 T 29.5 16.5"
-                  fill="none"
-                  stroke="#38bdf8"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
-              </svg>
-              <span
-                class="inverter-status-dot"
-                style="background: ${hubDotColor}; box-shadow: 0 0 8px ${hubDotColor};"
-              ></span>
+              ${config.inverter_icon
+                ? html`<ha-icon class="inverter-custom-icon" icon="${config.inverter_icon}"></ha-icon>`
+                : html`
+                    <svg class="inverter-core-svg" viewBox="0 0 38 28" fill="none" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="invBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#1e293b" />
+                          <stop offset="100%" stop-color="#0f172a" />
+                        </linearGradient>
+                        <linearGradient id="invScreenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stop-color="#050a18" />
+                          <stop offset="100%" stop-color="#0c162e" />
+                        </linearGradient>
+                      </defs>
+                      <!-- Inverter Metal Enclosure / Beveled Chassis -->
+                      <rect
+                        x="1"
+                        y="1"
+                        width="36"
+                        height="26"
+                        rx="4.5"
+                        fill="url(#invBodyGrad)"
+                        stroke="var(--hub-accent, #3b82f6)"
+                        stroke-width="1.3"
+                        stroke-opacity="0.75"
+                      />
+                      <!-- Side Cooling Radiator Fins -->
+                      <line x1="1" y1="8" x2="3.5" y2="8" stroke="var(--hub-accent, #3b82f6)" stroke-width="1" stroke-opacity="0.4" />
+                      <line x1="1" y1="13" x2="3.5" y2="13" stroke="var(--hub-accent, #3b82f6)" stroke-width="1" stroke-opacity="0.4" />
+                      <line x1="1" y1="18" x2="3.5" y2="18" stroke="var(--hub-accent, #3b82f6)" stroke-width="1" stroke-opacity="0.4" />
+                      <line x1="37" y1="8" x2="34.5" y2="8" stroke="var(--hub-accent, #3b82f6)" stroke-width="1" stroke-opacity="0.4" />
+                      <line x1="37" y1="13" x2="34.5" y2="13" stroke="var(--hub-accent, #3b82f6)" stroke-width="1" stroke-opacity="0.4" />
+                      <line x1="37" y1="18" x2="34.5" y2="18" stroke="var(--hub-accent, #3b82f6)" stroke-width="1" stroke-opacity="0.4" />
+
+                      <!-- High-contrast LCD Inverter Screen -->
+                      <rect
+                        x="6"
+                        y="4.5"
+                        width="26"
+                        height="14"
+                        rx="2.5"
+                        fill="url(#invScreenGrad)"
+                        stroke="rgba(255, 255, 255, 0.16)"
+                        stroke-width="0.8"
+                      />
+                      <!-- Smooth Pure Sine AC Inverter Wave with Glow -->
+                      <path
+                        d="M 9 11.5 C 11.5 7.5, 13.5 7.5, 16 11.5 C 18.5 15.5, 20.5 15.5, 23 11.5 C 24.5 9, 26.5 9, 28 11.5"
+                        fill="none"
+                        stroke="#38bdf8"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <!-- Mini DC symbol on upper-left of LCD -->
+                      <line x1="9" y1="7.2" x2="13" y2="7.2" stroke="#10b981" stroke-width="1" stroke-linecap="round" />
+
+                      <!-- Lower Hardware Panel & Status Indicators -->
+                      <circle cx="11.5" cy="22.5" r="1.3" fill="#10b981" />
+                      <line x1="16" y1="22.5" x2="22" y2="22.5" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1" stroke-linecap="round" />
+                      <circle cx="26.5" cy="22.5" r="1.3" fill="${hubDotColor}" style="filter: drop-shadow(0 0 2px ${hubDotColor});" />
+                    </svg>
+                  `}
             </div>
             <span class="hub-mode-title">${inverterModeLabel}</span>
             <span class="hub-sub-pill ${hasSelfPower ? 'active-self' : ''}">${inverterSubLabel}</span>

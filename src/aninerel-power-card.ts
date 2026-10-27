@@ -121,17 +121,26 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   public getCardSize(): number {
     const isCompact =
       this._compactOverride !== null ? this._compactOverride : Boolean(this._config?.compact_mode);
-    return isCompact ? 6 : 14;
+    if (isCompact) return 6;
+    let size = 10;
+    if (this._config?.show_bms !== false) size += 8;
+    if (this._config?.show_controls) size += 4;
+    if (this._config?.show_energy) size += 4;
+    if (this._config?.show_blackbox) size += 4;
+    if (this._config?.show_params) size += 4;
+    return size;
   }
 
   // 4. Modern Sections View Grid Options (HA 2024.3+)
+  // Using grid_rows: 'auto' so HA dynamically spans rows based on actual rendered card height,
+  // preventing any overlap or clipping with subsequent dashboard cards.
   public getLayoutOptions() {
     const isCompact =
       this._compactOverride !== null ? this._compactOverride : Boolean(this._config?.compact_mode);
     return {
-      grid_rows: isCompact ? 6 : 14,
+      grid_rows: isCompact ? 6 : 'auto',
       grid_columns: isCompact ? 2 : 4,
-      grid_min_rows: isCompact ? 5 : 8,
+      grid_min_rows: isCompact ? 4 : 8,
       grid_min_columns: 2,
     };
   }
@@ -1382,6 +1391,10 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               isCompact,
               onToggleCompact: () => {
                 this._compactOverride = !isCompact;
+                this.requestUpdate();
+                setTimeout(() => {
+                  window.dispatchEvent(new Event('resize'));
+                }, 50);
               },
               gridBreakerState,
               gridBreakerEntity,

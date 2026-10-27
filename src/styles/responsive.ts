@@ -45,9 +45,27 @@ export const responsiveStyles = css`
       width: 60px;
       height: 60px;
     }
-    .node-inverter .node-badge {
-      width: 54px;
-      height: 54px;
+    .node-inverter .inverter-hub-badge {
+      width: 90px;
+      height: 70px;
+      padding: 5px 4px 4px;
+      border-radius: 14px;
+    }
+    .node-inverter .inverter-core-svg {
+      width: 30px;
+      height: 23px;
+    }
+    .node-inverter .inverter-custom-icon {
+      --mdc-icon-size: 23px;
+    }
+    .node-inverter .hub-mode-title {
+      font-size: 0.70rem;
+      max-width: 80px;
+    }
+    .node-inverter .hub-sub-pill {
+      font-size: 0.58rem;
+      padding: 1px 5px;
+      max-width: 78px;
     }
     .node-value {
       font-size: 0.82rem;

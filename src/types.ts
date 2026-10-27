@@ -198,6 +198,7 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
   title?: string;
   subtitle?: string;
   icon?: string;
+  inverter_icon?: string;
 
   entities: EntitiesConfig;
 

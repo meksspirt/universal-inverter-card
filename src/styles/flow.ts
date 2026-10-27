@@ -202,19 +202,24 @@ export const flowStyles = css`
 
   /* CENTRAL INVERTER HUB (Self-contained Glassmorphic Core) */
   .node-inverter .inverter-hub-badge {
-    width: 122px;
-    height: 88px;
-    border-radius: 20px;
+    width: 98px;
+    height: 76px;
+    border-radius: 16px;
+    display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 9px 10px 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 6px 5px;
     box-sizing: border-box;
+    position: relative;
     background: linear-gradient(155deg, rgba(30, 41, 59, 0.96) 0%, rgba(15, 23, 42, 0.96) 100%);
-    border: 1.8px solid color-mix(in srgb, var(--hub-accent, #3b82f6) 55%, rgba(255, 255, 255, 0.15));
+    border: 1.5px solid color-mix(in srgb, var(--hub-accent, #3b82f6) 55%, rgba(255, 255, 255, 0.15));
     box-shadow:
-      0 10px 24px rgba(0, 0, 0, 0.48),
-      0 0 22px color-mix(in srgb, var(--hub-accent, #3b82f6) 20%, transparent),
+      0 8px 20px rgba(0, 0, 0, 0.45),
+      0 0 16px color-mix(in srgb, var(--hub-accent, #3b82f6) 20%, transparent),
       inset 0 1px 1px rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .hub-top-row {
@@ -226,47 +231,55 @@ export const flowStyles = css`
   }
 
   .inverter-core-svg {
-    width: 36px;
-    height: 26px;
+    width: 34px;
+    height: 25px;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
+  }
+
+  .inverter-custom-icon {
+    --mdc-icon-size: 26px;
     color: var(--hub-accent, #3b82f6);
-    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.3));
   }
 
   .inverter-status-dot {
     position: absolute;
-    top: 1px;
-    right: 4px;
-    width: 8px;
-    height: 8px;
+    top: 5px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: #10b981;
   }
 
   .hub-mode-title {
-    font-size: 0.82rem;
+    font-size: 0.76rem;
     font-weight: 800;
     color: var(--primary-text, #f8fafc);
     letter-spacing: 0.2px;
     line-height: 1.1;
-    max-width: 106px;
+    margin: 2px 0 2px;
+    max-width: 86px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: center;
   }
 
   .hub-sub-pill {
-    font-size: 0.64rem;
+    font-size: 0.62rem;
     font-weight: 700;
-    color: rgba(148, 163, 184, 0.92);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(226, 232, 240, 0.92);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
-    padding: 1.5px 7px;
+    padding: 1px 6px;
     line-height: 1.15;
     white-space: nowrap;
-    max-width: 110px;
+    max-width: 86px;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
+    display: inline-block;
   }
 
   .hub-sub-pill.active-self {
