@@ -1,6 +1,7 @@
 import { html, svg, TemplateResult } from 'lit';
 import { AninerelCardConfig, HomeAssistant } from '../types';
 import { localize } from '../localize/localize';
+import { formatPower } from '../utils/format';
 import {
   getBatteryVoltageStatus,
   getGridVoltageStatus,
@@ -20,6 +21,7 @@ export interface ElectricalParamsProps {
   loadEnergyToday: number | null;
   batteryDischargeEnergyToday?: number | null;
   inverterLoadPercent?: number | null;
+  loadWatts?: number | null;
   efficiencyPct?: number | null;
   thermalLossWatts?: number | null;
   historyMap: Map<string, number[]>;
@@ -98,35 +100,53 @@ function renderSparkline(
 }
 
 /**
- * Renders radial arc progress gauge for Autarky / Self-Sufficiency / Battery SoC
+ * Renders modern tachometer arc progress gauge with scale markers and illuminated needle pip
  */
 function renderArcGauge(percent: number, color: string): TemplateResult {
-  const radius = 22;
+  const radius = 21;
   const stroke = 4.5;
-  const normalizedRadius = radius - stroke / 2;
-  const circumference = Math.PI * normalizedRadius; // Half circle arc (180 deg)
+  const circumference = Math.PI * radius; // 180 deg semicircle: ~65.97
   const clampedPercent = Math.max(0, Math.min(100, percent));
   const strokeDashoffset = circumference * (1 - clampedPercent / 100);
 
+  // Exact coordinates of the illuminated needle pip at current percentage
+  const angleRad = (clampedPercent / 100) * Math.PI;
+  const pipX = Number((27 - radius * Math.cos(angleRad)).toFixed(1));
+  const pipY = Number((27 - radius * Math.sin(angleRad)).toFixed(1));
+
   return svg`
-    <svg class="arc-gauge-svg" viewBox="0 0 50 30">
+    <svg class="arc-gauge-svg" viewBox="0 0 54 32">
+      <!-- Scale graduation tick marks (0%, 50%, 100%) -->
+      <line x1="6" y1="27" x2="6" y2="29.5" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.2" stroke-linecap="round" />
+      <line x1="27" y1="3.5" x2="27" y2="6" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.2" stroke-linecap="round" />
+      <line x1="48" y1="27" x2="48" y2="29.5" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.2" stroke-linecap="round" />
+
       <!-- Background track -->
       <path
-        d="M 5 26 A 20 20 0 0 1 45 26"
+        d="M 6 27 A 21 21 0 0 1 48 27"
         fill="none"
         stroke="rgba(255, 255, 255, 0.08)"
         stroke-width="${stroke}"
         stroke-linecap="round"
       />
-      <!-- Active gauge arc -->
+      <!-- Active gauge arc with glowing drop shadow -->
       <path
-        d="M 5 26 A 20 20 0 0 1 45 26"
+        d="M 6 27 A 21 21 0 0 1 48 27"
         fill="none"
         stroke="${color}"
         stroke-width="${stroke}"
         stroke-linecap="round"
-        stroke-dasharray="${circumference}"
-        stroke-dashoffset="${strokeDashoffset}"
+        stroke-dasharray="${circumference.toFixed(2)}"
+        stroke-dashoffset="${strokeDashoffset.toFixed(2)}"
+        style="filter: drop-shadow(0 0 3px ${color});"
+      />
+      <!-- Illuminated glowing needle pip at current value -->
+      <circle
+        cx="${pipX}"
+        cy="${pipY}"
+        r="2.8"
+        fill="#ffffff"
+        style="filter: drop-shadow(0 0 4px ${color});"
       />
     </svg>
   `;
@@ -146,6 +166,7 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
     loadEnergyToday,
     batteryDischargeEnergyToday,
     inverterLoadPercent,
+    loadWatts = null,
     efficiencyPct = null,
     thermalLossWatts = null,
     historyMap,
@@ -302,7 +323,10 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
         <div class="param-header">
           <ha-icon icon="mdi:transmission-tower"></ha-icon>
           <span class="param-title">${localize('params.grid', hass, lang)}</span>
-          <span class="param-badge" style="background: ${gridVColor}22; color: ${gridVColor}">
+          <span
+            class="param-badge"
+            style="background: color-mix(in srgb, ${gridVColor} 14%, rgba(0,0,0,0.3)); border: 1px solid ${gridVColor}55; color: ${gridVColor}; box-shadow: 0 0 6px ${gridVColor}22;"
+          >
             ${gridStatusLabel}
           </span>
         </div>
@@ -328,24 +352,28 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
           ${efficiencyPct !== null && !isNaN(efficiencyPct) && effectiveKpiMode !== 'conversion_efficiency'
             ? html`
                 <span
-                  class="param-badge"
-                  style="background: ${efficiencyPct >= 90 ? '#10b98122' : '#f59e0b22'}; color: ${efficiencyPct >= 90 ? '#10b981' : '#f59e0b'}"
+                  class="param-badge ${efficiencyPct >= 85 ? 'badge-good' : efficiencyPct >= 75 ? 'badge-mid' : 'badge-low'}"
                   title="${localize('params.conversion_efficiency', hass, lang)}: ${efficiencyPct.toFixed(1)}%${thermalLossWatts ? ` (${thermalLossWatts}W)` : ''}"
                 >
-                  ${localize('header.efficiency', hass, lang)} ${Math.round(efficiencyPct)}%
+                  ⚡ ${localize('header.efficiency', hass, lang)} ${Math.round(efficiencyPct)}%
                 </span>
               `
             : effectiveKpiMode === 'conversion_efficiency' && thermalLossWatts !== null && thermalLossWatts > 0
             ? html`
-                <span class="param-badge" style="background: rgba(168, 85, 247, 0.16); color: #c084fc">
+                <span class="param-badge badge-purple">
                   🔥 ${Math.round(thermalLossWatts)}W
                 </span>
               `
             : ''}
         </div>
         <div class="param-kpi-container">
-          <div class="param-main-value kpi-val" style="color: ${kpiColor}">
-            ${kpiValue}%
+          <div class="param-kpi-val-group">
+            <div class="param-main-value kpi-val" style="color: ${kpiColor}">
+              ${kpiValue}%
+            </div>
+            ${effectiveKpiMode === 'inverter_load' && loadWatts !== null && loadWatts !== undefined && loadWatts > 0
+              ? html`<div class="kpi-sub-watts">${formatPower(loadWatts)}</div>`
+              : ''}
           </div>
           <div class="arc-gauge-wrapper">
             ${renderArcGauge(kpiValue, kpiColor)}

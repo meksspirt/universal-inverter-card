@@ -1283,6 +1283,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       loadEnergyToday,
       batteryDischargeEnergyToday: batDischargeEnergyToday,
       inverterLoadPercent,
+      loadWatts,
       efficiencyPct: efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct,
       thermalLossWatts: efficiencyResult.thermalLossWatts,
       historyMap: this._historyMap,
