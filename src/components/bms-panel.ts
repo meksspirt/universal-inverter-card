@@ -18,11 +18,13 @@ export interface DualBatteryData {
   voltage: number | null;
   current?: number | null;
   temperature: number | null;
+  mosfetTemperature?: number | null;
   cycleCount?: number | null;
   remainingCapacity?: number | null;
   voltageEntity?: string;
   socEntity?: string;
   temperatureEntity?: string;
+  mosfetTemperatureEntity?: string;
   cells: CellData[];
 }
 
@@ -433,11 +435,23 @@ export function renderBmsPanel(props: BmsPanelProps): TemplateResult {
                   <span class="pack-voltage">
                     ${pack.voltage !== null && pack.voltage > 0 ? `${pack.voltage.toFixed(2)}V` : '—'}
                   </span>
-                  ${pack.temperature !== null && !isNaN(pack.temperature)
+                  ${(pack.temperature !== null && !isNaN(pack.temperature)) ||
+                  (pack.mosfetTemperature !== null && pack.mosfetTemperature !== undefined && !isNaN(pack.mosfetTemperature))
                     ? html`
-                        <span class="pack-temp">
+                        <span
+                          class="pack-temp"
+                          title="${pack.temperature !== null ? `Cell: ${Math.round(pack.temperature)}°C` : ''}${pack.temperature !== null && pack.mosfetTemperature !== null && pack.mosfetTemperature !== undefined ? ' • ' : ''}${pack.mosfetTemperature !== null && pack.mosfetTemperature !== undefined ? `MOSFET: ${Math.round(pack.mosfetTemperature)}°C` : ''}"
+                          @click=${(e: Event) => {
+                            e.stopPropagation();
+                            onBmsClick(pack.mosfetTemperatureEntity || pack.temperatureEntity);
+                          }}
+                        >
                           <ha-icon icon="mdi:thermometer"></ha-icon>
-                          ${Math.round(pack.temperature)}°C
+                          ${pack.temperature !== null &&
+                          pack.mosfetTemperature !== null &&
+                          pack.mosfetTemperature !== undefined
+                            ? html`${Math.round(pack.temperature)}°<span style="opacity:0.45;margin:0 1px;">/</span>${Math.round(pack.mosfetTemperature)}°C`
+                            : html`${Math.round((pack.mosfetTemperature ?? pack.temperature)!)}°C`}
                         </span>
                       `
                     : ''}

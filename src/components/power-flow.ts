@@ -129,10 +129,15 @@ export function renderPowerFlow(params: PowerFlowRenderParams): TemplateResult {
     selfSourceLabel = ` ← ${localize('nodes.battery', hass, lang)}`;
   }
 
-  const effectiveThermalWatts =
-    thermalLossWatts !== null && !isNaN(thermalLossWatts) && thermalLossWatts > 0
-      ? thermalLossWatts
-      : selfConsumptionWatts;
+  const hasExplicitSelf =
+    selfConsumptionWatts !== null &&
+    selfConsumptionWatts !== undefined &&
+    !isNaN(selfConsumptionWatts) &&
+    selfConsumptionWatts > 0;
+
+  const effectiveThermalWatts = hasExplicitSelf
+    ? selfConsumptionWatts
+    : thermalLossWatts;
 
   const hasSelfPower =
     effectiveThermalWatts !== null &&

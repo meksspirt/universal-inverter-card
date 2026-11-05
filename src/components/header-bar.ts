@@ -175,35 +175,45 @@ export function renderHeaderBar(props: HeaderBarProps): TemplateResult {
           : ''}
 
         <!-- Real-Time Conversion Efficiency & Heat Loss Chip -->
-        ${efficiencyPct !== null && !isNaN(efficiencyPct) && !isOffline
-          ? html`
-              <button
-                type="button"
-                class="status-chip"
-                style="--chip-color: ${efficiencyPct >= 90 ? '#10b981' : efficiencyPct >= 80 ? '#f59e0b' : '#f97316'}"
-                @click=${() => onChipClick(selfConsumptionEntity || config.entities?.load_power)}
-                title="${localize('params.conversion_efficiency', hass, lang)}: ${efficiencyPct.toFixed(1)}%${thermalLossWatts ? ` (${localize('header.heat_loss', hass, lang)}: ${Math.round(thermalLossWatts)}W)` : ''}"
-              >
-                <ha-icon icon="mdi:fire-circle"></ha-icon>
-                <span>
-                  ${localize('header.efficiency', hass, lang)}: ${efficiencyPct.toFixed(1)}%${thermalLossWatts !== null && thermalLossWatts > 0 ? ` • ${Math.round(thermalLossWatts)}W` : ''}
-                </span>
-              </button>
-            `
-          : selfConsumptionWatts !== null && selfConsumptionWatts !== undefined && !isNaN(selfConsumptionWatts) && selfConsumptionWatts > 0
-          ? html`
-              <button
-                type="button"
-                class="status-chip"
-                style="--chip-color: #a855f7"
-                @click=${() => onChipClick(selfConsumptionEntity)}
-                title="Inverter own power consumption"
-              >
-                <ha-icon icon="mdi:flash-outline"></ha-icon>
-                <span>${localize('header.self_power', hass, lang)}: ${Math.round(selfConsumptionWatts)}W</span>
-              </button>
-            `
-          : ''}
+        ${(() => {
+          const hasSelf =
+            selfConsumptionWatts !== null &&
+            selfConsumptionWatts !== undefined &&
+            !isNaN(selfConsumptionWatts) &&
+            selfConsumptionWatts > 0;
+          const activeThermal = hasSelf
+            ? selfConsumptionWatts
+            : (thermalLossWatts ?? null);
+          return efficiencyPct !== null && !isNaN(efficiencyPct) && !isOffline
+            ? html`
+                <button
+                  type="button"
+                  class="status-chip"
+                  style="--chip-color: ${efficiencyPct >= 90 ? '#10b981' : efficiencyPct >= 80 ? '#f59e0b' : '#f97316'}"
+                  @click=${() => onChipClick(selfConsumptionEntity || config.entities?.load_power)}
+                  title="${localize('params.conversion_efficiency', hass, lang)}: ${efficiencyPct.toFixed(1)}%${activeThermal ? ` (${localize('header.heat_loss', hass, lang)}: ${Math.round(activeThermal)}W)` : ''}"
+                >
+                  <ha-icon icon="mdi:fire-circle"></ha-icon>
+                  <span>
+                    ${localize('header.efficiency', hass, lang)}: ${efficiencyPct.toFixed(1)}%${activeThermal !== null && activeThermal !== undefined && activeThermal > 0 ? ` • ${Math.round(activeThermal)}W` : ''}
+                  </span>
+                </button>
+              `
+            : hasSelf
+            ? html`
+                <button
+                  type="button"
+                  class="status-chip"
+                  style="--chip-color: #a855f7"
+                  @click=${() => onChipClick(selfConsumptionEntity)}
+                  title="Inverter own power consumption"
+                >
+                  <ha-icon icon="mdi:flash-outline"></ha-icon>
+                  <span>${localize('header.self_power', hass, lang)}: ${Math.round(selfConsumptionWatts!)}W</span>
+                </button>
+              `
+            : '';
+        })()}
 
         <!-- Input Breaker Chip (Zigbee Smart Plug / Breaker) -->
         ${gridBreakerState === 'on' || gridBreakerState === 'off'

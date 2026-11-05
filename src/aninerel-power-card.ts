@@ -496,7 +496,13 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       const count1 = bms.bat1_cell_count || bms.battery_1?.cell_count || 4;
       if (bms.bat1_soc_entity) ids.add(bms.bat1_soc_entity);
       if (bms.bat1_voltage_entity) ids.add(bms.bat1_voltage_entity);
-      if (bms.bat1_temperature_entity) ids.add(bms.bat1_temperature_entity);
+      if (bms.bat1_temperature_entity) {
+        ids.add(bms.bat1_temperature_entity);
+        if (bms.bat1_temperature_entity.includes('cell_temperature')) {
+          ids.add(bms.bat1_temperature_entity.replace('cell_temperature', 'mosfet_temperature'));
+        }
+      }
+      if (bms.bat1_mosfet_temperature_entity) ids.add(bms.bat1_mosfet_temperature_entity);
       if (bms.bat1_cell_prefix) {
         addCellCandidates(bms.bat1_cell_prefix, count1);
       }
@@ -504,7 +510,13 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       const count2 = bms.bat2_cell_count || bms.battery_2?.cell_count || 4;
       if (bms.bat2_soc_entity) ids.add(bms.bat2_soc_entity);
       if (bms.bat2_voltage_entity) ids.add(bms.bat2_voltage_entity);
-      if (bms.bat2_temperature_entity) ids.add(bms.bat2_temperature_entity);
+      if (bms.bat2_temperature_entity) {
+        ids.add(bms.bat2_temperature_entity);
+        if (bms.bat2_temperature_entity.includes('cell_temperature')) {
+          ids.add(bms.bat2_temperature_entity.replace('cell_temperature', 'mosfet_temperature'));
+        }
+      }
+      if (bms.bat2_mosfet_temperature_entity) ids.add(bms.bat2_mosfet_temperature_entity);
       if (bms.bat2_cell_prefix) {
         addCellCandidates(bms.bat2_cell_prefix, count2);
       }
@@ -521,7 +533,13 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         if (np.soc_entity) ids.add(np.soc_entity);
         if (np.voltage_entity) ids.add(np.voltage_entity);
         if (np.current_entity) ids.add(np.current_entity);
-        if (np.temperature_entity) ids.add(np.temperature_entity);
+        if (np.temperature_entity) {
+          ids.add(np.temperature_entity);
+          if (np.temperature_entity.includes('cell_temperature')) {
+            ids.add(np.temperature_entity.replace('cell_temperature', 'mosfet_temperature'));
+          }
+        }
+        if (np.mosfet_temperature_entity) ids.add(np.mosfet_temperature_entity);
         if (np.soh_entity) ids.add(np.soh_entity);
         if (np.cell_voltage_prefix) {
           addCellCandidates(np.cell_voltage_prefix, np.cell_count || 4);
@@ -1008,6 +1026,8 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                   voltage_entity: bms.bat1_voltage_entity || bms.battery_1?.voltage_entity,
                   current_entity: bms.battery_1?.current_entity,
                   temperature_entity: bms.bat1_temperature_entity || bms.battery_1?.temperature_entity,
+                  mosfet_temperature_entity:
+                    bms.bat1_mosfet_temperature_entity || bms.battery_1?.mosfet_temperature_entity,
                   cell_count: bms.bat1_cell_count || bms.battery_1?.cell_count || 4,
                   cell_voltage_prefix:
                     bms.bat1_cell_prefix || bms.battery_1?.cell_voltage_prefix || 'sensor.redodo_1_cell_voltage_',
@@ -1018,6 +1038,8 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                   voltage_entity: bms.bat2_voltage_entity || bms.battery_2?.voltage_entity,
                   current_entity: bms.battery_2?.current_entity,
                   temperature_entity: bms.bat2_temperature_entity || bms.battery_2?.temperature_entity,
+                  mosfet_temperature_entity:
+                    bms.bat2_mosfet_temperature_entity || bms.battery_2?.mosfet_temperature_entity,
                   cell_count: bms.bat2_cell_count || bms.battery_2?.cell_count || 4,
                   cell_voltage_prefix:
                     bms.bat2_cell_prefix || bms.battery_2?.cell_voltage_prefix || 'sensor.redodo_2_cell_voltage_',
@@ -1032,6 +1054,16 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
           const pV = this._getNullableNumber(pc.voltage_entity);
           const pSoc = this._getNullableNumber(pc.soc_entity);
           const pTemp = this._getNullableNumber(pc.temperature_entity);
+
+          // Auto-discover MOSFET temperature if not explicitly supplied
+          let mosfetEntity = pc.mosfet_temperature_entity;
+          if (!mosfetEntity && pc.temperature_entity && pc.temperature_entity.includes('cell_temperature')) {
+            const candidate = pc.temperature_entity.replace('cell_temperature', 'mosfet_temperature');
+            if (this._hass?.states?.[candidate]) {
+              mosfetEntity = candidate;
+            }
+          }
+          const pMosfetTemp = mosfetEntity ? this._getNullableNumber(mosfetEntity) : null;
           const pCur = this._getNullableNumber(pc.current_entity);
           const pCount = pc.cell_count !== undefined ? pc.cell_count : 4;
           const pPrefix = pc.cell_voltage_prefix || '';
@@ -1078,9 +1110,11 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
             soc: pSoc,
             current: pCur,
             temperature: pTemp,
+            mosfetTemperature: pMosfetTemp,
             voltageEntity: pc.voltage_entity,
             socEntity: pc.soc_entity,
             temperatureEntity: pc.temperature_entity,
+            mosfetTemperatureEntity: mosfetEntity,
             cells: pCells,
           });
         }
@@ -1274,6 +1308,11 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       this._modalOpen = true;
     };
 
+    const effectiveSelfOrLoss =
+      selfConsumptionWatts !== null && !isNaN(selfConsumptionWatts) && selfConsumptionWatts > 0
+        ? selfConsumptionWatts
+        : efficiencyResult.thermalLossWatts;
+
     const paramsSectionTpl = renderElectricalParams({
       hass: this._hass,
       config: this._config,
@@ -1292,7 +1331,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
         this._config.kpi_mode === 'conversion_efficiency'
           ? (efficiencyResult.efficiencyPct ?? efficiencyResult.dailyEfficiencyPct)
           : efficiencyResult.efficiencyPct,
-      thermalLossWatts: efficiencyResult.thermalLossWatts,
+      thermalLossWatts: effectiveSelfOrLoss,
       historyMap: this._historyMap,
       onParamClick: (id) => this._handleEntityClick(id),
     });
@@ -1395,7 +1434,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               selfConsumptionWatts,
               selfConsumptionEntity: selfPowerEntity,
               efficiencyPct: efficiencyResult.efficiencyPct,
-              thermalLossWatts: efficiencyResult.thermalLossWatts,
+              thermalLossWatts: effectiveSelfOrLoss,
               isCompact,
               onToggleCompact: () => {
                 this._compactOverride = !isCompact;
@@ -1456,7 +1495,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
               isCriticalCountdown: smartRuntime.isCriticalCountdown,
               sheddingHint: smartRuntime.sheddingHint,
               efficiencyPct: efficiencyResult.efficiencyPct,
-              thermalLossWatts: efficiencyResult.thermalLossWatts,
+              thermalLossWatts: effectiveSelfOrLoss,
               selfConsumptionWatts,
               operatingMode,
               isFault,

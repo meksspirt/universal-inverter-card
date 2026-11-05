@@ -243,7 +243,7 @@ export function calculateConversionEfficiency(params: {
       // Realistic physical conversion efficiency bounds for inverters: 50% to 97.5%
       if (rawEff >= 50 && rawEff <= 97.5) {
         efficiencyPct = Number(rawEff.toFixed(1));
-        thermalLossWatts = Math.round(Math.max(avgSelf ?? 0, diff));
+        thermalLossWatts = Math.round(hasExplicitSelf ? avgSelf! : diff);
       }
     } else {
       // Input is less than output: sensor lag / transient mismatch.

@@ -78,6 +78,7 @@ export interface SingleBatteryConfig {
   voltage_entity?: string;
   current_entity?: string;
   temperature_entity?: string;
+  mosfet_temperature_entity?: string;
   cell_count?: number; // default: 4 for 12V, 8 for 24V, 16 for 48V
   cell_voltage_prefix?: string;
   cycle_count_entity?: string;
@@ -96,7 +97,8 @@ export interface BmsConfig {
   soc_entity?: string;                // sensor.battery_state_of_charge (%)
   voltage_entity?: string;            // sensor.battery_total_voltage (V)
   current_entity?: string;            // sensor.battery_current (A)
-  temperature_entity?: string;        // sensor.battery_temperature_probe_1 (°C)
+  temperature_entity?: string;
+  mosfet_temperature_entity?: string;        // sensor.battery_temperature_probe_1 (°C)
   temperature_2_entity?: string;      // sensor.battery_temperature_probe_2 (°C)
   soh_entity?: string;                // sensor.battery_state_of_health (% SOH)
   cell_count?: number;                // default: 8
@@ -117,6 +119,7 @@ export interface BmsConfig {
   bat1_soc_entity?: string;
   bat1_voltage_entity?: string;
   bat1_temperature_entity?: string;
+  bat1_mosfet_temperature_entity?: string;
   bat1_cell_count?: number;
   bat1_cell_prefix?: string;
 
@@ -124,6 +127,7 @@ export interface BmsConfig {
   bat2_soc_entity?: string;
   bat2_voltage_entity?: string;
   bat2_temperature_entity?: string;
+  bat2_mosfet_temperature_entity?: string;
   bat2_cell_count?: number;
   bat2_cell_prefix?: string;
 
