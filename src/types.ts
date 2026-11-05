@@ -223,6 +223,7 @@ export interface AninerelCardConfig extends LovelaceCardConfig {
     | 'inverter_load'
     | 'conversion_efficiency';
   kpi_entity?: string;
+  kpi_gauge_style?: 'bar' | 'arc';
 
   // Subsections
   bms?: BmsConfig;

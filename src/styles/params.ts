@@ -128,10 +128,25 @@ export const paramsStyles = css`
     align-items: center;
   }
 
-  .sparkline-svg {
+  .sparkline-svg,
+  .kpi-gauge-svg {
     width: 100%;
     height: 100%;
     overflow: visible;
+  }
+
+  .param-chart-box .arc-gauge-svg {
+    height: 24px;
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .param-sub-watts {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--secondary-text);
   }
 
   .sparkline-placeholder {
@@ -157,10 +172,10 @@ export const paramsStyles = css`
   }
 
   .kpi-val {
-    font-size: 1.35rem;
+    font-size: 1.12rem;
     font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.3px;
+    line-height: 1.2;
+    letter-spacing: -0.2px;
   }
 
   .kpi-sub-watts {

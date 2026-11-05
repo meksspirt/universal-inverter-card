@@ -100,6 +100,75 @@ function renderSparkline(
 }
 
 /**
+ * Renders modern high-tech progress track gauge with scale markers and illuminated needle pip,
+ * perfectly matching sparkline dimensions (110x24) for 100% horizontal and vertical alignment.
+ */
+function renderKpiGauge(percent: number, color: string, fillId = 'kpi'): TemplateResult {
+  const width = 110;
+  const height = 24;
+  const clampedPercent = Math.max(0, Math.min(100, percent));
+
+  const padX = 4;
+  const usableWidth = width - padX * 2; // 102
+  const trackHeight = 6;
+  const trackY = 9;
+  const fillWidth = Number(((clampedPercent / 100) * usableWidth).toFixed(1));
+  const pipX = Number((padX + (clampedPercent / 100) * usableWidth).toFixed(1));
+  const pipY = 12;
+  const gradId = `kpi-grad-${fillId}`;
+
+  return svg`
+    <svg class="kpi-gauge-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.8" />
+          <stop offset="100%" stop-color="${color}" stop-opacity="1" />
+        </linearGradient>
+      </defs>
+
+      <!-- Scale graduation tick marks (25%, 50%, 75%) -->
+      <line x1="${(padX + usableWidth * 0.25).toFixed(1)}" y1="7" x2="${(padX + usableWidth * 0.25).toFixed(1)}" y2="17" stroke="rgba(255, 255, 255, 0.16)" stroke-width="1" stroke-linecap="round" />
+      <line x1="${(padX + usableWidth * 0.50).toFixed(1)}" y1="6" x2="${(padX + usableWidth * 0.50).toFixed(1)}" y2="18" stroke="rgba(255, 255, 255, 0.26)" stroke-width="1.2" stroke-linecap="round" />
+      <line x1="${(padX + usableWidth * 0.75).toFixed(1)}" y1="7" x2="${(padX + usableWidth * 0.75).toFixed(1)}" y2="17" stroke="rgba(255, 255, 255, 0.16)" stroke-width="1" stroke-linecap="round" />
+
+      <!-- Background track -->
+      <rect
+        x="${padX}"
+        y="${trackY}"
+        width="${usableWidth}"
+        height="${trackHeight}"
+        rx="3"
+        fill="rgba(255, 255, 255, 0.08)"
+      />
+
+      <!-- Active level fill with glowing drop shadow -->
+      ${fillWidth > 0
+        ? svg`
+            <rect
+              x="${padX}"
+              y="${trackY}"
+              width="${fillWidth}"
+              height="${trackHeight}"
+              rx="3"
+              fill="url(#${gradId})"
+              style="filter: drop-shadow(0 0 3px ${color});"
+            />
+          `
+        : ''}
+
+      <!-- Illuminated needle pip at current value -->
+      <circle
+        cx="${pipX}"
+        cy="${pipY}"
+        r="3.2"
+        fill="#ffffff"
+        style="filter: drop-shadow(0 0 4px ${color});"
+      />
+    </svg>
+  `;
+}
+
+/**
  * Renders modern tachometer arc progress gauge with scale markers and illuminated needle pip
  */
 function renderArcGauge(percent: number, color: string): TemplateResult {
@@ -366,18 +435,18 @@ export function renderElectricalParams(props: ElectricalParamsProps): TemplateRe
               `
             : ''}
         </div>
-        <div class="param-kpi-container">
-          <div class="param-kpi-val-group">
-            <div class="param-main-value kpi-val" style="color: ${kpiColor}">
-              ${kpiValue}%
-            </div>
-            ${effectiveKpiMode === 'inverter_load' && loadWatts !== null && loadWatts !== undefined && loadWatts > 0
-              ? html`<div class="kpi-sub-watts">${formatPower(loadWatts)}</div>`
-              : ''}
-          </div>
-          <div class="arc-gauge-wrapper">
-            ${renderArcGauge(kpiValue, kpiColor)}
-          </div>
+        <div class="param-main-value">
+          <span style="color: ${kpiColor}">
+            ${kpiValue}%
+          </span>
+          ${effectiveKpiMode === 'inverter_load' && loadWatts !== null && loadWatts !== undefined && loadWatts > 0
+            ? html`<span class="param-slash">/</span><span class="param-sub-watts">${formatPower(loadWatts)}</span>`
+            : ''}
+        </div>
+        <div class="param-chart-box">
+          ${config.kpi_gauge_style === 'arc'
+            ? renderArcGauge(kpiValue, kpiColor)
+            : renderKpiGauge(kpiValue, kpiColor, effectiveKpiMode)}
         </div>
       </div>
     </div>
