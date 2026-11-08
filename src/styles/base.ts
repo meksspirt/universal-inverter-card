@@ -18,6 +18,11 @@ export const baseStyles = css`
     --inverter-color: #3b82f6;
   }
 
+  :host([modal-open]) {
+    z-index: 99999;
+    position: relative;
+  }
+
   ha-card {
     background: var(--card-bg);
     color: var(--primary-text);

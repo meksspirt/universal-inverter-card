@@ -114,6 +114,29 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     this._updateHistoryBuffers();
   }
 
+  protected updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+    if (changedProperties.has('_modalOpen')) {
+      this.toggleAttribute('modal-open', this._modalOpen);
+      const dialog = this.shadowRoot?.querySelector<HTMLDialogElement>('.compact-modal-dialog');
+      if (dialog) {
+        if (this._modalOpen) {
+          if (!dialog.open) {
+            try {
+              dialog.showModal();
+            } catch {
+              dialog.setAttribute('open', '');
+            }
+          }
+        } else {
+          if (dialog.open) {
+            dialog.close();
+          }
+        }
+      }
+    }
+  }
+
   protected firstUpdated(): void {
     this._fetchHistory();
   }
@@ -777,6 +800,20 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
       detail: { entityId },
     });
     this.dispatchEvent(event);
+  }
+
+  private _handleModalBackdropClick(e: MouseEvent): void {
+    const dialog = e.currentTarget as HTMLDialogElement;
+    if (!dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const isInDialog =
+      rect.top <= e.clientY &&
+      e.clientY <= rect.bottom &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.right;
+    if (!isInDialog) {
+      this._modalOpen = false;
+    }
   }
 
   // Service callers for inverter control commands
@@ -1573,100 +1610,100 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
                 </button>
               </div>
 
-              <!-- COMPACT MODE DETAILS MODAL OVERLAY -->
-              ${this._modalOpen
-                ? html`
-                    <div
-                      class="compact-modal-backdrop"
-                      @click=${() => {
-                        this._modalOpen = false;
-                      }}
-                    >
-                      <div
-                        class="compact-modal-dialog"
-                        @click=${(e: Event) => e.stopPropagation()}
-                      >
-                        <div class="compact-modal-header">
-                          <div class="compact-modal-tabs">
-                            <button
-                              type="button"
-                              class="compact-modal-tab ${this._modalTab === 'bms' ? 'active' : ''}"
-                              @click=${() => {
-                                this._modalTab = 'bms';
-                              }}
-                            >
-                              <ha-icon icon="mdi:battery-heart-variant"></ha-icon>
-                              <span>${activeLang === 'uk' ? 'АКБ та Комірки' : activeLang === 'ru' ? 'АКБ и Ячейки' : 'BMS & Cells'}</span>
-                            </button>
-                            <button
-                              type="button"
-                              class="compact-modal-tab ${this._modalTab === 'telemetry' ? 'active' : ''}"
-                              @click=${() => {
-                                this._modalTab = 'telemetry';
-                              }}
-                            >
-                              <ha-icon icon="mdi:chart-areaspline"></ha-icon>
-                              <span>${activeLang === 'uk' ? 'Телеметрія та Баланс' : activeLang === 'ru' ? 'Телеметрия и Баланс' : 'Telemetry & Energy'}</span>
-                            </button>
-                            <button
-                              type="button"
-                              class="compact-modal-tab ${this._modalTab === 'controls' ? 'active' : ''}"
-                              @click=${() => {
-                                this._modalTab = 'controls';
-                              }}
-                            >
-                              <ha-icon icon="mdi:tune-variant"></ha-icon>
-                              <span>${activeLang === 'uk' ? 'Керування' : activeLang === 'ru' ? 'Управление' : 'Controls'}</span>
-                            </button>
-                            <button
-                              type="button"
-                              class="compact-modal-tab ${this._modalTab === 'blackbox' ? 'active' : ''}"
-                              @click=${() => {
-                                this._modalTab = 'blackbox';
-                              }}
-                            >
-                              <ha-icon icon="mdi:database-clock-outline"></ha-icon>
-                              <span>
-                                ${activeLang === 'uk' ? 'Чорна скринька' : activeLang === 'ru' ? 'Черный ящик' : 'Black-Box'}
-                                ${blackBoxState.events.length > 0 ? `(${blackBoxState.events.length})` : ''}
-                              </span>
-                            </button>
-                          </div>
+              <!-- COMPACT MODE DETAILS MODAL OVERLAY (Native Top-Layer Dialog) -->
+              <dialog
+                class="compact-modal-dialog"
+                @cancel=${(e: Event) => {
+                  e.preventDefault();
+                  this._modalOpen = false;
+                }}
+                @close=${() => {
+                  this._modalOpen = false;
+                }}
+                @click=${(e: MouseEvent) => this._handleModalBackdropClick(e)}
+              >
+                ${this._modalOpen
+                  ? html`
+                      <div class="compact-modal-header">
+                        <div class="compact-modal-tabs">
                           <button
                             type="button"
-                            class="compact-modal-close"
+                            class="compact-modal-tab ${this._modalTab === 'bms' ? 'active' : ''}"
                             @click=${() => {
-                              this._modalOpen = false;
+                              this._modalTab = 'bms';
                             }}
                           >
-                            <ha-icon icon="mdi:close"></ha-icon>
+                            <ha-icon icon="mdi:battery-heart-variant"></ha-icon>
+                            <span>${activeLang === 'uk' ? 'АКБ та Комірки' : activeLang === 'ru' ? 'АКБ и Ячейки' : 'BMS & Cells'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            class="compact-modal-tab ${this._modalTab === 'telemetry' ? 'active' : ''}"
+                            @click=${() => {
+                              this._modalTab = 'telemetry';
+                            }}
+                          >
+                            <ha-icon icon="mdi:chart-areaspline"></ha-icon>
+                            <span>${activeLang === 'uk' ? 'Телеметрія та Баланс' : activeLang === 'ru' ? 'Телеметрия и Баланс' : 'Telemetry & Energy'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            class="compact-modal-tab ${this._modalTab === 'controls' ? 'active' : ''}"
+                            @click=${() => {
+                              this._modalTab = 'controls';
+                            }}
+                          >
+                            <ha-icon icon="mdi:tune-variant"></ha-icon>
+                            <span>${activeLang === 'uk' ? 'Керування' : activeLang === 'ru' ? 'Управление' : 'Controls'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            class="compact-modal-tab ${this._modalTab === 'blackbox' ? 'active' : ''}"
+                            @click=${() => {
+                              this._modalTab = 'blackbox';
+                            }}
+                          >
+                            <ha-icon icon="mdi:database-clock-outline"></ha-icon>
+                            <span>
+                              ${activeLang === 'uk' ? 'Чорна скринька' : activeLang === 'ru' ? 'Черный ящик' : 'Black-Box'}
+                              ${blackBoxState.events.length > 0 ? ` (${blackBoxState.events.length})` : ''}
+                            </span>
                           </button>
                         </div>
-                        <div class="compact-modal-content">
-                          ${this._modalTab === 'bms' ? bmsSectionTpl : ''}
-                          ${this._modalTab === 'telemetry'
-                            ? html`${paramsSectionTpl} ${energySectionTpl}`
-                            : ''}
-                          ${this._modalTab === 'controls' ? controlsSectionTpl : ''}
-                          ${this._modalTab === 'blackbox'
-                            ? renderBlackBoxPanel({
-                                hass: this._hass,
-                                language: this._config.language,
-                                state: blackBoxState,
-                                expanded: true,
-                                forceOpen: true,
-                                onToggleExpand: () => {},
-                                onClear: () => {
-                                  clearBlackBoxState(cardKey);
-                                  this.requestUpdate();
-                                },
-                              })
-                            : ''}
-                        </div>
+                        <button
+                          type="button"
+                          class="compact-modal-close"
+                          @click=${() => {
+                            this._modalOpen = false;
+                          }}
+                        >
+                          <ha-icon icon="mdi:close"></ha-icon>
+                        </button>
                       </div>
-                    </div>
-                  `
-                : ''}
+                      <div class="compact-modal-content">
+                        ${this._modalTab === 'bms' ? bmsSectionTpl : ''}
+                        ${this._modalTab === 'telemetry'
+                          ? html`${paramsSectionTpl} ${energySectionTpl}`
+                          : ''}
+                        ${this._modalTab === 'controls' ? controlsSectionTpl : ''}
+                        ${this._modalTab === 'blackbox'
+                          ? renderBlackBoxPanel({
+                              hass: this._hass,
+                              language: this._config.language,
+                              state: blackBoxState,
+                              expanded: true,
+                              forceOpen: true,
+                              onToggleExpand: () => {},
+                              onClear: () => {
+                                clearBlackBoxState(cardKey);
+                                this.requestUpdate();
+                              },
+                            })
+                          : ''}
+                      </div>
+                    `
+                  : ''}
+              </dialog>
             `
           : html`
               <!-- 4. Electrical Telemetry & Battery SoC / Self-Sufficiency / Efficiency KPI -->

@@ -393,18 +393,33 @@ export const alertStyles = css`
     flex-shrink: 0;
   }
 
-  .compact-modal-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(2, 6, 23, 0.76);
-    backdrop-filter: blur(8px);
+  dialog.compact-modal-dialog {
+    width: 92vw;
+    max-width: 640px;
+    max-height: 86vh;
+    background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+    margin: auto;
+    color: var(--primary-text, #ffffff);
     box-sizing: border-box;
+    container-type: inline-size;
     animation: fadeInModal 0.18s ease-out;
+  }
+
+  dialog.compact-modal-dialog:not([open]) {
+    display: none;
+  }
+
+  dialog.compact-modal-dialog::backdrop {
+    background: rgba(2, 6, 23, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   @keyframes fadeInModal {
@@ -416,19 +431,6 @@ export const alertStyles = css`
       opacity: 1;
       transform: scale(1);
     }
-  }
-
-  .compact-modal-dialog {
-    width: 100%;
-    max-width: 620px;
-    max-height: 86vh;
-    background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 20px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
   }
 
   .compact-modal-header {
@@ -493,8 +495,11 @@ export const alertStyles = css`
   .compact-modal-content {
     padding: 16px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
     gap: 14px;
+    box-sizing: border-box;
   }
 `;
