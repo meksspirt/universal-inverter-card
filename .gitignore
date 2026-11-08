@@ -10,6 +10,7 @@ node_modules/
 .npm
 .DS_Store
 Thumbs.db
+scratch/
 
 # Do NOT ignore dist/ because HACS needs the compiled JavaScript bundle directly from the repo!
 !dist/aninerel-power-card.js

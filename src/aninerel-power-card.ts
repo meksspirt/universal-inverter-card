@@ -1,5 +1,5 @@
 import { LitElement, html, PropertyValues } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, AninerelCardConfig, LovelaceCard } from './types';
 import { CARD_NAME, LEGACY_CARD_NAME, CARD_VERSION, DEFAULT_CONFIG, STUB_CONFIG } from './const';
 import { cardStyles } from './styles';
@@ -40,6 +40,7 @@ const DEFAULT_LOAD_PERCENT_ENTITY =
 
 @customElement(CARD_NAME)
 export class AninerelPowerCard extends LitElement implements LovelaceCard {
+  @property({ type: Boolean }) public preview = false;
   @state() private _config!: AninerelCardConfig;
   @state() private _hass!: HomeAssistant;
   @state() private _controlsExpanded = false;
@@ -132,35 +133,55 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
   }
 
   // 4. Modern Sections View Grid Options (HA 2024.3+)
-  // Using grid_rows: 'auto' so HA dynamically spans rows based on actual rendered card height,
-  // preventing any overlap or clipping with subsequent dashboard cards.
-  public getLayoutOptions() {
+  // Standard HA 12-column grid options: columns: 12 ensures full width across the section grid,
+  // rows: 'auto' allows the card to span dynamically without overlapping subsequent dashboard cards.
+  public getGridOptions() {
     const isCompact =
       this._compactOverride !== null ? this._compactOverride : Boolean(this._config?.compact_mode);
     return {
-      grid_rows: isCompact ? 6 : 'auto',
-      grid_columns: isCompact ? 2 : 4,
-      grid_min_rows: isCompact ? 4 : 8,
-      grid_min_columns: 2,
+      columns: 12,
+      rows: isCompact ? 6 : 'auto',
+      min_columns: 6,
+      min_rows: isCompact ? 4 : 8,
     };
   }
 
+  // Backward-compatible alias for older/custom layout engines
+  public getLayoutOptions() {
+    return this.getGridOptions();
+  }
+
   // 5. Default stub configuration when clicking "+ Add Card" in HA UI (Auto-discovers user's entities)
-  public static getStubConfig(hass?: HomeAssistant): Record<string, any> {
+  public static getStubConfig(
+    hass?: HomeAssistant,
+    entities?: string[],
+    entitiesFallback?: string[]
+  ): Record<string, any> {
     if (!hass || !hass.states) {
-      return STUB_CONFIG;
+      const { type, ...rest } = STUB_CONFIG;
+      return rest;
     }
 
-    const keys = Object.keys(hass.states);
+    const availableEntities =
+      entities && entities.length > 0
+        ? entities
+        : entitiesFallback && entitiesFallback.length > 0
+        ? entitiesFallback
+        : Object.keys(hass.states);
+
     const findId = (domain: string, keywords: string[]): string | undefined => {
       for (const kw of keywords) {
-        const match = keys.find((id) => id.startsWith(`${domain}.`) && id.toLowerCase().includes(kw));
+        const match = availableEntities.find(
+          (id) => id.startsWith(`${domain}.`) && id.toLowerCase().includes(kw)
+        );
         if (match) return match;
       }
       return undefined;
     };
 
-    const loadP = findId('sensor', ['load_power', 'consumption_power', 'home_load', 'house_power']) || 'sensor.load_power';
+    const loadP =
+      findId('sensor', ['load_power', 'consumption_power', 'home_load', 'house_power']) ||
+      'sensor.load_power';
     const batP = findId('sensor', ['battery_power', 'bat_power', 'battery_charge_power']);
     const gridP = findId('sensor', ['grid_power', 'mains_power', 'grid_consumption']);
     const solarP = findId('sensor', ['solar_power', 'pv_power', 'pv1_power', 'mppt_power']);
@@ -177,7 +198,6 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
     const maxChg = findId('number', ['max_ac_charge_current', 'max_charge_current']);
 
     return {
-      type: 'custom:aninerel-power-card',
       show_solar: Boolean(solarP),
       entities: {
         load_power: loadP,
@@ -211,7 +231,7 @@ export class AninerelPowerCard extends LitElement implements LovelaceCard {
 
   // Fetches real 24-hour historical records from Home Assistant via WebSocket/API
   private async _fetchHistory(): Promise<void> {
-    if (!this._config || !this._hass) return;
+    if (this.preview || !this._config || !this._hass) return;
 
     const batEntity =
       this._config.battery_voltage_entity || this._config.bms?.voltage_entity;
@@ -1692,6 +1712,10 @@ declare global {
       description: string;
       preview?: boolean;
       documentationURL?: string;
+      getEntitySuggestion?: (
+        hass: HomeAssistant,
+        entityId: string
+      ) => { config: Record<string, any>; label?: string } | null;
     }>;
   }
 }
@@ -1704,6 +1728,36 @@ window.customCards.push({
     'Universal power card for hybrid inverters (Aninerel, Anenji, Deye, Growatt, PowMr, EASun, Voltronic) & BMS battery banks (LiFePO4, JK, Daly, Redodo, Pylontech)',
   preview: true,
   documentationURL: 'https://github.com/meksspirt/universal-inverter-card',
+  getEntitySuggestion: (hass: HomeAssistant, entityId: string) => {
+    const stateObj = hass?.states?.[entityId];
+    if (!stateObj || !entityId.startsWith('sensor.')) return null;
+    const id = entityId.toLowerCase();
+    const unit = stateObj.attributes?.unit_of_measurement;
+    const devClass = stateObj.attributes?.device_class;
+    const isPower = unit === 'W' || unit === 'kW' || devClass === 'power';
+    const isMatch =
+      isPower &&
+      (id.includes('inverter') ||
+        id.includes('load_power') ||
+        id.includes('consumption') ||
+        id.includes('battery_power') ||
+        id.includes('grid_power') ||
+        id.includes('solar_power') ||
+        id.includes('pv_power'));
+    if (!isMatch) return null;
+    return {
+      config: {
+        type: `custom:${CARD_NAME}`,
+        title: stateObj.attributes?.friendly_name || 'Inverter Power',
+        entities: {
+          load_power: id.includes('load') || id.includes('consumption') ? entityId : 'sensor.load_power',
+          ...(id.includes('battery') ? { battery_power: entityId } : {}),
+          ...(id.includes('grid') ? { grid_power: entityId } : {}),
+          ...(id.includes('solar') || id.includes('pv') ? { solar_power: entityId } : {}),
+        },
+      },
+    };
+  },
 });
 window.customCards.push({
   type: LEGACY_CARD_NAME,

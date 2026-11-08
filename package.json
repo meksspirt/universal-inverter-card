@@ -1,10 +1,12 @@
 {
   "name": "universal-inverter-card",
-  "version": "1.4.9",
+  "version": "1.5.0",
   "type": "module",
   "description": "Universal Home Assistant custom card for hybrid inverters & BMS battery systems",
   "main": "dist/universal-inverter-card.js",
   "scripts": {
+    "lint": "tsc --noEmit",
+    "test": "tsc --noEmit",
     "build": "rollup -c",
     "watch": "rollup -c --watch",
     "deploy": "node scripts/deploy.mjs",

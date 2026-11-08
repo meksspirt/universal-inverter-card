@@ -1,6 +1,6 @@
 import { AninerelCardConfig } from './types';
 
-export const CARD_VERSION = '1.4.9';
+export const CARD_VERSION = '1.5.0';
 export const CARD_NAME = 'universal-inverter-card';
 export const LEGACY_CARD_NAME = 'aninerel-power-card';
 
@@ -38,8 +38,7 @@ export const DEFAULT_COLORS = {
 };
 
 export const STUB_CONFIG: Record<string, any> = {
-  type: 'custom:universal-inverter-card',
-  title: 'Aninerel ANL 4200T',
+  title: 'Inverter & Battery System',
   show_solar: false,
   entities: {
     battery_power: 'sensor.aninerel_anl_4200t_24l_w_pro_battery_power',

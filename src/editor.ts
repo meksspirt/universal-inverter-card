@@ -40,8 +40,12 @@ export class AninerelPowerCardEditor extends LitElement {
 
   private _valueChanged(ev: CustomEvent): void {
     const value = ev.detail.value;
+    const newConfig = {
+      ...this._config,
+      ...value,
+    };
     const event = new CustomEvent('config-changed', {
-      detail: { config: value },
+      detail: { config: newConfig },
       bubbles: true,
       composed: true,
     });
